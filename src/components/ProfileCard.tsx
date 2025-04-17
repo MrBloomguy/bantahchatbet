@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trophy, Users, TrendingUp } from 'lucide-react';
+import { X, Trophy, Users, TrendingUp, Star } from 'lucide-react';
 import { useProfile, Profile } from '../hooks/useProfile';
 import LoadingSpinner from './LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
@@ -106,6 +106,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
               <span>${profile.stats?.total_earnings || 0}</span>
             </div>
             <p className="text-sm text-white/60">Earnings</p>
+          </div>
+          <div className="text-center">
+            <div className="flex items-center justify-center mb-2">
+              <Star className="w-5 h-5 text-purple-500 mr-2" />
+              <span>{profile.points || 0}</span>
+            </div>
+            <p className="text-sm text-white/60">Points</p>
           </div>
         </div>
 

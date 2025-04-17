@@ -1,5 +1,5 @@
 import React from 'react';
-import { Share2, ChevronRight, Wallet, Trophy, Users, TrendingUp, BarChart2 } from 'lucide-react';
+import { Share2, ChevronRight, Wallet, Trophy, Users, TrendingUp, BarChart2, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
@@ -32,6 +32,11 @@ const Profile: React.FC = () => {
       icon: <TrendingUp className="w-5 h-5 text-[#CCFF00]" />,
       label: 'Active Bets',
       value: '8'
+    },
+    {
+      icon: <Star className="w-5 h-5 text-purple-500" />,
+      label: 'Points',
+      value: `${currentUser?.points || 0}`
     }
   ];
 
@@ -104,12 +109,19 @@ const Profile: React.FC = () => {
               <span className="text-[#CCFF00] text-sm font-semibold">{currentUser?.followers_count || 0}</span>
               <span className="text-gray-400 text-sm">followers</span>
             </div>
-            <div className="flex gap-2 mt-3">
+            <div className="flex gap-2 mt-3 items-center">
               <button
                 onClick={() => navigate('/settings/profile')}
                 className="px-4 py-1.5 rounded-full bg-[#CCFF00] text-black font-semibold text-sm shadow hover:bg-[#e6ff70] transition"
               >
                 Edit Profile
+              </button>
+              <button
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-purple-700 text-white font-semibold text-sm shadow hover:bg-purple-800 transition"
+                disabled
+              >
+                <Star className="w-4 h-4" />
+                {currentUser?.points || 0} Points
               </button>
               <button
                 onClick={() => navigate('/referral')}

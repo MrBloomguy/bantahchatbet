@@ -37,6 +37,9 @@ import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import Leaderboard from './pages/Leaderboard';
 import Stories from './pages/Stories';
+import ProfileSettings from './pages/ProfileSettings';
+import Settings from './pages/Settings';
+import Referral from './pages/Referral';
 
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -194,6 +197,26 @@ const App: React.FC = () => {
                          <Route path="/event/:eventId/chat" element={
                           <ProtectedRoute>
                             <EventChatWrapper />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/settings/profile" element={
+                          <ProtectedRoute>
+                            <ProfileSettings />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/settings" element={
+                          <ProtectedRoute>
+                            <Settings />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/referral" element={
+                          <ProtectedRoute>
+                            <Referral />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/settings/privacy" element={
+                          <ProtectedRoute>
+                            <Privacy />
                           </ProtectedRoute>
                         } />
                       </Routes>

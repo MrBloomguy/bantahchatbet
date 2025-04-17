@@ -1,9 +1,10 @@
 import React from 'react';
-import { Share2, Gift, Users, TrendingUp } from 'lucide-react';
+import { Share2, Gift, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useReferral } from '../hooks/useReferral';
 import MobileFooterNav from '../components/MobileFooterNav';
 import PageHeader from '../components/PageHeader';
+import MascotImage from '../assets/referral-mascot.svg'; // Replace with your actual mascot image path
 
 const Referral: React.FC = () => {
   const navigate = useNavigate();
@@ -22,9 +23,9 @@ const Referral: React.FC = () => {
     if (referralCode) {
       try {
         await navigator.share({
-          title: 'Join me on Bantah',
-          text: `Use my referral code ${referralCode} to join Bantah and start betting on anything!`,
-          url: window.location.origin
+          title: 'Join me on Bantah!',
+          text: `Use my code ${referralCode} and let's have fun!`,
+          url: window.location.origin,
         });
       } catch (err) {
         console.log('Error sharing:', err);
@@ -33,104 +34,94 @@ const Referral: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#1a1b2e]">
-      <PageHeader title="Refer & Earn" />
+    <div className="min-h-screen bg-pink-50 flex flex-col">
+      <PageHeader title="Earn Free Rewards!" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-[#242538] rounded-xl p-4">
-            <div className="w-12 h-12 bg-[#CCFF00]/20 flex items-center justify-center mb-2">
-              <Users className="w-6 h-6 text-[#CCFF00]" />
-            </div>
-            <p className="text-white/60 text-sm">Total Referrals</p>
-            <p className="text-white font-bold text-xl">{stats?.totalReferrals}</p>
+      <div className="max-w-md mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-4">
+        {/* Short Banner with Mascot */}
+        <div className="bg-gradient-to-br from-blue-400 to-indigo-500 rounded-xl shadow-md p-4 flex items-center text-white">
+          <img src={MascotImage} alt="Referral Mascot" className="w-16 h-16 mr-4" />
+          <div>
+            <h2 className="text-lg font-semibold">Invite Friends & Get Treats!</h2>
+            <p className="text-sm opacity-80">Share the fun, earn rewards.</p>
           </div>
+          <button
+            onClick={handleShare}
+            className="bg-yellow-400 text-blue-800 rounded-full px-3 py-1.5 text-sm font-semibold ml-auto hover:bg-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-400"
+          >
+            <Share2 className="w-4 h-4 mr-1" />
+            Share
+          </button>
+        </div>
 
-          <div className="bg-[#242538] rounded-xl p-4">
-            <div className="mb-2">
-              <Gift className="w-5 h-5 text-[#CCFF00]" />
-            </div>
-            <p className="text-white/60 text-sm">Earnings</p>
-            <p className="text-[#CCFF00] font-bold text-xl">₦ {stats?.totalRewards?.toLocaleString()}</p>
-          </div>
-
-          <div className="bg-[#242538] rounded-xl p-4">
-            <div className="mb-2">
-              <Share2 className="w-5 h-5 text-[#CCFF00]" />
-            </div>
-            <p className="text-white/60 text-sm">Pending</p>
-            <p className="text-white font-bold text-xl">{stats?.pendingReferrals}</p>
-            <p className="text-white/60 text-sm">Successful</p>
-            <p className="text-white font-bold text-xl">{stats?.successfulReferrals}</p>
-          </div>
-
-          <div className="bg-[#242538] rounded-xl p-6">
-            <h2 className="text-white font-bold mb-4">Your Referral Code</h2>
-            <div className="bg-[#1a1b2e] rounded-lg p-4 mb-4">
-              <div className="flex items-center justify-between">
-                <p className="font-syne text-2xl text-[#CCFF00] tracking-wider">
-                  {referralCode || '--------'}
-                </p>
-                <button
-                  onClick={handleCopy}
-                  className="px-4 py-2 bg-[#CCFF00]/20 text-[#CCFF00] rounded-lg hover:bg-[#CCFF00]/30 transition-colors"
-                >
-                  {copied ? 'Copied!' : 'Copy'}
-                </button>
-              </div>
-            </div>
+        {/* Compact Referral Code Section */}
+        <div className="bg-white rounded-xl shadow-md p-3">
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">Your Code</h2>
+          <div className="bg-gray-100 rounded-lg p-2 flex items-center justify-between">
+            <p className="text-base font-mono text-gray-800">{referralCode || '-------'}</p>
             <button
-              onClick={handleShare}
-              className="w-full py-3 bg-[#CCFF00] text-black rounded-xl font-medium hover:bg-[#b3ff00] transition-colors"
+              onClick={handleCopy}
+              className="px-2 py-1 bg-green-400 text-white rounded-md text-xs font-semibold hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400"
             >
-              Share Code
+              {copied ? 'Copied!' : 'Copy'}
             </button>
           </div>
+          <p className="text-xs text-gray-500 mt-1">Tap to copy.</p>
         </div>
 
-        {/* How it Works */}
-        <div className="bg-[#242538] rounded-xl p-6">
-          <h2 className="text-white font-bold mb-4">How it Works</h2>
-          <div className="space-y-4">
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 rounded-lg bg-[#CCFF00]/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-[#CCFF00]">1</span>
-              </div>
-              <div>
-                <p className="text-white font-medium">Share Your Code</p>
-                <p className="text-white/60 text-sm">Share your unique referral code with friends</p>
-              </div>
+        {/* Compact Stats Card */}
+        <div className="bg-yellow-100 rounded-xl shadow-md p-4">
+          <h2 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+            <Users className="w-4 h-4 text-yellow-500 mr-1" /> Your Stats
+          </h2>
+          <div className="grid grid-cols-2 gap-2 text-center">
+            <div className="bg-yellow-200 rounded-md p-2">
+              <p className="text-xs text-gray-700"><span className="font-bold">{stats?.totalReferrals || 0}</span> Friends</p>
             </div>
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 rounded-lg bg-[#CCFF00]/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-[#CCFF00]">2</span>
-              </div>
-              <div>
-                <p className="text-white font-medium">Friends Join</p>
-                <p className="text-white/60 text-sm">They sign up using your referral code</p>
-              </div>
+            <div className="bg-green-200 rounded-md p-2">
+              <p className="text-xs text-gray-700"><span className="font-bold">₦ {stats?.totalRewards?.toLocaleString() || 0}</span> Earned</p>
             </div>
-            <div className="flex items-start gap-4">
-              <div className="w-8 h-8 rounded-lg bg-[#CCFF00]/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-[#CCFF00]">3</span>
-              </div>
-              <div>
-                <p className="text-white font-medium">Earn Rewards</p>
-                <p className="text-white/60 text-sm">Get rewarded when friends participate</p>
-              </div>
+            <div className="bg-orange-200 rounded-md p-2">
+              <p className="text-xs text-gray-700"><span className="font-bold">{stats?.pendingReferrals || 0}</span> Pending</p>
             </div>
+            {stats?.successfulReferrals > 0 && (
+              <div className="bg-blue-200 rounded-md p-2">
+                <p className="text-xs text-gray-700"><span className="font-bold">{stats?.successfulReferrals || 0}</span> Success</p>
+              </div>
+            )}
           </div>
         </div>
 
-        {/* Terms */}
-        <div className="bg-[#242538] rounded-xl p-6">
-          <h2 className="text-white font-bold mb-4">Terms & Conditions</h2>
-          <ul className="list-disc list-inside text-white/60 text-sm space-y-2">
-            <li>Referral rewards are paid out when your referred friends join and participate in events</li>
-            <li>Each friend must use your referral code during sign up</li>
-            <li>Rewards are credited to your wallet automatically</li>
-            <li>Bantah reserves the right to modify or terminate the referral program at any time</li>
+        {/* Compact How to Earn */}
+        <div className="bg-white rounded-xl shadow-md p-3">
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">How to Earn</h2>
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <div className="w-5 h-5 rounded-full bg-pink-400 text-white flex items-center justify-center text-xs font-bold mr-2">1</div>
+              <p className="text-gray-700 text-sm font-semibold">Share</p>
+            </div>
+            <p className="text-gray-600 text-xs ml-7">Send your code.</p>
+            <div className="flex items-center">
+              <div className="w-5 h-5 rounded-full bg-yellow-400 text-blue-800 flex items-center justify-center text-xs font-bold mr-2">2</div>
+              <p className="text-gray-700 text-sm font-semibold">Join</p>
+            </div>
+            <p className="text-gray-600 text-xs ml-7">Friends sign up.</p>
+            <div className="flex items-center">
+              <div className="w-5 h-5 rounded-full bg-green-400 text-white flex items-center justify-center text-xs font-bold mr-2">3</div>
+              <p className="text-gray-700 text-sm font-semibold">Earn</p>
+            </div>
+            <p className="text-gray-600 text-xs ml-7">Get rewards!</p>
+          </div>
+        </div>
+
+        {/* Compact Terms */}
+        <div className="bg-gray-100 rounded-xl p-2 text-xs text-gray-700">
+          <h2 className="font-semibold mb-1">Terms</h2>
+          <ul className="list-disc pl-4 space-y-0.5">
+            <li>Rewards on sign-up & action.</li>
+            <li>Use correct code.</li>
+            <li>Rewards may change.</li>
+            <li>Bantah manages referrals.</li>
           </ul>
         </div>
       </div>

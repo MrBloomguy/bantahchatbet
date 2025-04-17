@@ -53,7 +53,10 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-[#242538] rounded-xl w-full max-w-sm">
+      <div
+        className="bg-[#242538] rounded-xl w-full max-w-sm bg-cover bg-center"
+        style={{ backgroundImage: 'url(/public/dialogue-bakcground.svg)' }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-white/10">
           <h2 className="text-lg font-bold text-white">Join Event</h2>
@@ -120,13 +123,13 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="btn-secondary flex-1"
+              className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition"
             >
               Cancel
             </button>
             <button
               onClick={handleSubmit}
-              className="btn-primary flex-1"
+              className="flex-1 px-4 py-2 bg-[#CCFF00] text-black rounded-lg hover:bg-[#b3ff00] transition"
             >
               Join Event
             </button>

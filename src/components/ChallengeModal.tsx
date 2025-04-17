@@ -123,7 +123,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-xl">
+      <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-xl bg-cover bg-center" style={{ backgroundImage: 'url(/public/dialogue-bakcground.svg)' }}>
         <div className="p-2 border-b flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-[#CCFF00]" />
