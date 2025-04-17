@@ -21,6 +21,7 @@ import AdminAuditLog from './pages/AdminAuditLog';
 import AdminPlatformFees from './pages/AdminPlatformFees';
 import AdminStories from './pages/AdminStories';
 import AdminCreateEvent from './pages/AdminCreateEvent'; // Fix import path
+import AdminUsers from './pages/AdminUsers'; // Import AdminUsers page
 
 // User Pages
 import SignIn from './pages/SignIn';
@@ -129,6 +130,11 @@ const App: React.FC = () => {
                         <Route path="/admin/create" element={
                           <AdminRoute>
                             <AdminCreateEvent />
+                          </AdminRoute>
+                        } />
+                        <Route path="/admin/users" element={
+                          <AdminRoute>
+                            <AdminUsers />
                           </AdminRoute>
                         } />
 

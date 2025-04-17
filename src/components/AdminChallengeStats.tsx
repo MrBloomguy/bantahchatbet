@@ -16,7 +16,7 @@ interface ChallengeStats {
     winner_id: string;
     amount: number;
     completed_at: string;
-    winner: { name: string };
+    winner: { name: string; points?: number; level?: string };
   }[];
 }
 
@@ -34,6 +34,16 @@ export const AdminChallengeStats: React.FC = () => {
       console.error('Error loading challenge stats:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteChallenge = async (challengeId: string) => {
+    try {
+      const { error } = await supabase.rpc('delete_challenge', { challenge_id: challengeId });
+      if (error) throw error;
+      loadStats(); // Refresh stats after deletion
+    } catch (error) {
+      console.error('Error deleting challenge:', error);
     }
   };
 
@@ -125,24 +135,25 @@ export const AdminChallengeStats: React.FC = () => {
       <div className="bg-[#242538] rounded-xl p-6">
         <h2 className="text-xl font-bold text-white mb-4">Recent Outcomes</h2>
         <div className="space-y-4">
-          {stats.recentOutcomes.map((outcome) => (
-            <div 
-              key={outcome.id}
-              className="flex items-center justify-between bg-[#1a1b2e] p-4 rounded-lg"
-            >
-              <div>
-                <h3 className="text-white font-medium">{outcome.title}</h3>
-                <p className="text-white/60 text-sm">
-                  Winner: {outcome.winner.name}
-                </p>
-              </div>
-              <div className="text-right">
-                <p className="text-[#CCFF00] font-medium">
-                  ₦{outcome.amount.toLocaleString()}
-                </p>
-                <p className="text-white/60 text-sm">
-                  {new Date(outcome.completed_at).toLocaleDateString()}
-                </p>
+          {stats?.recentOutcomes.map((outcome) => (
+            <div key={outcome.id} className="bg-[#1a1b2e] rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-white font-medium">{outcome.title}</h3>
+                  <div className="flex items-center gap-4 mt-1">
+                    <p className="text-white/60 text-sm">Winner: {outcome.winner?.name || 'N/A'}</p>
+                    <p className="text-white/60 text-sm">Points: {outcome.winner?.points || 0}</p>
+                    <p className="text-white/60 text-sm">Level: {outcome.winner?.level || 'N/A'}</p>
+                    <p className="text-white/60 text-sm">Amount: ₦{outcome.amount.toLocaleString()}</p>
+                    <p className="text-white/60 text-sm">Completed: {new Date(outcome.completed_at).toLocaleString()}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => handleDeleteChallenge(outcome.id)}
+                  className="px-3 py-1.5 text-sm bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           ))}

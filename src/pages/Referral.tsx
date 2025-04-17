@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useReferral } from '../hooks/useReferral';
 import MobileFooterNav from '../components/MobileFooterNav';
 import PageHeader from '../components/PageHeader';
-import MascotImage from '../assets/referral-mascot.svg'; // Replace with your actual mascot image path
+import MascotImage from '/referral-mascot.svg'; // Update import path for referral mascot image
 
 const Referral: React.FC = () => {
   const navigate = useNavigate();

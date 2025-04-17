@@ -9,7 +9,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 const AdminEvents: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { getEvents, markEventComplete, processEventPayouts } = useAdmin();
+  const { getEvents, markEventComplete, processEventPayouts, deleteEvent } = useAdmin();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -52,6 +52,17 @@ const AdminEvents: React.FC = () => {
     }
   };
 
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      await deleteEvent(eventId);
+      toast.showSuccess('Event deleted successfully');
+      loadEvents();
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast.showError('Failed to delete event');
+    }
+  };
+
   if (loading) {
     return (
       <AdminLayout>
@@ -87,6 +98,12 @@ const AdminEvents: React.FC = () => {
                       <p className="text-white/60 text-sm">
                         {event.participants_count} participants
                       </p>
+                      <p className="text-white/60 text-sm">
+                        Points: {event.creator?.points || 0}
+                      </p>
+                      <p className="text-white/60 text-sm">
+                        Level: {event.creator?.level || 'N/A'}
+                      </p>
                       <span className={`px-2 py-1 text-xs rounded-full ${
                         event.status === 'active' ? 'bg-green-500/20 text-green-400' :
                         event.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
@@ -120,6 +137,12 @@ const AdminEvents: React.FC = () => {
                         Process Payouts
                       </button>
                     )}
+                    <button
+                      onClick={() => handleDeleteEvent(event.id)}
+                      className="px-3 py-1.5 text-sm bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20"
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
               </div>
