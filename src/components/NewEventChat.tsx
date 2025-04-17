@@ -155,40 +155,31 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   }, [eventEndTime]);
 
   return (
-    <div className="flex flex-col h-screen bg-purple-50">
+    <div className="flex flex-col h-screen bg-gray-100">
       {/* Top Bar */}
-      <div className="bg-purple-700 text-white p-3 flex items-center shadow-sm z-10 rounded-br-xl">
-        <button onClick={onBack} className="mr-3">
+      <div className="bg-purple-700 text-white p-4 flex items-center shadow-md">
+        <button onClick={onBack} className="mr-4">
           <ArrowLeft size={24} />
         </button>
         <div className="flex items-center">
-          <UserAvatar url={creatorAvatar || '/bantahlogo.png'} size="sm" />
-          <div className="ml-2">
-            <h6 className="font-semibold">{eventName}</h6>
-            <p className="text-xs text-purple-200 flex items-center">
-            <img
-                src={creatorAvatar || "/bantahlogo.png"}
-                alt={eventCreatorUsername}
-                className="w-4 h-4 rounded-full object-cover mr-1"
-              />
-              <span>{eventCreatorUsername} • {numberOfMembers} Members</span>
-            </p>
+          <UserAvatar url={creatorAvatar || '/bantahlogo.png'} size="md" />
+          <div className="ml-3">
+            <h6 className="font-bold text-lg">{eventName}</h6>
+            <p className="text-sm text-purple-200">{eventCreatorUsername} • {numberOfMembers} Members</p>
           </div>
         </div>
-
-  
-      <div className="ml-auto">
-          <span className="bg-purple-600 text-white rounded-full px-2 py-1 text-xs font-semibold">
+        <div className="ml-auto">
+          <span className="bg-purple-600 text-white rounded-full px-3 py-1 text-sm font-semibold">
             ₦ {(eventPoolAmount / 1000).toFixed(1)}K
           </span>
         </div>
       </div>
 
-      {/* Compact Banner with YES/NO and Event Info */}
+      {/* Compact Banner */}
       <CompactBanner eventPoolAmount={eventPoolAmount} countdown={countdown} />
 
       {/* Chat Messages Area */}
-      <div className="flex-grow overflow-y-auto p-3 space-y-2">
+      <div className="flex-grow overflow-y-auto p-4 space-y-4">
         {isLoading && (
           <div className="flex justify-center items-center py-10">
             <Loader className="animate-spin text-purple-700" size={32} />
@@ -201,29 +192,23 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             return (
               <div
                 key={msg.id}
-                className={`flex ${isCurrentUserSender ? 'justify-end' : 'justify-start'} items-start mb-2`}
+                className={`flex ${isCurrentUserSender ? 'justify-end' : 'justify-start'} items-start`}
               >
                 {!isCurrentUserSender && msg.sender && (
-                  <div className="mr-2 cursor-pointer" onClick={() => openProfileCard(msg.sender!)}>
+                  <div className="mr-3 cursor-pointer" onClick={() => openProfileCard(msg.sender!)}>
                     <UserAvatar url={msg.sender.avatar_url} size="sm" />
                   </div>
                 )}
-                <div className="flex flex-col">
-                  <div className={`${isCurrentUserSender ? 'items-end' : 'items-start'}`}>
-                    {!isCurrentUserSender && msg.sender?.username && (
-                      <span className="text-xs text-gray-500 mb-0.5">@{msg.sender.username}</span>
-                    )}
-                    <ChatBubble
-                      content={msg.content}
-                      timestamp={msg.created_at}
-                      isSender={isCurrentUserSender}
-                      senderName={!isCurrentUserSender ? msg.sender?.username : undefined}
-                      hasAvatar={!isCurrentUserSender}
-                    />
-                  </div>
+                <div className="max-w-xs">
+                  <ChatBubble
+                    content={msg.content}
+                    timestamp={msg.created_at}
+                    isSender={isCurrentUserSender}
+                    senderName={!isCurrentUserSender ? msg.sender?.username : undefined}
+                  />
                 </div>
                 {isCurrentUserSender && currentUser?.avatar_url && (
-                  <div className="ml-2">
+                  <div className="ml-3">
                     <UserAvatar url={currentUser.avatar_url} size="sm" />
                   </div>
                 )}
@@ -260,21 +245,21 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
       )}
 
       {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 p-3 flex items-center space-x-2 sticky bottom-0">        
-        <button className="text-gray-500 hover:text-purple-700 p-2 rounded-full">
-          <Smile size={20} />
+      <div className="bg-white border-t border-gray-300 p-4 flex items-center space-x-3">
+        <button className="text-gray-500 hover:text-purple-700">
+          <Smile size={24} />
         </button>
-        <form onSubmit={handleSubmit} className="flex-grow relative">
+        <form onSubmit={handleSubmit} className="flex-grow flex items-center">
           <input
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Start a message"
-            className="bg-gray-100 rounded-full p-2 px-4 focus:outline-none focus:ring-1 focus:ring-purple-500 flex-grow text-sm pr-10"
+            placeholder="Type a message..."
+            className="flex-grow bg-gray-200 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
           />
           <button
             type="submit"
-            className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-purple-700 text-white rounded-full p-2 hover:bg-purple-800 disabled:opacity-50"
+            className="ml-3 bg-purple-700 text-white rounded-full p-3 hover:bg-purple-800 disabled:opacity-50"
             disabled={!message.trim() || isLoading}
           >
             <Send size={20} />

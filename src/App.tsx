@@ -40,6 +40,7 @@ import Stories from './pages/Stories';
 
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import EventChatWrapper from './components/EventChatWrapper';
 
 const App: React.FC = () => {
   const location = useLocation();
@@ -175,6 +176,11 @@ const App: React.FC = () => {
                             <Messages />
                           </ProtectedRoute>
                         } />
+                        <Route path="/messages/:chatId" element={
+                          <ProtectedRoute>
+                            <Messages />
+                          </ProtectedRoute>
+                        } />
                         <Route path="/notifications" element={
                           <ProtectedRoute>
                             <Notifications />
@@ -187,9 +193,7 @@ const App: React.FC = () => {
                         } />
                          <Route path="/event/:eventId/chat" element={
                           <ProtectedRoute>
-                            <div>
-                            Event Chat
-                            </div>
+                            <EventChatWrapper />
                           </ProtectedRoute>
                         } />
                       </Routes>

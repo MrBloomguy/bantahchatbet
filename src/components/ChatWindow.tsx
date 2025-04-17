@@ -40,6 +40,9 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewMessageSent, userId: other
     const [loading, setLoading] = useState(true);
     const [chatId, setChatId] = useState<string | null>(null);
     const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
+    const [ongoingChallenge, setOngoingChallenge] = useState(null); // State to store ongoing challenge details
+    const [challengeDetails, setChallengeDetails] = useState<any | null>(null);
+    const [timeLeft, setTimeLeft] = useState<string | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
@@ -158,6 +161,85 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewMessageSent, userId: other
         initializeChat();
     }, [currentUser, otherUserId]);
 
+    useEffect(() => {
+        const fetchOngoingChallenge = async () => {
+            if (!currentUser || !otherUserId) return;
+
+            try {
+                const { data: challenge, error } = await supabase
+                    .from('challenges')
+                    .select('*')
+                    .eq('status', 'accepted')
+                    .or(`challenger_id.eq.${currentUser.id},challenger_id.eq.${otherUserId}`)
+                    .or(`challenged_id.eq.${currentUser.id},challenged_id.eq.${otherUserId}`)
+                    .single();
+
+                if (error) {
+                    console.error('Error fetching ongoing challenge:', error);
+                    return;
+                }
+
+                setOngoingChallenge(challenge);
+            } catch (error) {
+                console.error('Error fetching ongoing challenge:', error);
+            }
+        };
+
+        fetchOngoingChallenge();
+    }, [currentUser, otherUserId]);
+
+    useEffect(() => {
+        const fetchChallengeDetails = async () => {
+            if (!chatId) return;
+
+            try {
+                const { data: challenge, error } = await supabase
+                    .from('challenges')
+                    .select('game_type, amount, expires_at')
+                    .eq('chat_id', chatId)
+                    .single();
+
+                if (error) {
+                    console.error('Error fetching challenge details:', error);
+                    return;
+                }
+
+                setChallengeDetails(challenge);
+
+                if (challenge.expires_at) {
+                    const updateCountdown = () => {
+                        const now = new Date();
+                        const expiresAt = new Date(challenge.expires_at);
+                        const diff = expiresAt.getTime() - now.getTime();
+
+                        if (diff <= 0) {
+                            setTimeLeft('Challenge expired');
+                        } else {
+                            const hours = Math.floor(diff / (1000 * 60 * 60));
+                            const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+                            const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+                            setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
+                        }
+                    };
+
+                    updateCountdown();
+                    const interval = setInterval(updateCountdown, 1000);
+                    return () => clearInterval(interval);
+                }
+            } catch (error) {
+                console.error('Error fetching challenge details:', error);
+            }
+        };
+
+        fetchChallengeDetails();
+    }, [chatId]);
+
+    useEffect(() => {
+        if (timeLeft === 'Challenge expired') {
+            setTimeLeft('Challenge ended, winnings will be released soon or check your wallet for your payout.');
+        }
+    }, [timeLeft]);
+
     const scrollToBottom = () => {
         requestAnimationFrame(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -229,6 +311,33 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewMessageSent, userId: other
         }
     };
 
+    const renderChallengeBanner = () => {
+        if (!ongoingChallenge) return null;
+
+        return (
+            <div className="bg-yellow-100 text-yellow-800 p-3 text-center rounded-md shadow-md mb-4">
+                <p className="font-semibold">Ongoing Challenge</p>
+                <p>Game: {ongoingChallenge.game_type}</p>
+                <p>Platform: {ongoingChallenge.platform}</p>
+                <p>Amount: ₦{ongoingChallenge.amount.toLocaleString()}</p>
+                {timeLeft && <p>Time Left: {timeLeft}</p>}
+            </div>
+        );
+    };
+
+    const challengeBanner = () => {
+        if (!challengeDetails) return null;
+
+        return (
+            <div className="bg-yellow-100 text-yellow-800 p-3 rounded-md shadow-md mb-4">
+                <p className="font-semibold">Ongoing Challenge</p>
+                <p>Game: {challengeDetails.game_type}</p>
+                <p>Amount: ₦{challengeDetails.amount.toLocaleString()}</p>
+                {timeLeft && <p>Time Left: {timeLeft}</p>}
+            </div>
+        );
+    };
+
     // --- Chat Header ---
     const chatHeader = () => {
         if (loading && !otherUser) {
@@ -265,6 +374,8 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewMessageSent, userId: other
         <div className="flex flex-col h-screen bg-gray-50">
             {chatHeader()}
             <div className="flex-grow overflow-y-auto px-4 py-2 space-y-2">
+                {renderChallengeBanner()}
+                {challengeBanner()}
                 {loading && messages.length === 0 && (
                     <div className="flex justify-center items-center h-full">
                         <LoadingSpinner />

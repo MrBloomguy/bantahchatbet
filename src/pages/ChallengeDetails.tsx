@@ -31,6 +31,12 @@ const ChallengeDetails: React.FC = () => {
     }
   };
 
+  const navigateToChallengeChat = () => {
+    if (challenge && challenge.id) {
+      navigate(`/messages?tab=challenges&chatId=${challenge.id}`);
+    }
+  };
+
   useEffect(() => {
     const fetchChallengeDetails = async () => {
       if (!id) {
@@ -180,6 +186,14 @@ const ChallengeDetails: React.FC = () => {
           <p className="text-white/60 mb-1">Status</p>
           <p className="text-white capitalize">{challenge.status || 'Unknown'}</p>
         </div>
+
+        {/* Navigate to Challenge Chat */}
+        <button 
+          onClick={navigateToChallengeChat}
+          className="bg-[#CCFF00] text-black px-4 py-2 rounded-lg font-medium hover:bg-opacity-90 transition"
+        >
+          Go to Challenge Chat
+        </button>
       </div>
     </div>
   );

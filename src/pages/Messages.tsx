@@ -6,6 +6,7 @@ import MobileFooterNav from '../components/MobileFooterNav';
 import { supabase } from '../lib/supabase';
 import { Search, MessageSquare, MessageSquareText } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import ChatWindow from '../components/ChatWindow';
 
 interface User {
   id: string;
@@ -48,102 +49,138 @@ const Messages: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredChatList, setFilteredChatList] = useState<ChatListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'challenges'>('all');
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
   const { userId: activeChatUserId } = useParams<{ userId?: string }>();
+  const { chatId } = useParams<{ chatId?: string }>();
   const [refreshChatList, setRefreshChatList] = useState(false);
 
-  // --- FetchChatList Logic (Reverted to multi-step) ---
-  useEffect(() => {
-    const fetchChatList = async () => {
-      setLoading(true);
-      try {
-        if (!currentUser) return;
+  const navigateToChallengeChat = (chatId: string) => {
+    navigate(`/messages?tab=challenges&chatId=${chatId}`);
+  };
 
-        // 1. Fetch all chat_ids where the current user is a participant
-        const { data: chatParticipants, error: participantsError } = await supabase
-          .from('chat_participants')
-          .select('chat_id')
-          .eq('user_id', currentUser.id);
+  // Fix type predicate for filtering chat list
+  const isValidChatListItem = (item: any): item is ChatListItem => {
+    return (
+      item !== null &&
+      typeof item.chat_id === 'string' &&
+      typeof item.other_user === 'object' &&
+      typeof item.other_user.is_online === 'boolean' &&
+      typeof item.unread_count === 'number'
+    );
+  };
 
-        if (participantsError) {
-          console.error('Error fetching chat participants:', participantsError);
-          setChatListItems([]);
-          return;
-        }
+  // --- FetchChatList Logic ---
+  const fetchChatList = async () => {
+    setLoading(true);
+    try {
+      if (!currentUser) return;
 
-        const chatIds = chatParticipants.map(p => p.chat_id);
-        if (chatIds.length === 0) {
-          setChatListItems([]);
-          setLoading(false);
-          return;
-        }
+      const { data: chatParticipants, error: participantsError } = await supabase
+        .from('chat_participants')
+        .select('chat_id')
+        .eq('user_id', currentUser.id);
 
-        // 2. Fetch details for each chat
-        const chatDetailsPromises = chatIds.map(async (chatId) => {
-          const { data: otherParticipant, error: otherParticipantError } = await supabase
-            .from('chat_participants')
-            .select('user_id')
-            .eq('chat_id', chatId)
-            .neq('user_id', currentUser.id)
-            .single();
-
-          if (otherParticipantError || !otherParticipant) return null;
-          const otherUserId = otherParticipant.user_id;
-
-          const { data: otherUser, error: otherUserError } = await supabase
-            .from('users_view')
-            .select('id, name, avatar_url')
-            .eq('id', otherUserId)
-            .single();
-
-          if (otherUserError || !otherUser) return null;
-
-          const { data: lastMessageData, error: lastMessageError } = await supabase
-            .from('messages')
-            .select('content, created_at, sender_id')
-            .eq('chat_id', chatId)
-            .order('created_at', { ascending: false })
-            .limit(1)
-            .maybeSingle();
-
-          // Placeholder for unread count
-          const unread_count = 0; // TODO: Implement unread count
-
-          const lastMessage: LastMessage | null = lastMessageData
-            ? { ...lastMessageData } : null;
-
-          return {
-            chat_id: chatId,
-            other_user: { ...otherUser, is_online: false },
-            last_message: lastMessage,
-            unread_count: unread_count,
-          };
-        });
-
-        const chatListResults = (await Promise.all(chatDetailsPromises))
-          .filter((item): item is ChatListItem => item !== null);
-
-        chatListResults.sort((a, b) => {
-          if (!a.last_message) return 1;
-          if (!b.last_message) return -1;
-          return new Date(b.last_message.created_at).getTime() - new Date(a.last_message.created_at).getTime();
-        });
-
-        setChatListItems(chatListResults);
-
-      } catch (error) {
-        console.error('Error fetching chat list:', error);
+      if (participantsError) {
+        console.error('Error fetching chat participants:', participantsError);
         setChatListItems([]);
-      } finally {
-        setLoading(false);
+        return;
       }
-    };
 
+      const chatIds = chatParticipants.map(p => p.chat_id);
+      if (chatIds.length === 0) {
+        setChatListItems([]);
+        setLoading(false);
+        return;
+      }
+
+      const chatDetailsPromises = chatIds.map(async (chatId) => {
+        const { data: otherParticipant, error: otherParticipantError } = await supabase
+          .from('chat_participants')
+          .select('user_id')
+          .eq('chat_id', chatId)
+          .neq('user_id', currentUser.id)
+          .single();
+
+        if (otherParticipantError || !otherParticipant) return null;
+        const otherUserId = otherParticipant.user_id;
+
+        const { data: otherUser, error: otherUserError } = await supabase
+          .from('users_view')
+          .select('id, name, avatar_url')
+          .eq('id', otherUserId)
+          .single();
+
+        if (otherUserError || !otherUser) return null;
+
+        const { data: lastMessageData } = await supabase
+          .from('messages')
+          .select('content, created_at, sender_id')
+          .eq('chat_id', chatId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        const unread_count = 0; // Placeholder for unread count
+
+        const lastMessage: LastMessage | null = lastMessageData
+          ? { ...lastMessageData } : null;
+
+        return {
+          chat_id: chatId,
+          other_user: { ...otherUser, is_online: false },
+          last_message: lastMessage,
+          unread_count: unread_count,
+        };
+      });
+
+      const chatListResults = (await Promise.all(chatDetailsPromises))
+        .filter(isValidChatListItem);
+
+      chatListResults.sort((a, b) => {
+        if (!a.last_message) return 1;
+        if (!b.last_message) return -1;
+        return new Date(b.last_message.created_at).getTime() - new Date(a.last_message.created_at).getTime();
+      });
+
+      setChatListItems(chatListResults);
+
+    } catch (error) {
+      console.error('Error fetching chat list:', error);
+      setChatListItems([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchChatList();
   }, [currentUser, refreshChatList]);
+
+  // --- Process Query Parameters ---
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const tab = params.get('tab');
+    const chatId = params.get('chatId');
+
+    if (tab === 'challenges') {
+      setActiveFilter('challenges');
+    }
+
+    if (chatId) {
+      setTimeout(() => {
+        navigate(`/messages/${chatId}`);
+      }, 0);
+    }
+  }, [location.search]);
+
+  useEffect(() => {
+    if (chatId) {
+      setActiveFilter('challenges');
+    }
+  }, [chatId]);
 
   // --- Filter Logic ---
   useEffect(() => {
@@ -151,6 +188,8 @@ const Messages: React.FC = () => {
 
     if (activeFilter === 'unread') {
       listToFilter = listToFilter.filter(item => item.unread_count > 0);
+    } else if (activeFilter === 'challenges') {
+      listToFilter = listToFilter.filter(item => item.last_message?.content.includes('challenge'));
     }
 
     if (searchQuery) {
@@ -173,7 +212,8 @@ const Messages: React.FC = () => {
     navigate(`/messages/${userId}`);
   };
 
-  const formatRelativeTime = (dateString: string | null) => {
+  // Fix formatRelativeTime to handle undefined
+  const formatRelativeTime = (dateString: string | null | undefined) => {
     if (!dateString) return '';
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: false });
@@ -220,6 +260,18 @@ const Messages: React.FC = () => {
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
               >
                 Unread
+              </button>
+              {/* Add Challenges Tab */}
+              <button
+                onClick={() => setActiveFilter('challenges')}
+                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors duration-150 ${activeFilter === 'challenges'
+                  ? 'bg-purple-600 text-white shadow-sm'
+                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                Challenges
+                {chatListItems.some(item => item.unread_count > 0 && item.last_message?.content.includes('challenge')) && (
+                  <span className="ml-2 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full">!</span>
+                )}
               </button>
             </div>
           </div>
@@ -292,7 +344,9 @@ const Messages: React.FC = () => {
                     ? 'No matching chats found.'
                     : activeFilter === 'unread'
                       ? 'No unread messages.'
-                      : 'No chats yet. Start a conversation!'}
+                      : activeFilter === 'challenges'
+                        ? 'No challenges found.'
+                        : 'No chats yet. Start a conversation!'}
                 </p>
               </div>
             )}

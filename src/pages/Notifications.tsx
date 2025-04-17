@@ -7,6 +7,7 @@ import LoadingSpinner from '../components/LoadingSpinner';
 import { useToast } from '../contexts/ToastContext';
 import PageHeader from '../components/PageHeader';
 import MobileFooterNav from '../components/MobileFooterNav';
+import { supabase } from '../lib/supabase';
 
 const filters = [
   { id: 'all', label: 'All Notifications', types: [] },
@@ -62,12 +63,18 @@ const Notifications = () => {
       const { notification_type, metadata } = notification;
       
       if (filter === 'all') return true;
+
+      if (filter === 'challenges') {
+        return notification.type === 'challenge_received';
+      }
       
       const filterConfig = filters.find(f => f.id === filter);
       if (!filterConfig) return false;
       return filterConfig.types.includes(notification_type);
     });
   }, [notifications, filter]);
+
+  console.log('Filtered Notifications:', filterNotifications);
 
   const handleMarkAllRead = async () => {
     try {
@@ -86,6 +93,22 @@ const Notifications = () => {
     } catch (err) {
       console.error('Failed to mark as read:', err);
       toast.showError('Failed to mark notification as read');
+    }
+  };
+
+  const sendChallengeEndNotification = async (challengeId: string, userIds: string[]) => {
+    try {
+      const notifications = userIds.map(userId => ({
+        user_id: userId,
+        type: 'challenge_ended',
+        title: 'Challenge Ended',
+        content: 'Challenge ended, winnings will be released soon or check your wallet for your payout.',
+        metadata: { challenge_id: challengeId }
+      }));
+
+      await supabase.from('notifications').insert(notifications);
+    } catch (error) {
+      console.error('Error sending challenge end notifications:', error);
     }
   };
 
@@ -136,6 +159,7 @@ const Notifications = () => {
                     key={notification.id}
                     className={`flex items-center bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 relative group ${!notification.read_at ? 'ring-2 ring-[#CCFF00]/40' : ''}`}
                   >
+                    {console.log('Notification Debug:', notification)}
                     {/* Icon/Avatar */}
                     <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#F6F7FB] flex items-center justify-center mr-4">
                       {notification.metadata?.banner_url ? (
@@ -152,17 +176,85 @@ const Notifications = () => {
                       </div>
                       <p className="text-gray-500 text-sm truncate">{notification.content}</p>
                       {/* Challenge Accept/Decline Buttons */}
-                      {notification.notification_type && notification.notification_type.startsWith('challenge_') && !notification.read_at && (
+                      {notification.type === 'challenge_received' && notification.metadata?.challenge_id && !notification.read_at && (
                         <div className="flex gap-2 mt-2">
                           <button
                             className="px-3 py-1 rounded-full bg-[#CCFF00] text-black text-xs font-semibold shadow hover:bg-[#b3ff00] transition"
-                            onClick={() => {/* Accept logic here (handled elsewhere) */}}
+                            onClick={async () => {
+                              try {
+                                // Check if the challenge is already accepted or declined
+                                const { data: challenge, error } = await supabase
+                                  .from('challenges')
+                                  .select('status')
+                                  .eq('id', notification.metadata.challenge_id)
+                                  .single();
+
+                                if (error) throw error;
+                                if (challenge.status !== 'pending') {
+                                  toast.showError('This challenge has already been responded to.');
+                                  return;
+                                }
+
+                                // Update challenge status to accepted
+                                await supabase
+                                  .from('challenges')
+                                  .update({ status: 'accepted' })
+                                  .eq('id', notification.metadata.challenge_id);
+
+                                // Notify both parties
+                                await supabase.from('notifications').insert([
+                                  {
+                                    user_id: notification.metadata.challenger_id,
+                                    type: 'challenge_accepted',
+                                    title: 'Challenge Accepted',
+                                    content: `Your challenge with @${currentUser.username} has been accepted!`,
+                                    metadata: notification.metadata
+                                  },
+                                  {
+                                    user_id: currentUser.id,
+                                    type: 'challenge_started',
+                                    title: 'Challenge Started',
+                                    content: `The challenge has started! Duration: 1 hour, Amount: ₦${notification.metadata.amount}`,
+                                    metadata: notification.metadata
+                                  }
+                                ]);
+
+                                toast.showSuccess('Challenge accepted! Notifications sent.');
+                                refetchNotifications();
+                              } catch (error) {
+                                console.error('Error accepting challenge:', error);
+                                toast.showError('Failed to accept challenge');
+                              }
+                            }}
                           >
                             Accept
                           </button>
                           <button
                             className="px-3 py-1 rounded-full bg-red-100 text-red-600 text-xs font-semibold shadow hover:bg-red-200 transition"
-                            onClick={() => {/* Decline logic here (handled elsewhere) */}}
+                            onClick={async () => {
+                              try {
+                                // Update challenge status to declined
+                                await supabase
+                                  .from('challenges')
+                                  .update({ status: 'declined' })
+                                  .eq('id', notification.metadata.challenge_id);
+
+                                // Notify the challenger
+                                await supabase.from('notifications').insert({
+                                  user_id: notification.metadata.challenger_id,
+                                  type: 'challenge_declined',
+                                  title: 'Challenge Declined',
+                                  content: `Your challenge with @${currentUser.username} was declined.`,
+                                  metadata: notification.metadata
+                                });
+
+                                toast.showSuccess('Challenge declined! Notification sent.');
+                                refetchNotifications();
+                              } catch (error) {
+                                console.error('Error declining challenge:', error);
+                                toast.showError('Failed to decline challenge');
+                              }
+                            }}
                           >
                             Decline
                           </button>

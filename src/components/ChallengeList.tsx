@@ -103,7 +103,7 @@ export const ChallengeList = () => {
           {challenges.map((challenge) => (
             <div
               key={challenge.id}
-              onClick={() => navigate(`/challenges/${challenge.id}`)}
+              onClick={() => navigate(`/challenge/${challenge.id}`)}
               className="p-4 bg-[#242538] rounded-xl hover:bg-[#2A2C42] transition-colors cursor-pointer"
             >
               <div className="flex flex-col gap-3">

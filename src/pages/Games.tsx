@@ -237,10 +237,49 @@ const Games: React.FC = () => {
         }
       );
 
+      // Initialize chat for the challenge if accepted
+      if (accept) {
+        await initializeChallengeChat(challenge.id, challenge.challenger.id, challenge.challenged.id);
+      }
+
       fetchChallenges();
     } catch (error) {
       console.error('Error responding to challenge:', error);
       toast.showError('Failed to respond to challenge');
+    }
+  };
+
+  const initializeChallengeChat = async (challengeId: string, challengerId: string, challengedId: string) => {
+    try {
+      const { data: existingChat, error: existingChatError } = await supabase
+        .from('chats')
+        .select('id')
+        .eq('challenge_id', challengeId)
+        .single();
+
+      if (existingChatError && existingChatError.code !== 'PGRST116') {
+        console.error('Error checking for existing chat:', existingChatError);
+        return;
+      }
+
+      if (!existingChat) {
+        const { data: newChat, error: newChatError } = await supabase
+          .from('chats')
+          .insert({
+            challenge_id: challengeId,
+            participants: [challengerId, challengedId],
+          })
+          .select()
+          .single();
+
+        if (newChatError) {
+          console.error('Error creating new chat for challenge:', newChatError);
+        } else {
+          console.log('Challenge chat initialized:', newChat);
+        }
+      }
+    } catch (error) {
+      console.error('Error initializing challenge chat:', error);
     }
   };
 
@@ -318,61 +357,72 @@ const Games: React.FC = () => {
 
   const renderChallengesList = () => (
     <div className="space-y-3">
-      {challenges.map((challenge) => (
-        <div
-          key={challenge.id}
-          onClick={() => navigate(`/challenges/${challenge.id}`)}
-          className="bg-[#242538] rounded-xl p-4 hover:bg-[#2a2b42] transition-colors cursor-pointer"
-        >
-          {/* Title and Amount */}
-          <div className="flex items-center justify-between mb-3">
-            <h3 className="text-white font-medium">{challenge.title || 'Untitled Challenge'}</h3>
-            <span className="text-[#CCFF00] font-medium">
-              ₦{challenge.amount.toLocaleString()}
-            </span>
-          </div>
+      {challenges.map((challenge) => {
+        if (!challenge.challenger || !challenge.challenged) {
+          console.warn('Skipping challenge with missing data:', challenge);
+          return null;
+        }
 
-          {/* Players */}
-          <div className="flex items-center justify-between mb-3">
-            <div className="flex items-center gap-2">
-              <img
-                src={challenge.challenger.avatar_url}
-                alt={challenge.challenger.name}
-                className="w-8 h-8 rounded-full"
-              />
-              <span className="text-white">{challenge.challenger.name}</span>
-            </div>
-
-            <span className="text-white/60">vs</span>
-
-            <div className="flex items-center gap-2">
-              <span className="text-white">{challenge.challenged.name}</span>
-              <img
-                src={challenge.challenged.avatar_url}
-                alt={challenge.challenged.name}
-                className="w-8 h-8 rounded-full"
-              />
-            </div>
-          </div>
-
-          {/* Game Details */}
-          <div className="flex items-center justify-between text-sm">
-            <div className="space-x-2">
-              <span className="text-white/60">{challenge.game_type}</span>
-              <span className="text-white/60">•</span>
-              <span className="text-white/60">{challenge.platform}</span>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-white/60">
-                {formatDate(challenge.scheduled_at || challenge.created_at)}
-              </span>
-              <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(challenge.status)}`}>
-                {challenge.status}
+        return (
+          <div
+            key={challenge.id}
+            onClick={() => navigate(`/messages?tab=challenges&chatId=${challenge.id}`)}
+            className="bg-[#242538] rounded-xl p-4 hover:bg-[#2a2b42] transition-colors cursor-pointer"
+          >
+            {/* Title and Amount */}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-white font-medium">{challenge.title || 'Untitled Challenge'}</h3>
+              <span className="text-[#CCFF00] font-medium">
+                ₦{challenge.amount.toLocaleString()}
               </span>
             </div>
+
+            {/* Players */}
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <img
+                  src={challenge.challenger.avatar_url}
+                  alt={challenge.challenger.name}
+                  className="w-8 h-8 rounded-full"
+                />
+                <span className="text-white">{challenge.challenger.name}</span>
+              </div>
+
+              <span className="text-white/60">vs</span>
+
+              <div className="flex items-center gap-2">
+                <span className="text-white">{challenge.challenged.name}</span>
+                <img
+                  src={challenge.challenged.avatar_url}
+                  alt={challenge.challenged.name}
+                  className="w-8 h-8 rounded-full"
+                />
+              </div>
+            </div>
+
+            {/* Game Details */}
+            <div className="flex items-center justify-between text-sm">
+              <div className="space-x-2">
+                <span className="text-white/60">{challenge.game_type}</span>
+                <span className="text-white/60">•</span>
+                <span className="text-white/60">{challenge.platform}</span>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className="text-white/60">
+                  {formatDate(challenge.scheduled_at || challenge.created_at)}
+                </span>
+                <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(challenge.status)}`}>
+                  {challenge.status}
+                </span>
+                {/* Add "Ongoing Challenge" badge for active challenges */}
+                {challenge.status === 'accepted' && (
+                  <span className="px-2 py-1 bg-[#CCFF00] text-black text-xs font-semibold rounded-full">Ongoing Challenge</span>
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 
@@ -509,7 +559,7 @@ const Games: React.FC = () => {
                 challenges.length > 0 ? (
                   <div className="flex flex-col gap-4">
                     {challenges.map((challenge) => (
-                      <div key={challenge.id} onClick={() => navigate(`/challenges/${challenge.id}`)} className="bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 cursor-pointer group flex flex-col gap-2">
+                      <div key={challenge.id} onClick={() => navigate(`/messages?tab=challenges&chatId=${challenge.id}`)} className="bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 cursor-pointer group flex flex-col gap-2">
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="text-gray-900 font-semibold truncate">{challenge.title || 'Untitled Challenge'}</h3>
                           <span className="text-[#CCFF00] font-semibold">₦{challenge.amount.toLocaleString()}</span>
