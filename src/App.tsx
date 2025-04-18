@@ -185,7 +185,7 @@ const App: React.FC = () => {
                             <Messages />
                           </ProtectedRoute>
                         } />
-                        <Route path="/messages/:chatId" element={
+                        <Route path="/messages/:userId" element={
                           <ProtectedRoute>
                             <Messages />
                           </ProtectedRoute>

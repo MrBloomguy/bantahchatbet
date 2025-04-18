@@ -3,6 +3,7 @@ import { X, Trophy, Users, TrendingUp, Star } from 'lucide-react';
 import { useProfile, Profile } from '../hooks/useProfile';
 import LoadingSpinner from './LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
+import UserLevelBadge from './UserLevelBadge';
 
 interface ProfileCardProps {
   profile?: Profile;
@@ -82,7 +83,14 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
           className="w-24 h-24 rounded-full mx-auto mb-4"
         />
         <h2 className="text-xl font-bold mb-1">{profile.name}</h2>
-        <p className="text-white/60 mb-4">@{profile.username}</p>
+        <p className="text-white/60">@{profile.username}</p>
+        <div className="flex items-center justify-center gap-2 mt-2 mb-4">
+          <div className="flex items-center gap-1 px-3 py-1 bg-purple-500/10 text-purple-500 rounded-full text-sm">
+            <Star className="w-4 h-4" />
+            <span>{profile.points || 0} Points</span>
+          </div>
+          <UserLevelBadge points={profile.points || 0} size="sm" />
+        </div>
         {profile.bio && <p className="text-white/80 mb-6">{profile.bio}</p>}
 
         <div className="grid grid-cols-3 gap-4 mb-6">
@@ -106,13 +114,6 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
               <span>${profile.stats?.total_earnings || 0}</span>
             </div>
             <p className="text-sm text-white/60">Earnings</p>
-          </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Star className="w-5 h-5 text-purple-500 mr-2" />
-              <span>{profile.points || 0}</span>
-            </div>
-            <p className="text-sm text-white/60">Points</p>
           </div>
         </div>
 

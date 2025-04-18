@@ -6,6 +6,7 @@ import { useWallet } from '../contexts/WalletContext';
 import MobileFooterNav from '../components/MobileFooterNav';
 import UserRankBadge from '../components/UserRankBadge';
 import PageHeader from '../components/PageHeader';
+import UserLevelBadge from '../components/UserLevelBadge';
 
 const Profile: React.FC = () => {
   const { currentUser, logout } = useAuth();
@@ -32,11 +33,6 @@ const Profile: React.FC = () => {
       icon: <TrendingUp className="w-5 h-5 text-[#CCFF00]" />,
       label: 'Active Bets',
       value: '8'
-    },
-    {
-      icon: <Star className="w-5 h-5 text-purple-500" />,
-      label: 'Points',
-      value: `${currentUser?.points || 0}`
     }
   ];
 
@@ -101,6 +97,16 @@ const Profile: React.FC = () => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-1 tracking-tight">{currentUser?.name}</h2>
             <p className="text-gray-500 text-base mb-2">@{currentUser?.username}</p>
+            
+            {/* Level and Points Section */}
+            <div className="flex items-center gap-3 mb-4">
+              <UserLevelBadge points={currentUser?.points || 0} size="md" />
+              <div className="flex items-center gap-1 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full">
+                <Star className="w-4 h-4" />
+                <span className="font-medium">{currentUser?.points || 0} Points</span>
+              </div>
+            </div>
+            
             {currentUser?.bio && (
               <p className="text-gray-700 text-center mb-3 max-w-xs leading-relaxed">{currentUser.bio}</p>
             )}
@@ -117,13 +123,6 @@ const Profile: React.FC = () => {
                 Edit Profile
               </button>
               <button
-                className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-purple-700 text-white font-semibold text-sm shadow hover:bg-purple-800 transition"
-                disabled
-              >
-                <Star className="w-4 h-4" />
-                {currentUser?.points || 0} Points
-              </button>
-              <button
                 onClick={() => navigate('/referral')}
                 className="px-4 py-1.5 rounded-full bg-[#F6F7FB] text-[#7440ff] font-semibold text-sm shadow hover:bg-[#edeaff] transition"
               >
@@ -132,7 +131,7 @@ const Profile: React.FC = () => {
             </div>
           </div>
 
-          {/* Stats Section - Made more compact */}
+          {/* Stats Section */}
           <div className="grid grid-cols-2 gap-3 mb-6">
             {stats.map((stat, index) => (
               <div

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Trophy, Crown, Star, Users, Wallet, Gamepad2, Zap, Phone, DollarSign } from 'lucide-react';
+import { Trophy, Crown, Star, Users, Wallet } from 'lucide-react';
 import MobileFooterNav from '../components/MobileFooterNav';
 import ProfileCard from '../components/ProfileCard';
 import { useLeaderboard } from '../hooks/useLeaderboard';

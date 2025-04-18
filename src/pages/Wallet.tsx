@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { ArrowLeft } from 'lucide-react';
+import PageHeader from '../components/PageHeader';
 import WalletCard from '../components/WalletCard';
 import WalletTransactionHistory from '../components/WalletTransactionHistory';
 import MobileFooterNav from '../components/MobileFooterNav';
@@ -31,18 +31,9 @@ const Wallet: React.FC = () => {
   }, [searchParams, toast, navigate, refreshWallet]);
 
   return (
-    <div className="min-h-screen bg-[#EDEDED]">
-      {/* Header */}
-      <div className="bg-white text-black flex items-center p-4 sticky top-0 z-10">
-        <button
-          onClick={() => navigate(-1)}
-          className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-xl font-semibold ml-2">Wallet</h1>
-      </div>
-
+    <div className="min-h-screen bg-[#1a1b2e]">
+      <PageHeader title="Wallet" showBackButton />
+      
       <div className="max-w-lg mx-auto p-4 space-y-4">
         <WalletCard />
         <WalletTransactionHistory />

@@ -33,19 +33,19 @@ interface TransactionItemProps {
 const getTransactionIcon = (type: string) => {
   switch (type) {
     case 'deposit':
-      return <ArrowDownRight className="w-5 h-5 text-green-500" />;
+      return <ArrowDownRight className="w-6 h-6 text-emerald-500" />;
     case 'withdrawal':
-      return <ArrowUpRight className="w-5 h-5 text-red-500" />;
+      return <ArrowUpRight className="w-6 h-6 text-rose-500" />;
     case 'bet_lock':
-      return <Lock className="w-5 h-5 text-orange-500" />;
+      return <Lock className="w-6 h-6 text-amber-500" />;
     case 'bet_win':
-      return <Trophy className="w-5 h-5 text-green-500" />;
+      return <Trophy className="w-6 h-6 text-emerald-500" />;
     case 'bet_loss':
-      return <X className="w-5 h-5 text-red-500" />;
+      return <X className="w-6 h-6 text-rose-500" />;
     case 'bet_refund':
-      return <RotateCcw className="w-5 h-5 text-blue-500" />;
+      return <RotateCcw className="w-6 h-6 text-blue-500" />;
     default:
-      return <CircleDot className="w-5 h-5 text-gray-500" />;
+      return <CircleDot className="w-6 h-6 text-gray-500" />;
   }
 };
 
@@ -53,13 +53,13 @@ const getStatusBadgeColor = (status: string) => {
   switch (status.toLowerCase()) {
     case 'success':
     case 'completed':
-      return 'bg-green-100 text-green-800';
+      return 'bg-emerald-100 text-emerald-800 border border-emerald-200';
     case 'pending':
-      return 'bg-yellow-100 text-yellow-800';
+      return 'bg-amber-100 text-amber-800 border border-amber-200';
     case 'failed':
-      return 'bg-red-100 text-red-800';
+      return 'bg-rose-100 text-rose-800 border border-rose-200';
     default:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-gray-100 text-gray-800 border border-gray-200';
   }
 };
 
@@ -71,29 +71,36 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction }) => {
   const [showDetails, setShowDetails] = useState(false);
 
   return (
-    <div className="p-4 hover:bg-gray-50 cursor-pointer" onClick={() => setShowDetails(true)}>
+    <div 
+      className="p-4 hover:bg-gray-50 transition-colors duration-200 cursor-pointer rounded-xl mx-2 my-1" 
+      onClick={() => setShowDetails(true)}
+    >
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          {getTransactionIcon(transaction.type)}
+        <div className="flex items-center gap-4">
+          <div className="p-2 rounded-xl bg-gray-50 border border-gray-100">
+            {getTransactionIcon(transaction.type)}
+          </div>
           <div>
-            <div className="font-medium">
+            <div className="font-semibold text-gray-900">
               {transaction.type.split('_').map(word => 
                 word.charAt(0).toUpperCase() + word.slice(1)
               ).join(' ')}
             </div>
             <div className="text-sm text-gray-500">
-              {format(new Date(transaction.created_at), 'MMM d, yyyy HH:mm')}
+              {format(new Date(transaction.created_at), 'MMM d, yyyy • HH:mm')}
             </div>
           </div>
         </div>
         <div className="text-right">
-          <div className={`font-medium ${
-            ['withdrawal', 'bet_loss'].includes(transaction.type) ? 'text-red-600' : 'text-green-600'
+          <div className={`font-bold text-lg ${
+            ['withdrawal', 'bet_loss'].includes(transaction.type) 
+              ? 'text-rose-600' 
+              : 'text-emerald-600'
           }`}>
             {['withdrawal', 'bet_loss'].includes(transaction.type) ? '-' : '+'}
             {formatNaira(transaction.amount)}
           </div>
-          <div className={`text-xs px-2 py-1 rounded-full inline-block ${
+          <div className={`text-xs px-3 py-1 rounded-full inline-block mt-1 font-medium ${
             getStatusBadgeColor(transaction.status)
           }`}>
             {formatStatus(transaction.status)}
@@ -189,47 +196,37 @@ const WalletTransactionHistory: React.FC = () => {
     }
   };
 
-  // Remove or comment out the renderDebugInfo function
-  /*
-  const renderDebugInfo = (transaction: Transaction) => {
-    if (process.env.NODE_ENV !== 'development') return null;
-
-    return (
-      <div className="text-xs text-gray-400 mt-1">
-        <div>ID: {transaction.id}</div>
-        <div>Created: {new Date(transaction.created_at).toISOString()}</div>
-        <div>Status: {transaction.status}</div>
-        <pre>{JSON.stringify(transaction.metadata, null, 2)}</pre>
-      </div>
-    );
-  };
-  */
-
   return (
-    <div className="bg-white rounded-lg shadow">
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold">Transaction History</h2>
-        <div className="flex gap-2 mt-2">
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="p-6 border-b border-gray-100">
+        <h2 className="text-xl font-bold text-gray-900">Transaction History</h2>
+        <div className="flex gap-3 mt-4">
           <button
             onClick={() => setFilter('all')}
-            className={`px-3 py-1 rounded-full text-sm ${
-              filter === 'all' ? 'bg-[#7440FF] text-white' : 'bg-gray-100'
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+              filter === 'all' 
+                ? 'bg-[#7440FF] text-white shadow-md shadow-[#7440FF]/25' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            All
+            All Transactions
           </button>
           <button
             onClick={() => setFilter('bets')}
-            className={`px-3 py-1 rounded-full text-sm ${
-              filter === 'Events' ? 'bg-[#7440FF] text-white' : 'bg-gray-100'
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+              filter === 'bets' 
+                ? 'bg-[#7440FF] text-white shadow-md shadow-[#7440FF]/25' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             Events
           </button>
           <button
             onClick={() => setFilter('deposits')}
-            className={`px-3 py-1 rounded-full text-sm ${
-              filter === 'deposits' ? 'bg-[#7440FF] text-white' : 'bg-gray-100'
+            className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+              filter === 'deposits' 
+                ? 'bg-[#7440FF] text-white shadow-md shadow-[#7440FF]/25' 
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
             Deposits
@@ -237,19 +234,22 @@ const WalletTransactionHistory: React.FC = () => {
         </div>
       </div>
 
-      <div className="divide-y">
+      <div className="divide-y divide-gray-50">
         {loading ? (
-          <div className="p-8 flex justify-center">
+          <div className="p-12 flex justify-center">
             <LoadingSpinner />
           </div>
         ) : transactions.length === 0 ? (
-          <div className="p-8 text-center text-gray-500">
-            No transactions found
+          <div className="p-12 text-center">
+            <div className="text-gray-400 font-medium">No transactions found</div>
+            <p className="text-sm text-gray-500 mt-1">Your transaction history will appear here</p>
           </div>
         ) : (
-          transactions.map((transaction) => (
-            <TransactionItem key={transaction.id} transaction={transaction} />
-          ))
+          <div className="py-2">
+            {transactions.map((transaction) => (
+              <TransactionItem key={transaction.id} transaction={transaction} />
+            ))}
+          </div>
         )}
       </div>
     </div>
@@ -258,41 +258,41 @@ const WalletTransactionHistory: React.FC = () => {
 
 const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({ transaction, onClose }) => {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
-      <div className="bg-white p-6 rounded-lg max-w-lg w-full">
-        <h3 className="text-lg font-semibold mb-4">Transaction Details</h3>
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white p-6 rounded-2xl max-w-lg w-full shadow-xl">
+        <h3 className="text-xl font-bold text-gray-900 mb-6">Transaction Details</h3>
         
-        <div className="space-y-2">
-          <div>
-            <span className="font-medium">Status:</span> 
-            <span className={`ml-2 px-2 py-1 rounded-full text-sm ${
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <span className="font-medium text-gray-600">Status</span> 
+            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
               getStatusBadgeColor(transaction.status)
             }`}>
               {formatStatus(transaction.status)}
             </span>
           </div>
           
-          <div>
-            <span className="font-medium">Reference:</span> 
-            <span className="ml-2">{transaction.reference}</span>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <span className="font-medium text-gray-600">Reference</span> 
+            <span className="text-gray-900 font-medium">{transaction.reference}</span>
           </div>
           
-          <div>
-            <span className="font-medium">Amount:</span> 
-            <span className="ml-2">{formatNaira(transaction.amount)}</span>
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <span className="font-medium text-gray-600">Amount</span> 
+            <span className="text-gray-900 font-bold">{formatNaira(transaction.amount)}</span>
           </div>
           
-          <div>
-            <span className="font-medium">Date:</span> 
-            <span className="ml-2">
+          <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+            <span className="font-medium text-gray-600">Date</span> 
+            <span className="text-gray-900">
               {format(new Date(transaction.created_at), 'PPpp')}
             </span>
           </div>
 
           {transaction.metadata && (
-            <div>
-              <span className="font-medium">Payment Details:</span>
-              <pre className="mt-2 bg-gray-50 p-2 rounded text-sm">
+            <div className="p-3 bg-gray-50 rounded-xl">
+              <span className="font-medium text-gray-600">Payment Details</span>
+              <pre className="mt-2 bg-white p-3 rounded-xl text-sm overflow-auto">
                 {JSON.stringify(transaction.metadata, null, 2)}
               </pre>
             </div>
@@ -301,7 +301,7 @@ const TransactionDetailsModal: React.FC<TransactionDetailsModalProps> = ({ trans
 
         <button
           onClick={onClose}
-          className="mt-6 w-full bg-black text-white py-2 rounded-lg"
+          className="mt-6 w-full bg-[#7440FF] text-white py-3 rounded-xl font-medium hover:bg-[#6030FF] transition-colors duration-200 shadow-md shadow-[#7440FF]/25"
         >
           Close
         </button>

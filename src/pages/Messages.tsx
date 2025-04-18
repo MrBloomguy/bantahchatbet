@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import MobileFooterNav from '../components/MobileFooterNav';
 import { supabase } from '../lib/supabase';
-import { Search, MessageSquare, MessageSquareText } from 'lucide-react';
+import { Search, MessageSquare, MessageSquareText, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import ChatWindow from '../components/ChatWindow';
 
@@ -29,17 +29,13 @@ interface ChatListItem {
   unread_count: number;
 }
 
-// --- Updated Compact ChatListItemSkeleton Component ---
 const ChatListItemSkeleton: React.FC = () => (
   <div className="bg-white p-3 rounded-lg shadow-sm flex items-center space-x-3 animate-pulse">
-    {/* Avatar Placeholder */}
     <div className="w-11 h-11 rounded-full bg-gray-300 flex-shrink-0"></div>
-    {/* Text Placeholders */}
     <div className="flex-grow min-w-0 space-y-1.5">
-      <div className="h-4 bg-gray-300 rounded w-3/4"></div> {/* Smaller name placeholder */}
-      <div className="h-3 bg-gray-300 rounded w-1/2"></div> {/* Smaller message placeholder */}
+      <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+      <div className="h-3 bg-gray-300 rounded w-1/2"></div>
     </div>
-    {/* Timestamp Placeholder */}
     <div className="h-3 bg-gray-300 rounded w-10 flex-shrink-0 self-start mt-0.5"></div>
   </div>
 );
@@ -56,23 +52,24 @@ const Messages: React.FC = () => {
   const { userId: activeChatUserId } = useParams<{ userId?: string }>();
   const { chatId } = useParams<{ chatId?: string }>();
   const [refreshChatList, setRefreshChatList] = useState(false);
+  const [showMobileChat, setShowMobileChat] = useState(false);
 
-  const navigateToChallengeChat = (chatId: string) => {
-    navigate(`/messages?tab=challenges&chatId=${chatId}`);
+  useEffect(() => {
+    if (activeChatUserId) {
+      setShowMobileChat(true);
+    }
+  }, [activeChatUserId]);
+
+  const handleUserClick = (userId: string) => {
+    navigate(`/messages/${userId}`);
+    setShowMobileChat(true);
   };
 
-  // Fix type predicate for filtering chat list
-  const isValidChatListItem = (item: any): item is ChatListItem => {
-    return (
-      item !== null &&
-      typeof item.chat_id === 'string' &&
-      typeof item.other_user === 'object' &&
-      typeof item.other_user.is_online === 'boolean' &&
-      typeof item.unread_count === 'number'
-    );
+  const handleBackToList = () => {
+    navigate('/messages');
+    setShowMobileChat(false);
   };
 
-  // --- FetchChatList Logic ---
   const fetchChatList = async () => {
     setLoading(true);
     try {
@@ -123,7 +120,7 @@ const Messages: React.FC = () => {
           .limit(1)
           .maybeSingle();
 
-        const unread_count = 0; // Placeholder for unread count
+        const unread_count = 0;
 
         const lastMessage: LastMessage | null = lastMessageData
           ? { ...lastMessageData } : null;
@@ -133,19 +130,20 @@ const Messages: React.FC = () => {
           other_user: { ...otherUser, is_online: false },
           last_message: lastMessage,
           unread_count: unread_count,
-        };
+        } as ChatListItem;
       });
 
-      const chatListResults = (await Promise.all(chatDetailsPromises))
-        .filter(isValidChatListItem);
+      const validResults = (await Promise.all(chatDetailsPromises))
+        .filter((item): item is ChatListItem => item !== null)
+        .sort((a, b) => {
+          if (!a?.last_message) return 1;
+          if (!b?.last_message) return -1;
+          const dateA = new Date(a.last_message.created_at).getTime();
+          const dateB = new Date(b.last_message.created_at).getTime();
+          return dateB - dateA;
+        });
 
-      chatListResults.sort((a, b) => {
-        if (!a.last_message) return 1;
-        if (!b.last_message) return -1;
-        return new Date(b.last_message.created_at).getTime() - new Date(a.last_message.created_at).getTime();
-      });
-
-      setChatListItems(chatListResults);
+      setChatListItems(validResults);
 
     } catch (error) {
       console.error('Error fetching chat list:', error);
@@ -159,7 +157,6 @@ const Messages: React.FC = () => {
     fetchChatList();
   }, [currentUser, refreshChatList]);
 
-  // --- Process Query Parameters ---
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const tab = params.get('tab');
@@ -182,7 +179,6 @@ const Messages: React.FC = () => {
     }
   }, [chatId]);
 
-  // --- Filter Logic ---
   useEffect(() => {
     let listToFilter = chatListItems;
 
@@ -208,11 +204,6 @@ const Messages: React.FC = () => {
     setSearchQuery(e.target.value);
   };
 
-  const handleUserClick = (userId: string) => {
-    navigate(`/messages/${userId}`);
-  };
-
-  // Fix formatRelativeTime to handle undefined
   const formatRelativeTime = (dateString: string | null | undefined) => {
     if (!dateString) return '';
     try {
@@ -226,9 +217,9 @@ const Messages: React.FC = () => {
     <div className="h-screen flex flex-col bg-gray-50">
       <Header title="Messages" showBackButton={false} />
       <div className="container mx-auto flex-grow flex">
-        {/* Chat List Sidebar (visible on larger screens) */}
-        <div className="w-full lg:w-1/3 lg:max-w-sm flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto">
-          {/* Search Bar - slightly reduced vertical padding */}
+        <div className={`w-full lg:w-1/3 lg:max-w-sm flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto ${
+          showMobileChat ? 'hidden lg:block' : 'block'
+        }`}>
           <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-2">
             <div className="relative mb-2">
               <span className="absolute inset-y-0 left-0 flex items-center pl-4">
@@ -242,8 +233,6 @@ const Messages: React.FC = () => {
                 className="w-full pl-11 pr-4 py-2 border border-gray-200 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent bg-gray-50 text-sm"
               />
             </div>
-
-            {/* Filter Bar - no changes needed */}
             <div className="flex space-x-2 mb-2">
               <button
                 onClick={() => setActiveFilter('all')}
@@ -261,7 +250,6 @@ const Messages: React.FC = () => {
               >
                 Unread
               </button>
-              {/* Add Challenges Tab */}
               <button
                 onClick={() => setActiveFilter('challenges')}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors duration-150 ${activeFilter === 'challenges'
@@ -275,8 +263,6 @@ const Messages: React.FC = () => {
               </button>
             </div>
           </div>
-
-          {/* Chat List Area - Compacted */}
           <div className="flex-grow overflow-y-auto">
             {loading ? (
               <div className="space-y-2 pt-1">
@@ -296,16 +282,13 @@ const Messages: React.FC = () => {
                         : 'bg-white hover:bg-gray-50/60 shadow-sm'}`}
                       onClick={() => handleUserClick(item.other_user.id)}
                     >
-                      {/* Avatar - Smaller */}
                       <div className="relative flex-shrink-0">
                         <img
                           src={item.other_user.avatar_url || '/avatar.svg'}
                           alt={item.other_user.name}
                           className="w-11 h-11 rounded-full object-cover border border-gray-100"
                         />
-                        {/* Online badge placeholder */}
                       </div>
-                      {/* Chat Info - Compacted */}
                       <div className="flex-grow min-w-0">
                         <div className="flex justify-between items-start mb-0.5">
                           <h6 className={`text-sm font-semibold text-gray-800 truncate ${item.unread_count > 0 ? 'font-bold' : ''}`}>
@@ -324,7 +307,6 @@ const Messages: React.FC = () => {
                           ) : (
                             <p className="text-xs text-gray-400 italic">No messages</p>
                           )}
-                          {/* Unread Badge - slightly smaller */}
                           {item.unread_count > 0 && (
                             <div className="w-4.5 h-4.5 bg-purple-600 rounded-full flex items-center justify-center text-white text-[10px] font-bold flex-shrink-0 ml-1.5">
                               {item.unread_count < 10 ? item.unread_count : '9+'}
@@ -352,14 +334,27 @@ const Messages: React.FC = () => {
             )}
           </div>
         </div>
-
-        {/* Main Content Area (Chat Window) - Take remaining space */}
-        <div className="flex-grow">
+        <div className={`flex-grow ${!showMobileChat ? 'hidden lg:block' : 'block'}`}>
           {activeChatUserId ? (
-            // Render ChatWindow if a chat is selected
-            <ChatWindow userId={activeChatUserId} onNewMessageSent={() => setRefreshChatList(prev => !prev)} />
+            <div className="h-full flex flex-col">
+              {showMobileChat && (
+                <div className="lg:hidden flex items-center gap-2 p-4 bg-white border-b border-gray-200">
+                  <button onClick={handleBackToList} className="p-2 hover:bg-gray-100 rounded-full">
+                    <ArrowLeft className="w-6 h-6 text-gray-600" />
+                  </button>
+                  <div className="flex-1">
+                    {filteredChatList.find(chat => chat.other_user.id === activeChatUserId)?.other_user.name || 'Chat'}
+                  </div>
+                </div>
+              )}
+              <div className="flex-1">
+                <ChatWindow 
+                  userId={activeChatUserId} 
+                  onNewMessageSent={() => setRefreshChatList(prev => !prev)}
+                />
+              </div>
+            </div>
           ) : (
-            // Render a placeholder if no chat is selected
             <div className="hidden lg:flex items-center justify-center h-full">
               <div className="text-center">
                 <MessageSquareText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
@@ -374,7 +369,7 @@ const Messages: React.FC = () => {
           )}
         </div>
       </div>
-      <MobileFooterNav />
+      {!showMobileChat && <MobileFooterNav />}
     </div>
   );
 };

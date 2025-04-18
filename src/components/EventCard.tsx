@@ -96,8 +96,15 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
     if (event.is_private) {
       setShowJoinModal(true);
     } else {
-      onChatClick(event);
+      handleChatClick();
+    }
+  };
+
+  const handleChatClick = () => {
+    if (currentUser) {
       navigate(`/event/${event.id}/chat`);
+    } else {
+      navigate('/login');
     }
   };
 
