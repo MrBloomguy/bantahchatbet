@@ -31,7 +31,7 @@ const DesktopNav: React.FC = () => {
     {
       id: 'create',
       path: '/create',
-      icon: <img src="/create.png" alt="Create Icon" className="w-11 h-11" />,
+      icon: <img src="/create.png" alt="Create Icon" className="w-14 h-11" />,
       label: 'Create',
       isMain: true,
     },

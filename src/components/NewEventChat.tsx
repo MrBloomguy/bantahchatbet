@@ -12,12 +12,6 @@ import { supabase } from '../lib/supabase';
 
 export interface NewEventChatProps {
   eventId: string;
-  eventName: string;
-  eventCreatorUsername: string;
-  eventPoolAmount: number;
-  eventStartTime: string;
-  eventEndTime: string;
-  numberOfMembers: number;
   onBack: () => void;
 }
 
@@ -52,10 +46,9 @@ const CompactBanner: React.FC<{ eventPoolAmount: number; countdown: string }> = 
   eventPoolAmount,
   countdown,
 }) => (
-  <div className="bg-gray-100 border-b border-gray-200 py-2 px-4 shadow-sm">
-    <p className="text-sm text-gray-600">
-      <span className="font-semibold">Event Pool:</span> ₦ {(eventPoolAmount / 1000).toFixed(1)}K
-      <span className="ml-4">
+  <div className="bg-gray-100 border-b border-gray-200 py-2 px-4 shadow-sm flex items-center justify-between">
+    <div className="flex items-center gap-4 text-sm text-gray-600">
+      <span className="flex items-center gap-1">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="inline-block h-4 w-4 mr-1 align-text-top text-gray-500"
@@ -68,7 +61,15 @@ const CompactBanner: React.FC<{ eventPoolAmount: number; countdown: string }> = 
         </svg>
         {countdown}
       </span>
-    </p>
+    </div>
+    <div className="flex items-center gap-2">
+      <button className="bg-green-500 text-white rounded-md px-3 py-1 text-sm font-semibold hover:bg-green-600">
+        YES
+      </button>
+      <button className="bg-red-500 text-white rounded-md px-3 py-1 text-sm font-semibold hover:bg-red-600">
+        NO
+      </button>
+    </div>
   </div>
 );
 
@@ -81,11 +82,6 @@ const PointsBadge: React.FC<{ points: number }> = ({ points }) => (
 
 const NewEventChat: React.FC<NewEventChatProps> = ({
   eventId,
-  eventName,
-  eventCreatorUsername,
-  eventPoolAmount,
-  eventEndTime,
-  numberOfMembers,
   onBack,
 }) => {
   const { getProfile } = useProfile();
@@ -93,13 +89,13 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const toast = useToast();
   const { messages, sendMessage, isLoading } = useEventChat(eventId);
 
+  const [event, setEvent] = useState<any>(null);
+  const [loadingEvent, setLoadingEvent] = useState(true);
   const [message, setMessage] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [selectedProfile, setSelectedProfile] = useState<ChatMessage['sender'] | null>(null);
   const [countdown, setCountdown] = useState('');
-  const [creatorAvatar, setCreatorAvatar] = useState<string | null>(null);
   const [userPoints, setUserPoints] = useState<{ [key: string]: number }>({});
-  const isCurrentUserAdmin = currentUser?.username === eventCreatorUsername;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -138,48 +134,46 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   };
 
   useEffect(() => {
-    const fetchCreatorProfile = async () => {
-      const profile = await getProfile(eventCreatorUsername);
-      if (profile) {
-        setCreatorAvatar(profile.avatar_url);
-      }
+    const fetchEvent = async () => {
+      setLoadingEvent(true);
+      const { data, error } = await supabase
+        .from('events')
+        .select(`*, creator:creator_id(*), pool:event_pools(*), participants:event_participants(user_id), banner_url`)
+        .eq('id', eventId)
+        .single();
+      if (!error && data) setEvent(data);
+      setLoadingEvent(false);
     };
-    fetchCreatorProfile();
-  }, [eventCreatorUsername, getProfile]);
+    fetchEvent();
+  }, [eventId]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
   useEffect(() => {
+    if (!event?.end_time) return;
     const updateCountdown = () => {
-      try {
-        const endTime = new Date(eventEndTime);
-        const now = new Date();
-        if (!isNaN(endTime.getTime())) {
-          if (endTime > now) {
-            const diff = endTime.getTime() - now.getTime();
-            const hours = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
-            const minutes = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
-            const seconds = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
-            setCountdown(`${hours}h ${minutes}m ${seconds}s`);
-          } else {
-            setCountdown('Event ended');
-          }
+      const endTime = new Date(event.end_time);
+      const now = new Date();
+      if (!isNaN(endTime.getTime())) {
+        if (endTime > now) {
+          const diff = endTime.getTime() - now.getTime();
+          const hours = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
+          const minutes = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+          const seconds = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
+          setCountdown(`${hours}h ${minutes}m ${seconds}s`);
         } else {
-          setCountdown('Invalid end time');
+          setCountdown('Event ended');
         }
-      } catch (error) {
-        console.error('Error parsing event end time:', error);
-        setCountdown('Error');
+      } else {
+        setCountdown('Invalid end time');
       }
     };
-
     updateCountdown();
     const intervalId = setInterval(updateCountdown, 1000);
-
     return () => clearInterval(intervalId);
-  }, [eventEndTime]);
+  }, [event?.end_time]);
 
   useEffect(() => {
     messages.forEach((msg) => {
@@ -189,8 +183,15 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     });
   }, [messages]);
 
-  // Cast currentUser to include additional properties
   const userProfile = currentUser as CurrentUser;
+
+  if (loadingEvent || !event) {
+    return (
+      <div className="flex flex-col h-screen bg-white items-center justify-center">
+        <Loader className="animate-spin text-purple-500" size={32} />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-white">
@@ -199,29 +200,48 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         <button onClick={onBack} className="mr-4 text-gray-600 hover:text-purple-700">
           <ArrowLeft size={20} />
         </button>
-        <div className="flex items-center flex-1 min-w-0">
+        <div className="flex items-center flex-1 min-w-0 gap-3">
           <UserAvatar
-            url={creatorAvatar || '/bantahlogo.png'}
+            url={event.creator?.avatar_url || '/bantahlogo.png'}
             size="sm"
-            username={eventCreatorUsername}
+            username={event.creator?.username || ''}
           />
           <div className="flex-1 min-w-0">
-            <h6 className="font-semibold text-gray-800 truncate">{eventName}</h6>
-            <p className="text-sm text-gray-500 truncate">{numberOfMembers} Members</p>
+            <h6 className="font-semibold text-gray-800 truncate flex items-center gap-2">
+              {event.title}
+              <span className="text-xs text-gray-400 font-normal">by @{event.creator?.username}</span>
+            </h6>
+            <div className="flex items-center gap-3 mt-1 text-xs text-gray-600">
+              <span className="flex items-center gap-1">
+                <img src="/avatar-count.svg" alt="Members" className="w-4 h-4" />
+                {event.participants?.length || 0}
+              </span>
+              <span className="flex items-center gap-1">
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                {countdown}
+              </span>
+<span className="flex items-center gap-1">
+                <img src="/bet_icon.png" alt="Pool" className="w-4 h-4" />
+                ₦{event.pool?.total_amount?.toLocaleString() || 0}
+              </span>
+            </div>
           </div>
         </div>
-        <div className="flex items-center space-x-2 ml-2">
-          <button className="bg-green-500 text-white rounded-md px-2 py-1 text-sm font-semibold hover:bg-green-600">
-            YES
+        {/* Menu Dropdown */}
+        <div className="relative ml-2">
+          <button className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Menu">
+            <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="1.5"/><circle cx="19.5" cy="12" r="1.5"/><circle cx="4.5" cy="12" r="1.5"/></svg>
           </button>
-          <button className="bg-red-500 text-white rounded-md px-2 py-1 text-sm font-semibold hover:bg-red-600">
-            NO
-          </button>
+          {/* Example dropdown, implement menu logic as needed */}
+          {/* <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-10">
+            <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">Report</button>
+            <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">Leave Chat</button>
+          </div> */}
         </div>
       </div>
 
       {/* Compact Banner */}
-      <CompactBanner eventPoolAmount={eventPoolAmount} countdown={countdown} />
+      <CompactBanner eventPoolAmount={event.pool?.total_amount || 0} countdown={countdown} />
 
       {/* Chat Messages Area */}
       <div className="flex-grow overflow-y-auto p-4 space-y-3">
@@ -321,7 +341,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             type="text"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder={`Message #${eventName}`}
+            placeholder={`Message #${event.title}`}
             className="flex-grow bg-gray-100 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800"
           />
           <button
