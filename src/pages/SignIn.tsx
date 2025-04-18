@@ -31,7 +31,7 @@ const SignIn: React.FC = () => {
 
   useEffect(() => {
     if (currentUser) {
-      navigate('/dashboard');
+      navigate('/');
     }
   }, [currentUser, navigate]);
 
@@ -45,7 +45,7 @@ const SignIn: React.FC = () => {
     setLoading(true);
     try {
       await signInWithEmail(email, password);
-      navigate('/dashboard');
+      navigate('/');
     } catch (error: any) {
       toast.showError('Invalid email or password');
     } finally {
@@ -70,6 +70,7 @@ const SignIn: React.FC = () => {
     try {
       await signUp(email, password);
       setIsSignIn(true);
+      navigate('/');
     } catch (error: any) {
       toast.showError('Failed to create account');
     } finally {

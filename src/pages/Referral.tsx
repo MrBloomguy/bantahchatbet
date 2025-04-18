@@ -8,12 +8,12 @@ import MascotImage from '/referral-mascot.svg'; // Update import path for referr
 
 const Referral: React.FC = () => {
   const navigate = useNavigate();
-  const { referralCode, stats, generateReferralCode } = useReferral();
+  const { referralCode, referralLink, stats, generateReferralCode } = useReferral();
   const [copied, setCopied] = React.useState(false);
 
   const handleCopy = async () => {
-    if (referralCode) {
-      await navigator.clipboard.writeText(referralCode);
+    if (referralLink) {
+      await navigator.clipboard.writeText(referralLink);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -35,7 +35,7 @@ const Referral: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-pink-50 flex flex-col">
-      <PageHeader title="Earn Free Rewards!" />
+      <PageHeader title="Referrals" />
 
       <div className="max-w-md mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-4">
         {/* Short Banner with Mascot */}
@@ -56,9 +56,9 @@ const Referral: React.FC = () => {
 
         {/* Compact Referral Code Section */}
         <div className="bg-white rounded-xl shadow-md p-3">
-          <h2 className="text-sm font-semibold text-gray-700 mb-2">Your Code</h2>
+          <h2 className="text-sm font-semibold text-gray-700 mb-2">Code</h2>
           <div className="bg-gray-100 rounded-lg p-2 flex items-center justify-between">
-            <p className="text-base font-mono text-gray-800">{referralCode || '-------'}</p>
+            <p className="text-base font-mono text-gray-800 break-all">{referralLink || '-------'}</p>
             <button
               onClick={handleCopy}
               className="px-2 py-1 bg-green-400 text-white rounded-md text-xs font-semibold hover:bg-green-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-400"
@@ -66,29 +66,40 @@ const Referral: React.FC = () => {
               {copied ? 'Copied!' : 'Copy'}
             </button>
           </div>
-          <p className="text-xs text-gray-500 mt-1">Tap to copy.</p>
         </div>
 
         {/* Compact Stats Card */}
         <div className="bg-yellow-100 rounded-xl shadow-md p-4">
           <h2 className="text-sm font-semibold text-gray-700 mb-2 flex items-center">
-            <Users className="w-4 h-4 text-yellow-500 mr-1" /> Your Stats
+            <Users className="w-4 h-4 text-yellow-500 mr-1" /> Your Referrals
           </h2>
-          <div className="grid grid-cols-2 gap-2 text-center">
+          <div className="space-y-2">
+            {stats.users.length === 0 && (
+              <div className="text-gray-500 text-sm">No referrals yet.</div>
+            )}
+            {stats.users.map((user) => (
+              <div key={user.id} className="flex items-center justify-between bg-yellow-200 rounded-md p-2">
+                <div className="flex items-center gap-2">
+                  <span className="font-mono text-xs text-gray-700">{user.username || user.email || user.id.slice(0, 6)}</span>
+                  <span className={`text-xs px-2 py-0.5 rounded-full ${user.status === 'completed' ? 'bg-green-400 text-white' : 'bg-orange-400 text-white'}`}>{user.status === 'completed' ? 'Joined' : 'Pending'}</span>
+                </div>
+                <span className="text-xs text-gray-500">{user.joined_at ? new Date(user.joined_at).toLocaleDateString() : ''}</span>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-2 text-center">
             <div className="bg-yellow-200 rounded-md p-2">
-              <p className="text-xs text-gray-700"><span className="font-bold">{stats?.totalReferrals || 0}</span> Friends</p>
+              <p className="text-xs text-gray-700"><span className="font-bold">{stats.totalReferrals}</span> Total</p>
             </div>
             <div className="bg-green-200 rounded-md p-2">
-              <p className="text-xs text-gray-700"><span className="font-bold">₦ {stats?.totalRewards?.toLocaleString() || 0}</span> Earned</p>
+              <p className="text-xs text-gray-700"><span className="font-bold">₦ {stats.totalRewards?.toLocaleString() || 0}</span> Earned</p>
             </div>
             <div className="bg-orange-200 rounded-md p-2">
-              <p className="text-xs text-gray-700"><span className="font-bold">{stats?.pendingReferrals || 0}</span> Pending</p>
+              <p className="text-xs text-gray-700"><span className="font-bold">{stats.pendingReferrals}</span> Pending</p>
             </div>
-            {stats?.successfulReferrals > 0 && (
-              <div className="bg-blue-200 rounded-md p-2">
-                <p className="text-xs text-gray-700"><span className="font-bold">{stats?.successfulReferrals || 0}</span> Success</p>
-              </div>
-            )}
+            <div className="bg-blue-200 rounded-md p-2">
+              <p className="text-xs text-gray-700"><span className="font-bold">{stats.completedReferrals}</span> Joined</p>
+            </div>
           </div>
         </div>
 
