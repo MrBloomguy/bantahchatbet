@@ -42,6 +42,10 @@ const Profile: React.FC = () => {
       path: '/settings/profile'
     },
     {
+      label: 'Levels & Badges',
+      path: '/levels'
+    },
+    {
       label: 'Settings',
       path: '/settings'
     },

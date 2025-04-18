@@ -1,5 +1,5 @@
 import React from 'react';
-import { Star, Trophy, Crown, Medal } from 'lucide-react';
+import { Star, Trophy, Crown, Medal, Award } from 'lucide-react';
 
 interface UserLevelBadgeProps {
   points: number;
@@ -7,34 +7,87 @@ interface UserLevelBadgeProps {
   showLabel?: boolean;
 }
 
-const UserLevelBadge: React.FC<UserLevelBadgeProps> = ({ points, size = 'sm', showLabel = true }) => {
-  const getLevel = (points: number) => {
-    if (points >= 10000) return { level: 'Master', icon: Crown, color: 'bg-yellow-500', textColor: 'text-yellow-500' };
-    if (points >= 5000) return { level: 'Expert', icon: Trophy, color: 'bg-purple-500', textColor: 'text-purple-500' };
-    if (points >= 2000) return { level: 'Advanced', icon: Medal, color: 'bg-blue-500', textColor: 'text-blue-500' };
-    if (points >= 500) return { level: 'Intermediate', icon: Star, color: 'bg-green-500', textColor: 'text-green-500' };
-    return { level: 'Beginner', icon: Star, color: 'bg-gray-500', textColor: 'text-gray-500' };
+const UserLevelBadge: React.FC<UserLevelBadgeProps> = ({ 
+  points, 
+  size = 'md',
+  showLabel = true 
+}) => {
+  const getLevelInfo = (points: number) => {
+    if (points >= 10000) return {
+      name: 'Master',
+      icon: <Crown className="animate-pulse" />,
+      color: 'from-yellow-400 to-yellow-500',
+      borderColor: 'border-yellow-400',
+      glowColor: 'yellow'
+    };
+    if (points >= 5000) return {
+      name: 'Expert',
+      icon: <Trophy />,
+      color: 'from-purple-400 to-purple-500',
+      borderColor: 'border-purple-400',
+      glowColor: 'purple'
+    };
+    if (points >= 2000) return {
+      name: 'Advanced',
+      icon: <Award />,
+      color: 'from-blue-400 to-blue-500',
+      borderColor: 'border-blue-400',
+      glowColor: 'blue'
+    };
+    if (points >= 500) return {
+      name: 'Intermediate',
+      icon: <Medal />,
+      color: 'from-green-400 to-green-500',
+      borderColor: 'border-green-400',
+      glowColor: 'green'
+    };
+    return {
+      name: 'Beginner',
+      icon: <Star />,
+      color: 'from-gray-400 to-gray-500',
+      borderColor: 'border-gray-400',
+      glowColor: 'gray'
+    };
   };
 
   const sizeClasses = {
-    sm: 'text-xs h-5',
-    md: 'text-sm h-6',
-    lg: 'text-base h-8'
+    sm: {
+      badge: 'h-6 text-xs',
+      icon: 'w-3 h-3',
+      glow: 'w-6 h-6'
+    },
+    md: {
+      badge: 'h-8 text-sm',
+      icon: 'w-4 h-4',
+      glow: 'w-8 h-8'
+    },
+    lg: {
+      badge: 'h-10 text-base',
+      icon: 'w-5 h-5',
+      glow: 'w-10 h-10'
+    }
   };
 
-  const iconSizes = {
-    sm: 'w-3 h-3',
-    md: 'w-4 h-4',
-    lg: 'w-5 h-5'
-  };
-
-  const levelInfo = getLevel(points);
-  const Icon = levelInfo.icon;
+  const level = getLevelInfo(points);
 
   return (
-    <div className={`inline-flex items-center gap-1.5 px-2 ${sizeClasses[size]} ${levelInfo.color}/10 ${levelInfo.textColor} rounded-full font-medium`}>
-      <Icon className={iconSizes[size]} />
-      {showLabel && <span>{levelInfo.level}</span>}
+    <div className={`relative inline-flex items-center ${showLabel ? 'pr-3' : ''} ${sizeClasses[size].badge} rounded-full bg-gradient-to-r ${level.color}`}>
+      {/* Animated glow effect */}
+      <div className={`absolute ${sizeClasses[size].glow} rounded-full opacity-50 animate-ping`} style={{ backgroundColor: level.glowColor }} />
+      
+      {/* Icon container with border */}
+      <div className={`relative flex items-center justify-center rounded-full aspect-square ${sizeClasses[size].badge} border-2 ${level.borderColor} bg-white/10 backdrop-blur-sm`}>
+        <div className={sizeClasses[size].icon}>
+          {level.icon}
+        </div>
+      </div>
+
+      {/* Level name */}
+      {showLabel && (
+        <span className="ml-1 font-semibold text-white">
+          {level.name}
+        </span>
+      )}
     </div>
   );
 };

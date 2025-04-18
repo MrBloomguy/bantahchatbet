@@ -41,6 +41,7 @@ import Stories from './pages/Stories';
 import ProfileSettings from './pages/ProfileSettings';
 import Settings from './pages/Settings';
 import Referral from './pages/Referral';
+import Levels from './pages/Levels';
 
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -218,6 +219,11 @@ const App: React.FC = () => {
                         <Route path="/referral" element={
                           <ProtectedRoute>
                             <Referral />
+                          </ProtectedRoute>
+                        } />
+                        <Route path="/levels" element={
+                          <ProtectedRoute>
+                            <Levels />
                           </ProtectedRoute>
                         } />
                         <Route path="/settings/privacy" element={
