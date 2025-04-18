@@ -10,6 +10,9 @@ import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { WalletProvider } from './contexts/WalletContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { SplashScreenProvider } from './contexts/SplashScreenContext';
+import { PointsProvider } from './contexts/PointsContext';
+import LevelUpDialog from './components/LevelUpDialog';
+import PointsNotification from './components/PointsNotification';
 
 // Admin Pages
 import AdminLogin from './pages/AdminLogin';
@@ -59,182 +62,186 @@ const App: React.FC = () => {
             <WalletProvider>
               <SettingsProvider>
                 <SplashScreenProvider>
-                  <div className="min-h-screen bg-gray-50">
-                    {!isAuthPage && <DesktopNav />}
-                    <main className="lg:ml-[200px] flex-1">
-                      <Routes>
-                        {/* Public routes */}
-                        <Route path="/" element={<Events />} />
-                        <Route path="/signin" element={<SignIn />} />
-                        <Route path="/help" element={<Help />} />
-                        <Route path="/privacy" element={<Privacy />} />
-                        <Route path="/stories" element={<Stories />} />
-                        
-                        {/* Admin routes */}
-                        <Route path="/admin/login" element={<AdminLogin />} />
-                        <Route
-                          path="/admin/dashboard"
-                          element={
+                  <PointsProvider>
+                    <div className="min-h-screen bg-gray-50">
+                      {!isAuthPage && <DesktopNav />}
+                      <main className="lg:ml-[200px] flex-1">
+                        <Routes>
+                          {/* Public routes */}
+                          <Route path="/" element={<Events />} />
+                          <Route path="/signin" element={<SignIn />} />
+                          <Route path="/help" element={<Help />} />
+                          <Route path="/privacy" element={<Privacy />} />
+                          <Route path="/stories" element={<Stories />} />
+                          
+                          {/* Admin routes */}
+                          <Route path="/admin/login" element={<AdminLogin />} />
+                          <Route
+                            path="/admin/dashboard"
+                            element={
+                              <AdminRoute>
+                                <AdminDashboard />
+                              </AdminRoute>
+                            }
+                          />
+                          <Route
+                            path="/admin/events"
+                            element={
+                              <AdminRoute>
+                                <AdminEvents />
+                              </AdminRoute>
+                            }
+                          />
+                          <Route
+                            path="/admin/reports"
+                            element={
+                              <AdminRoute>
+                                <AdminReports />
+                              </AdminRoute>
+                            }
+                          />
+                          <Route
+                            path="/admin/withdrawals"
+                            element={
+                              <AdminRoute>
+                                <AdminWithdrawals />
+                              </AdminRoute>
+                            }
+                          />
+                          <Route
+                            path="/admin/platform-fees"
+                            element={
+                              <AdminRoute>
+                                <AdminPlatformFees />
+                              </AdminRoute>
+                            }
+                          />
+                          <Route
+                            path="/admin/audit-log"
+                            element={
+                              <AdminRoute>
+                                <AdminAuditLog />
+                              </AdminRoute>
+                            }
+                          />
+                          <Route
+                            path="/admin/stories"
+                            element={
+                              <AdminRoute>
+                                <AdminStories />
+                              </AdminRoute>
+                            }
+                          />
+                          <Route path="/admin/create" element={
                             <AdminRoute>
-                              <AdminDashboard />
+                              <AdminCreateEvent />
                             </AdminRoute>
-                          }
-                        />
-                        <Route
-                          path="/admin/events"
-                          element={
+                          } />
+                          <Route path="/admin/users" element={
                             <AdminRoute>
-                              <AdminEvents />
+                              <AdminUsers />
                             </AdminRoute>
-                          }
-                        />
-                        <Route
-                          path="/admin/reports"
-                          element={
-                            <AdminRoute>
-                              <AdminReports />
-                            </AdminRoute>
-                          }
-                        />
-                        <Route
-                          path="/admin/withdrawals"
-                          element={
-                            <AdminRoute>
-                              <AdminWithdrawals />
-                            </AdminRoute>
-                          }
-                        />
-                        <Route
-                          path="/admin/platform-fees"
-                          element={
-                            <AdminRoute>
-                              <AdminPlatformFees />
-                            </AdminRoute>
-                          }
-                        />
-                        <Route
-                          path="/admin/audit-log"
-                          element={
-                            <AdminRoute>
-                              <AdminAuditLog />
-                            </AdminRoute>
-                          }
-                        />
-                        <Route
-                          path="/admin/stories"
-                          element={
-                            <AdminRoute>
-                              <AdminStories />
-                            </AdminRoute>
-                          }
-                        />
-                        <Route path="/admin/create" element={
-                          <AdminRoute>
-                            <AdminCreateEvent />
-                          </AdminRoute>
-                        } />
-                        <Route path="/admin/users" element={
-                          <AdminRoute>
-                            <AdminUsers />
-                          </AdminRoute>
-                        } />
+                          } />
 
-                        {/* Protected routes */}
-                        <Route 
-                          path="/events" 
-                          element={
+                          {/* Protected routes */}
+                          <Route 
+                            path="/events" 
+                            element={
+                              <ProtectedRoute>
+                                <Events />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route 
+                            path="/wallet" 
+                            element={
+                              <ProtectedRoute>
+                                <Wallet />
+                              </ProtectedRoute>
+                            } 
+                          />
+                          <Route path="/games" element={
                             <ProtectedRoute>
-                              <Events />
+                              <Games />
                             </ProtectedRoute>
-                          } 
-                        />
-                        <Route 
-                          path="/wallet" 
-                          element={
+                          } />
+                          <Route path="/myevents" element={
                             <ProtectedRoute>
-                              <Wallet />
+                              <MyEvents />
                             </ProtectedRoute>
-                          } 
-                        />
-                        <Route path="/games" element={
-                          <ProtectedRoute>
-                            <Games />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/myevents" element={
-                          <ProtectedRoute>
-                            <MyEvents />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/challenge/:id" element={
-                          <ProtectedRoute>
-                            <ChallengeDetails />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/create" element={
-                          <ProtectedRoute>
-                            <Create />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/profile" element={
-                          <ProtectedRoute>
-                            <Profile />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/messages" element={
-                          <ProtectedRoute>
-                            <Messages />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/messages/:userId" element={
-                          <ProtectedRoute>
-                            <Messages />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/notifications" element={
-                          <ProtectedRoute>
-                            <Notifications />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/leaderboard" element={
-                          <ProtectedRoute>
-                            <Leaderboard />
-                          </ProtectedRoute>
-                        } />
-                         <Route path="/event/:eventId/chat" element={
-                          <ProtectedRoute>
-                            <EventChatWrapper />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/settings/profile" element={
-                          <ProtectedRoute>
-                            <ProfileSettings />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/settings" element={
-                          <ProtectedRoute>
-                            <Settings />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/referral" element={
-                          <ProtectedRoute>
-                            <Referral />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/levels" element={
-                          <ProtectedRoute>
-                            <Levels />
-                          </ProtectedRoute>
-                        } />
-                        <Route path="/settings/privacy" element={
-                          <ProtectedRoute>
-                            <Privacy />
-                          </ProtectedRoute>
-                        } />
-                      </Routes>
-                      <PWAInstallPrompt />
-                    </main>
-                  </div>
+                          } />
+                          <Route path="/challenge/:id" element={
+                            <ProtectedRoute>
+                              <ChallengeDetails />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/create" element={
+                            <ProtectedRoute>
+                              <Create />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/profile" element={
+                            <ProtectedRoute>
+                              <Profile />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/messages" element={
+                            <ProtectedRoute>
+                              <Messages />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/messages/:userId" element={
+                            <ProtectedRoute>
+                              <Messages />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/notifications" element={
+                            <ProtectedRoute>
+                              <Notifications />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/leaderboard" element={
+                            <ProtectedRoute>
+                              <Leaderboard />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/event/:eventId/chat" element={
+                            <ProtectedRoute>
+                              <EventChatWrapper />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/settings/profile" element={
+                            <ProtectedRoute>
+                              <ProfileSettings />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/settings" element={
+                            <ProtectedRoute>
+                              <Settings />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/referral" element={
+                            <ProtectedRoute>
+                              <Referral />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/levels" element={
+                            <ProtectedRoute>
+                              <Levels />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/settings/privacy" element={
+                            <ProtectedRoute>
+                              <Privacy />
+                            </ProtectedRoute>
+                          } />
+                        </Routes>
+                        <PWAInstallPrompt />
+                        <LevelUpDialog />
+                        <PointsNotification />
+                      </main>
+                    </div>
+                  </PointsProvider>
                 </SplashScreenProvider>
               </SettingsProvider>
             </WalletProvider>
