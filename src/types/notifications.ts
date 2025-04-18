@@ -41,4 +41,11 @@ export type NotificationType =
   | 'challenge_completed'
   | 'challenge_expired'
   | 'challenge_winner'
-  | 'challenge_loser';
+  | 'challenge_loser'
+  | 'points_earned'
+  | 'points_deducted'
+  | 'level_up'
+  | 'achievement_unlocked'
+  | 'daily_streak'
+  | 'weekly_points_summary'
+  | 'monthly_points_summary';

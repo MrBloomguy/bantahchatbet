@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback } from 'react';
 import { useAuth } from './AuthContext';
 import { useToast } from './ToastContext';
 import { supabase } from '../lib/supabase';
+import { sendPointsNotification } from '../utils/pointNotifications';
 
 interface Level {
   name: string;
@@ -121,24 +122,27 @@ export const PointsProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setLastPointsEarned({ points, action });
       setShowPointsNotification(true);
 
+      // Send points earned notification
+      await sendPointsNotification('points_earned', {
+        userId: currentUser.id,
+        points,
+        action
+      });
+
       // Check for level up
       if (newLevel.threshold > previousLevel.threshold) {
         setShowLevelUp(true);
         
-        // Create level up notification
-        await supabase
-          .from('notifications')
-          .insert({
-            user_id: currentUser.id,
-            type: 'level_up',
-            title: '🎉 Level Up!',
-            content: `Congratulations! You've reached ${newLevel.name} level!`,
-            metadata: {
-              level: newLevel.name,
-              points: newTotal,
-              benefits: newLevel.benefits
-            }
-          });
+        // Send level up notification
+        await sendPointsNotification('level_up', {
+          userId: currentUser.id,
+          points: newTotal,
+          action: 'Level up!',
+          level: {
+            name: newLevel.name,
+            benefits: newLevel.benefits
+          }
+        });
       }
 
     } catch (error) {
