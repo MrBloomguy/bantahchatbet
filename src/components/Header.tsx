@@ -55,34 +55,23 @@ const Header: React.FC<HeaderProps> = ({
     return currency + num.toFixed(2).replace(/\.00$/, '');
   };
 
-  const shouldHideTitle = () => {
-    const noTitlePaths = ['/events', '/games'];
-    return noTitlePaths.includes(location.pathname);
-  };
-
-  // Check if dark mode is enabled (assuming a 'dark' class on the root element)
-  const isDarkMode = document.documentElement.classList.contains('dark');
-
   return (
     <header className="sticky top-0 z-50 bg-white bg-opacity-95 border-b border-gray-200 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Left Section */}
           <div className="flex items-center gap-4">
-            {/* Logo always visible on left */}
-            <Logo className="w-8 h-8" />
-            {/* Conditionally show back button or title on mobile */}
-            {isMobile && (
-              <div className="flex items-center">
-                {showBackButton && (
-                  <button onClick={() => navigate(-1)} className="text-white mr-2">
-                    <ArrowLeft className="h-6 w-6" />
-                  </button>
-                )}
-                {title && !shouldHideTitle() && (
-                  <span className="font-bold text-xl text-white">{title}</span>
-                )}
-              </div>
+            {/* Back button if requested */}
+            {showBackButton && (
+              <button onClick={() => navigate(-1)} className="text-gray-700 mr-2">
+                <ArrowLeft className="h-6 w-6" />
+              </button>
+            )}
+            {/* Show logo only if no back button and no title (i.e. Home/Events page) */}
+            {(!showBackButton && (!title || location.pathname === '/events')) && <Logo className="w-8 h-8" />}
+            {/* Title always visible if provided and not on /events */}
+            {title && location.pathname !== '/events' && (
+              <span className="font-bold text-xl text-gray-900 ml-2">{title}</span>
             )}
           </div>
 

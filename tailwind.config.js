@@ -5,7 +5,31 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['Poppins', 'sans-serif'], // This makes Poppins the default font
+        sans: [
+          'SF Pro Rounded',
+          'SF Pro Rounded Medium',
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'sans-serif',
+        ],
+        bold: [
+          'Inter-Bold',
+          'Inter',
+          'Inter Placeholder',
+          'sans-serif',
+        ],
+        'bold-italic': [
+          'Inter-BoldItalic',
+          'Inter',
+          'Inter Placeholder',
+          'sans-serif',
+        ],
+        italic: [
+          'Inter-Italic',
+          'Inter',
+          'Inter Placeholder',
+          'sans-serif',
+        ],
       },
       colors: {
         primary: '#7440FF',

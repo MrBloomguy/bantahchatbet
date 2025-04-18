@@ -30,17 +30,15 @@ const Create: React.FC = () => {
           {/* Public Event Button */}
           <button
             onClick={() => setEventType('public')}
-            className={`flex-shrink-0 flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-300 ${
+            className={`flex-shrink-0 flex items-center gap-3 p-3 rounded-xl transition-all duration-300 ${
               eventType === 'public'
-                ? 'border-[#7440ff] bg-[#7440ff]/10 shadow-[0_0_20px_rgba(116,64,255,0.3)]'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'bg-[#7440ff]/10 shadow-[0_0_20px_rgba(116,64,255,0.08)] border border-[#7440ff]'
+                : 'hover:border-gray-200 border border-transparent'
             }`}
             style={{ minWidth: '200px' }}
           >
             <div className="w-10 h-10 rounded-full bg-[#CCFF00]/20 flex items-center justify-center">
-              <Globe className={`w-5 h-5 ${
-                eventType === 'public' ? 'text-[#CCFF00]' : 'text-gray-600'
-              }`} />
+              <Globe className={`w-5 h-5 ${eventType === 'public' ? 'text-[#CCFF00]' : 'text-gray-600'}`} />
             </div>
             <div className="text-left">
               <h3 className="font-medium text-black text-sm">Public Event</h3>
@@ -51,17 +49,15 @@ const Create: React.FC = () => {
           {/* Private Event Button */}
           <button
             onClick={() => setEventType('private')}
-            className={`flex-shrink-0 flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-300 ${
+            className={`flex-shrink-0 flex items-center gap-3 p-3 rounded-xl transition-all duration-300 ${
               eventType === 'private'
-                ? 'border-[#7440ff] bg-[#7440ff]/10 shadow-[0_0_20px_rgba(116,64,255,0.3)]'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'bg-[#7440ff]/10 shadow-[0_0_20px_rgba(116,64,255,0.08)] border border-[#7440ff]'
+                : 'hover:border-gray-200 border border-transparent'
             }`}
             style={{ minWidth: '200px' }}
           >
             <div className="w-10 h-10 rounded-full bg-[#CCFF00]/20 flex items-center justify-center">
-              <Lock className={`w-5 h-5 ${
-                eventType === 'private' ? 'text-[#CCFF00]' : 'text-gray-600'
-              }`} />
+              <Lock className={`w-5 h-5 ${eventType === 'private' ? 'text-[#CCFF00]' : 'text-gray-600'}`} />
             </div>
             <div className="text-left">
               <h3 className="font-medium text-black text-sm">Private Event</h3>
@@ -72,17 +68,15 @@ const Create: React.FC = () => {
           {/* Challenge Button */}
           <button
             onClick={() => setEventType('challenge')}
-            className={`flex-shrink-0 flex items-center gap-3 p-3 rounded-xl border-2 transition-all duration-300 ${
+            className={`flex-shrink-0 flex items-center gap-3 p-3 rounded-xl transition-all duration-300 ${
               eventType === 'challenge'
-                ? 'border-[#7440ff] bg-[#7440ff]/10 shadow-[0_0_20px_rgba(116,64,255,0.3)]'
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'bg-[#7440ff]/10 shadow-[0_0_20px_rgba(116,64,255,0.08)] border border-[#7440ff]'
+                : 'hover:border-gray-200 border border-transparent'
             }`}
             style={{ minWidth: '200px' }}
           >
             <div className="w-10 h-10 rounded-full bg-[#CCFF00]/20 flex items-center justify-center">
-              <Gamepad2 className={`w-5 h-5 ${
-                eventType === 'challenge' ? 'text-[#CCFF00]' : 'text-gray-600'
-              }`} />
+              <Gamepad2 className={`w-5 h-5 ${eventType === 'challenge' ? 'text-[#CCFF00]' : 'text-gray-600'}`} />
             </div>
             <div className="text-left">
               <h3 className="font-medium text-black text-sm">Challenge</h3>

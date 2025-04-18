@@ -215,7 +215,7 @@ const Messages: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      <Header title="Messages" showBackButton={false} />
+      <Header title="Messages" showBackButton={true} />
       <div className="container mx-auto flex-grow flex">
         <div className={`w-full lg:w-1/3 lg:max-w-sm flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto ${
           showMobileChat ? 'hidden lg:block' : 'block'

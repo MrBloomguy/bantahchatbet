@@ -10,7 +10,7 @@ import MobileFooterNav from '../components/MobileFooterNav';
 import { supabase } from '../lib/supabase';
 
 const filters = [
-  { id: 'all', label: 'All Notifications', types: [] },
+  { id: 'all', label: 'All', types: [] },
   { 
     id: 'events', 
     label: 'Events', 

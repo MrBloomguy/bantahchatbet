@@ -1,5 +1,5 @@
 import React from 'react';
-import { Share2, ChevronRight, Wallet, Trophy, Users, TrendingUp, BarChart2, Star } from 'lucide-react';
+import { ChevronRight, Wallet, Trophy, Users, TrendingUp, BarChart2, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
@@ -14,26 +14,7 @@ const Profile: React.FC = () => {
   const navigate = useNavigate();
 
   const stats = [
-    {
-      icon: <Wallet className="w-5 h-5 text-[#CCFF00]" />,
-      label: 'Total Earnings',
-      value: `₦ ${wallet?.balance.toLocaleString() || '0'}`
-    },
-    {
-      icon: <Trophy className="w-5 h-5 text-[#CCFF00]" />,
-      label: 'Win Rate',
-      value: '75%'
-    },
-    {
-      icon: <Users className="w-5 h-5 text-[#CCFF00]" />,
-      label: 'Groups Joined',
-      value: '12'
-    },
-    {
-      icon: <TrendingUp className="w-5 h-5 text-[#CCFF00]" />,
-      label: 'Active Bets',
-      value: '8'
-    }
+    // All stats cards removed
   ];
 
   const menuItems = [
@@ -82,9 +63,29 @@ const Profile: React.FC = () => {
         <div className="w-full max-w-xl mx-auto px-2 sm:px-4 py-4">
           {/* Profile Card */}
           <div className="relative bg-white rounded-3xl px-6 pt-8 pb-6 flex flex-col items-center mb-6 border border-[#f0f1fa]">
+            {/* Refer badge at the top right - replaces share icon */}
             <div className="absolute right-6 top-6">
-              <button onClick={handleShare} className="bg-[#F6F7FB] p-2 rounded-full hover:bg-[#CCFF00]/20 transition">
-                <Share2 className="w-5 h-5 text-gray-500" />
+              <button
+                onClick={async () => {
+                  if (currentUser?.referral_code) {
+                    await navigator.clipboard.writeText(currentUser.referral_code);
+                    // Show feedback/toast
+                    if (window?.toast) {
+                      window.toast('Referral code copied!', { type: 'success' });
+                    } else if (typeof window !== 'undefined') {
+                      alert('Referral code copied!');
+                    }
+                  }
+                }}
+                className="flex items-center gap-1 bg-[#F6F7FB] px-3 py-1.5 rounded-full text-[#7440ff] text-xs font-semibold hover:bg-[#CCFF00]/20 transition border border-[#7440ff]"
+                title="Copy Referral Code"
+                aria-label="Copy Referral Code"
+                type="button"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 17l4 4 4-4m0-5V3a1 1 0 00-1-1h-6a1 1 0 00-1 1v9m0 0l4 4 4-4" />
+                </svg>
+                <span>{currentUser?.referral_code ? currentUser.referral_code.slice(0, 8) : 'Refer'}</span>
               </button>
             </div>
             <div className="relative mb-3">
@@ -93,8 +94,20 @@ const Profile: React.FC = () => {
                 alt={currentUser?.name}
                 className="w-28 h-28 rounded-full border-4 border-[#F6F7FB] shadow-lg object-cover bg-[#F6F7FB]"
               />
+              {/* Edit icon at the edge of avatar */}
+              <button
+                onClick={() => navigate('/settings/profile')}
+                className="absolute bottom-2 right-2 p-2 rounded-full bg-[#CCFF00] text-black shadow hover:bg-[#e6ff70] transition"
+                aria-label="Edit Profile"
+                title="Edit Profile"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 20h9" />
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19.5 3 21l1.5-4L16.5 3.5z" />
+                </svg>
+              </button>
               {currentUser?.rank && (
-                <div className="absolute -bottom-2 right-0">
+                <div className="absolute -bottom-2 left-0">
                   <UserRankBadge rank={currentUser.rank} size="lg" />
                 </div>
               )}
@@ -114,39 +127,11 @@ const Profile: React.FC = () => {
             {currentUser?.bio && (
               <p className="text-gray-700 text-center mb-3 max-w-xs leading-relaxed">{currentUser.bio}</p>
             )}
-            <div className="flex items-center gap-2 mb-2">
-              <Users className="w-4 h-4 text-[#CCFF00]" />
-              <span className="text-[#CCFF00] text-sm font-semibold">{currentUser?.followers_count || 0}</span>
-              <span className="text-gray-400 text-sm">followers</span>
+            {/* Followers Row - compact, icon + count only */}
+            <div className="flex items-center gap-1 mb-2">
+              <Users className="w-5 h-5 text-[#CCFF00]" />
+              <span className="text-[#CCFF00] text-base font-semibold">{currentUser?.followers_count || 0}</span>
             </div>
-            <div className="flex gap-2 mt-3 items-center">
-              <button
-                onClick={() => navigate('/settings/profile')}
-                className="px-4 py-1.5 rounded-full bg-[#CCFF00] text-black font-semibold text-sm shadow hover:bg-[#e6ff70] transition"
-              >
-                Edit Profile
-              </button>
-              <button
-                onClick={() => navigate('/referral')}
-                className="px-4 py-1.5 rounded-full bg-[#F6F7FB] text-[#7440ff] font-semibold text-sm shadow hover:bg-[#edeaff] transition"
-              >
-                Refer & Earn
-              </button>
-            </div>
-          </div>
-
-          {/* Stats Section */}
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            {stats.map((stat, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-xl py-4 px-3 flex flex-col items-center border border-[#f0f1fa]"
-              >
-                <div className="mb-1">{stat.icon}</div>
-                <div className="text-lg font-bold text-gray-900 tracking-tight">{stat.value}</div>
-                <div className="text-xs text-gray-500 mt-0.5 font-medium uppercase tracking-wider">{stat.label}</div>
-              </div>
-            ))}
           </div>
 
           {/* Menu Items */}

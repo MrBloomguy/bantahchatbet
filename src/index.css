@@ -1,6 +1,10 @@
 /* Import Poppins font */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
 
+/* Import SF Pro Rounded and Inter fonts */
+@import url('https://fonts.cdnfonts.com/css/sf-pro-rounded');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -65,19 +69,27 @@
 /* Dark mode styles */
 :root {
   color-scheme: light;
+  --framer-font-family: 'SF Pro Rounded', 'SF Pro Rounded Medium', '-apple-system', 'BlinkMacSystemFont', sans-serif;
+  --framer-font-family-bold: 'Inter-Bold', 'Inter', 'Inter Placeholder', sans-serif;
+  --framer-font-family-bold-italic: 'Inter-BoldItalic', 'Inter', 'Inter Placeholder', sans-serif;
+  --framer-font-family-italic: 'Inter-Italic', 'Inter', 'Inter Placeholder', sans-serif;
+  --framer-font-color: #232323;
 }
 
 :root.dark {
   color-scheme: dark;
+  --framer-font-color: #e0e0e0;
 }
 
 /* Base styles */
 @layer base {
   html {
-    font-family: 'Poppins', sans-serif;
+    font-family: var(--framer-font-family);
+    color: var(--framer-font-color);
   }
   
   body {
+    color: var(--framer-font-color);
     @apply bg-light-bg text-light-text transition-colors duration-200;
   }
 
@@ -86,10 +98,14 @@
   }
 
   input, textarea, select {
+    font-family: var(--framer-font-family);
+    color: var(--framer-font-color);
     @apply bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text;
   }
 
   button {
+    font-family: var(--framer-font-family);
+    color: var(--framer-font-color);
     @apply text-light-text dark:text-dark-text;
   }
 }

@@ -220,182 +220,217 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({
   };
 
   return (
-    <>
-      <form onSubmit={handleSubmit} className="space-y-6 mb-20"> {/* Added margin bottom */}
-        {loading && (
-          <LoadingOverlay message="Sending challenge..." />
-        )}
+    <form onSubmit={handleSubmit} className="space-y-4 max-w-2xl mx-auto bg-white rounded-xl p-6 mb-20">
+      {loading && <LoadingOverlay message="Sending challenge..." />}
 
-        {/* Title */}
-        <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
-            Challenge Title
-          </label>
-          <input
-            type="text"
-            value={challengeData.title}
-            onChange={(e) => setChallengeData({...challengeData, title: e.target.value})}
-            className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
-            placeholder="e.g., FIFA 24 Match"
-            required
-            disabled={loading}
-          />
-        </div>
-
-        {/* User Search */}
-        <div>
-          <label className="block text-sm font-medium text-gray-400 mb-2">
-            Search Bantah Users
-          </label>
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/60" />
+      {/* Two Column Layout for Main Fields */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Title & Game Info */}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600">Challenge Title</label>
             <input
               type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#242538] text-white pl-12 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
-              placeholder="Search by username"
+              value={challengeData.title}
+              onChange={(e) => setChallengeData({...challengeData, title: e.target.value})}
+              className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900 placeholder-gray-400"
+              placeholder="e.g., FIFA 24 Match"
+              required
               disabled={loading}
             />
           </div>
-
-          {/* Search Results */}
-          {users.length > 0 && (
-            <div className="mt-2 bg-[#242538] rounded-xl overflow-hidden">
-              {users.map((user) => (
-                <button
-                  key={user.id}
-                  type="button"
-                  onClick={() => {
-                    setSelectedUser(user);
-                    setSearchQuery('');
-                    setUsers([]);
-                  }}
-                  className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors"
-                >
-                  <img
-                    src={user.avatar_url}
-                    alt={user.name}
-                    className="w-10 h-10 rounded-full"
-                  />
-                  <div className="flex-1 text-left">
-                    <h3 className="text-white font-medium">{user.name}</h3>
-                    <p className="text-white/60 text-sm">@{user.username}</p>
-                  </div>
-                  {user.stats && (
-                    <div className="text-right">
-                      <p className="text-[#CCFF00] font-medium">
-                        {user.stats.wins}/{user.stats.total_matches}
-                      </p>
-                      <p className="text-white/60 text-sm">Wins</p>
+          <div>
+            <label className="block text-sm font-medium text-gray-600">Game Type</label>
+            <select
+              value={challengeData.gameType}
+              onChange={e => setChallengeData({ ...challengeData, gameType: e.target.value as any })}
+              className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900"
+              disabled={loading}
+            >
+              <option value="FIFA">FIFA</option>
+              <option value="NBA2K">NBA2K</option>
+              <option value="OTHER">Other</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-600">Platform</label>
+            <select
+              value={challengeData.platform}
+              onChange={e => setChallengeData({ ...challengeData, platform: e.target.value as any })}
+              className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900"
+              disabled={loading}
+            >
+              <option value="PS5">PS5</option>
+              <option value="XBOX">XBOX</option>
+              <option value="PC">PC</option>
+            </select>
+          </div>
+        </div>
+        {/* User Search & Social */}
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600">Search Bantah Users</label>
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900 placeholder-gray-400"
+                placeholder="Search by username"
+                disabled={loading}
+              />
+            </div>
+            {users.length > 0 && (
+              <div className="mt-2 bg-gray-50 rounded-xl overflow-hidden border border-gray-200">
+                {users.map((user) => (
+                  <button
+                    key={user.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedUser(user);
+                      setSearchQuery('');
+                      setUsers([]);
+                    }}
+                    className="w-full flex items-center gap-4 p-4 hover:bg-gray-100 transition-colors"
+                  >
+                    <img
+                      src={user.avatar_url}
+                      alt={user.name}
+                      className="w-10 h-10 rounded-full"
+                    />
+                    <div className="flex-1 text-left">
+                      <h3 className="text-gray-900 font-medium">{user.name}</h3>
+                      <p className="text-gray-500 text-sm">@{user.username}</p>
                     </div>
-                  )}
+                    {user.stats && (
+                      <div className="text-right">
+                        <p className="text-[#CCFF00] font-medium">
+                          {user.stats.wins}/{user.stats.total_matches}
+                        </p>
+                        <p className="text-gray-500 text-sm">Wins</p>
+                      </div>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+          {selectedUser && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <div className="flex items-center gap-4">
+                <img
+                  src={selectedUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUser.id}`}
+                  alt={selectedUser.name}
+                  className="w-12 h-12 rounded-full"
+                />
+                <div className="flex-1">
+                  <h3 className="text-gray-900 font-medium">{selectedUser.name}</h3>
+                  <p className="text-gray-500 text-sm">@{selectedUser.username}</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSelectedUser(null)}
+                  className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Remove selected user"
+                >
+                  <X className="w-5 h-5 text-gray-400" />
                 </button>
-              ))}
+              </div>
             </div>
           )}
-        </div>
-
-        {/* Selected User */}
-        {selectedUser && (
-          <div className="bg-[#242538] rounded-xl p-4">
-            <div className="flex items-center gap-4">
-              <img
-                src={selectedUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${selectedUser.id}`}
-                alt={selectedUser.name}
-                className="w-12 h-12 rounded-full"
-              />
-              <div className="flex-1">
-                <h3 className="text-white font-medium">{selectedUser.name}</h3>
-                <p className="text-white/60 text-sm">@{selectedUser.username}</p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setSelectedUser(null)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                aria-label="Remove selected user"
-              >
-                <X className="w-5 h-5 text-white/60" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Social Platform Usernames */}
-        <div className="space-y-4">
-          <label className="block text-sm font-medium text-gray-400">
-            Challenge on Social Platforms
-          </label>
-          {SOCIAL_PLATFORMS.map((platform) => (
-            <div key={platform.id} className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="relative flex-1">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60">
-                    {platform.prefix}
-                  </span>
-                  <input
-                    type="text"
-                    value={socialUsernames[platform.id]}
-                    onChange={(e) => setSocialUsernames(prev => ({
-                      ...prev,
-                      [platform.id]: e.target.value
-                    }))}
-                    className="w-full bg-[#242538] text-white pl-10 pr-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
-                    placeholder={platform.placeholder}
-                    disabled={loading}
-                  />
+          {/* Social Platform Usernames */}
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-gray-600">Challenge on Social Platforms</label>
+            {SOCIAL_PLATFORMS.map((platform) => (
+              <div key={platform.id} className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">{platform.prefix}</span>
+                    <input
+                      type="text"
+                      value={socialUsernames[platform.id]}
+                      onChange={(e) => setSocialUsernames(prev => ({ ...prev, [platform.id]: e.target.value }))}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900 placeholder-gray-400"
+                      placeholder={platform.placeholder}
+                      disabled={loading}
+                    />
+                  </div>
+                  {challengeLinks[platform.id] && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopyLink(platform.id)}
+                      className="px-4 py-2 bg-[#CCFF00]/20 text-[#7440ff] rounded-lg hover:bg-[#CCFF00]/30 transition-colors"
+                    >
+                      Copy Link
+                    </button>
+                  )}
                 </div>
                 {challengeLinks[platform.id] && (
-                  <button
-                    type="button"
-                    onClick={() => handleCopyLink(platform.id)}
-                    className="px-4 py-2 bg-[#CCFF00]/20 text-[#CCFF00] rounded-lg hover:bg-[#CCFF00]/30 transition-colors"
-                  >
-                    Copy Link
-                  </button>
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                    <p className="text-gray-500 text-sm truncate">{challengeLinks[platform.id]}</p>
+                  </div>
                 )}
               </div>
-              {challengeLinks[platform.id] && (
-                <div className="bg-[#1a1b2e] rounded-lg p-3">
-                  <p className="text-white/60 text-sm truncate">
-                    {challengeLinks[platform.id]}
-                  </p>
-                </div>
-              )}
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
-
-        
-   {/* Wager Amount */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">Wager Amount (₦)</label>
-        <input
-          type="number"
-          id="wagerAmount"
-          aria-label="Wager amount in Naira"
-          placeholder="Enter wager amount"
-          min="100"
-          value={challengeData.wagerAmount}
-          onChange={(e) => setChallengeData({...challengeData, wagerAmount: parseInt(e.target.value)})}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-[#CCFF00] focus:ring-[#CCFF00]"
-          required
-        />
-        <p className="mt-1 text-sm text-gray-500">Minimum bet: ₦100</p>
       </div>
 
-        {/* Expires In */}
+      {/* Description & Rules */}
+      <div className="space-y-4">
         <div>
-          <label htmlFor="expiresIn" className="block text-sm font-medium text-gray-400 mb-2">
-            Expires In (minutes)
-          </label>
+          <label className="block text-sm font-medium text-gray-600">Rules</label>
+          <textarea
+            value={challengeData.rules}
+            onChange={(e) => setChallengeData({ ...challengeData, rules: e.target.value })}
+            className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900 placeholder-gray-400 min-h-[80px]"
+            placeholder="Describe the rules for this challenge (optional)"
+            disabled={loading}
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-600">Required Evidence</label>
+          <select
+            value={challengeData.evidence}
+            onChange={e => setChallengeData({ ...challengeData, evidence: e.target.value as any })}
+            className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900"
+            disabled={loading}
+          >
+            <option value="SCREENSHOT">Screenshot</option>
+            <option value="VIDEO">Video</option>
+            <option value="BOTH">Both</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Wager & Expiry Row */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-600">Wager Amount (₦)</label>
+          <input
+            type="number"
+            id="wagerAmount"
+            aria-label="Wager amount in Naira"
+            placeholder="Enter wager amount"
+            min="100"
+            value={challengeData.wagerAmount}
+            onChange={(e) => setChallengeData({...challengeData, wagerAmount: parseInt(e.target.value)})}
+            className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900 placeholder-gray-400"
+            required
+            disabled={loading}
+          />
+          <p className="mt-1 text-sm text-gray-500">Minimum bet: ₦100</p>
+        </div>
+        <div>
+          <label htmlFor="expiresIn" className="block text-sm font-medium text-gray-600">Expires In (minutes)</label>
           <select
             id="expiresIn"
             name="expiresIn"
             aria-label="Challenge expiration time"
             value={challengeData.expiresIn}
             onChange={(e) => setChallengeData({...challengeData, expiresIn: e.target.value})}
-            className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
+            className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900"
             disabled={loading}
           >
             <option value="15">15 minutes</option>
@@ -404,41 +439,36 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({
             <option value="120">2 hours</option>
           </select>
         </div>
+      </div>
 
-        {/* Action Buttons - Fixed at bottom on mobile */}
-        <div className="sticky bottom-[80px] bg-[#1a1b2e] p-4 rounded-t-xl shadow-lg md:relative md:bottom-0 md:shadow-none">
-          <label className="flex items-center gap-2 cursor-pointer mb-4">
-            <input
-              type="checkbox"
-              checked={acceptedTerms}
-              onChange={(e) => setAcceptedTerms(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-[#7440ff] focus:ring-[#7440ff]"
-              required
-              disabled={loading}
-            />
-            <span className="text-sm text-white/60">
-              I accept the terms and conditions
-            </span>
-          </label>
-
-          <button
-            type="submit"
-            disabled={loading || !acceptedTerms || (!selectedUser && !Object.values(socialUsernames).some(Boolean))}
-            className="w-full py-4 bg-[#7440ff] text-white rounded-xl font-medium hover:bg-[#7440ff]/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
-          >
-            {loading ? (
-              <>
-                <LoadingSpinner size="sm" color="#000000" />
-                <span>Sending Challenge...</span>
-              </>
-            ) : (
-              'Send Challenge'
-            )}
-          </button>
-        </div>
-      </form>
-
-      {/* Success Modal */}
+      {/* Action Buttons - Fixed at bottom on mobile */}
+      <div className="space-y-4 sticky bottom-[80px] bg-white p-4 rounded-t-xl shadow-lg md:relative md:bottom-0 md:shadow-none">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300 text-[#CCFF00] focus:ring-[#CCFF00]"
+            required
+            disabled={loading}
+          />
+          <span className="text-sm text-gray-600">I accept the terms and conditions</span>
+        </label>
+        <button
+          type="submit"
+          disabled={loading || !acceptedTerms || (!selectedUser && !Object.values(socialUsernames).some(Boolean))}
+          className="w-full py-4 bg-[#7440ff] text-white rounded-xl font-medium hover:bg-[#7440ff]/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+        >
+          {loading ? (
+            <>
+              <LoadingSpinner size="sm" color="#000000" />
+              <span>Sending Challenge...</span>
+            </>
+          ) : (
+            'Send Challenge'
+          )}
+        </button>
+      </div>
       {successChallenge && (
         <SocialChallengeSuccess
           platform={successChallenge.platform}
@@ -452,7 +482,7 @@ const CreateChallengeForm: React.FC<CreateChallengeFormProps> = ({
           }}
         />
       )}
-    </>
+    </form>
   );
 };
 
