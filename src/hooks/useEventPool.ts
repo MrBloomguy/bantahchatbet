@@ -1,6 +1,14 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 
+interface EventPool {
+  total_amount: number;
+  admin_fee: number;
+  creator_fee: number;
+  yes_pool: number;
+  no_pool: number;
+}
+
 export const useEventPool = () => {
   const [isLoading, setIsLoading] = useState(false);
 
@@ -11,6 +19,22 @@ export const useEventPool = () => {
   ) => {
     setIsLoading(true);
     try {
+      const { data: event, error: eventError } = await supabase
+        .from('events')
+        .select('creator_fee_percentage')
+        .eq('id', eventId)
+        .single();
+
+      if (eventError) throw eventError;
+
+      const { data: fees, error: feeError } = await supabase
+        .rpc('calculate_pool_fees', {
+          amount: amount,
+          creator_fee_pct: event.creator_fee_percentage
+        });
+
+      if (feeError) throw feeError;
+
       const { data: pool, error: fetchError } = await supabase
         .from('event_pools')
         .select('*')
@@ -19,29 +43,46 @@ export const useEventPool = () => {
 
       if (fetchError) throw fetchError;
 
-      const adminFeePercentage = 0.03; // 3% admin fee (corrected from 5%)
-      const adminFee = amount * adminFeePercentage;
-      const netAmount = amount - adminFee;
-
       const { error: updateError } = await supabase
         .from('event_pools')
         .update({
           total_amount: pool.total_amount + amount,
-          admin_fee: pool.admin_fee + adminFee,
-          [prediction ? 'winning_pool' : 'losing_pool']: (prediction ? pool.winning_pool : pool.losing_pool) + netAmount
+          admin_fee: pool.admin_fee + fees.admin_fee,
+          creator_fee: pool.creator_fee + fees.creator_fee,
+          yes_pool: prediction ? pool.yes_pool + fees.net_amount : pool.yes_pool,
+          no_pool: !prediction ? pool.no_pool + fees.net_amount : pool.no_pool,
+          updated_at: new Date().toISOString()
         })
         .eq('event_id', eventId);
 
       if (updateError) throw updateError;
     } catch (error) {
+      console.error('Error updating pool:', error);
       throw error;
     } finally {
       setIsLoading(false);
     }
   }, []);
 
+  const getPoolInfo = useCallback(async (eventId: string): Promise<EventPool | null> => {
+    try {
+      const { data, error } = await supabase
+        .from('event_pools')
+        .select('*')
+        .eq('event_id', eventId)
+        .single();
+
+      if (error) throw error;
+      return data;
+    } catch (error) {
+      console.error('Error fetching pool info:', error);
+      return null;
+    }
+  }, []);
+
   return {
-    isLoading,
-    updatePoolAmount
+    updatePoolAmount,
+    getPoolInfo,
+    isLoading
   };
 };

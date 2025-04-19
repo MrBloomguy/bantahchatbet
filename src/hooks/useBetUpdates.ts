@@ -1,29 +1,58 @@
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { useToast } from '../contexts/ToastContext';
 
-export function useBetUpdates(participantId: string) {
-  const [matchStatus, setMatchStatus] = useState<'waiting' | 'matched' | 'completed'>('waiting');
-  const toast = useToast();
+type BetStatus = 'waiting' | 'matched' | 'completed';
+
+export const useBetUpdates = (participantId: string): BetStatus => {
+  const [status, setStatus] = useState<BetStatus>('waiting');
 
   useEffect(() => {
+    if (!participantId) return;
+
+    // Initial status check
+    const checkStatus = async () => {
+      const { data, error } = await supabase
+        .from('event_participants')
+        .select('status, matched_at')
+        .eq('id', participantId)
+        .single();
+
+      if (error) {
+        console.error('Error checking bet status:', error);
+        return;
+      }
+
+      if (data.matched_at) {
+        setStatus('matched');
+      } else if (data.status === 'completed') {
+        setStatus('completed');
+      } else {
+        setStatus('waiting');
+      }
+    };
+
+    checkStatus();
+
+    // Subscribe to real-time updates
     const subscription = supabase
-      .channel(`bet_updates:${participantId}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'bet_matches',
-        filter: `yes_participant_id=eq.${participantId},no_participant_id=eq.${participantId}`
-      }, (payload) => {
-        const newStatus = payload.new.status;
-        setMatchStatus(newStatus);
-        
-        if (newStatus === 'matched') {
-          toast.showSuccess('Your bet has been matched!');
-        } else if (newStatus === 'completed') {
-          toast.showSuccess('Bet has been settled!');
+      .channel(`participant-${participantId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'event_participants',
+          filter: `id=eq.${participantId}`
+        },
+        (payload) => {
+          const { new: newData } = payload;
+          if (newData.matched_at) {
+            setStatus('matched');
+          } else if (newData.status === 'completed') {
+            setStatus('completed');
+          }
         }
-      })
+      )
       .subscribe();
 
     return () => {
@@ -31,5 +60,5 @@ export function useBetUpdates(participantId: string) {
     };
   }, [participantId]);
 
-  return matchStatus;
-}
+  return status;
+};

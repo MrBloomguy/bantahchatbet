@@ -75,7 +75,7 @@ const UserLevelBadge: React.FC<UserLevelBadgeProps> = ({
   const iconClass = sizeClasses[safeSize]?.icon || 'w-4 h-4';
 
   return (
-    <div className={`relative inline-flex items-center ${showLabel ? 'pr-3' : ''} ${badgeClass} rounded-full bg-gradient-to-r ${level.color}`}>
+    <div className={`relative inline-flex items-center ${showLabel ? 'pr-3' : ''} ${sizeClasses[size].badge} rounded-full bg-gradient-to-r ${level.color}`}>
       {/* Icon container with border */}
       <div className={`relative flex items-center justify-center rounded-full aspect-square ${badgeClass} border-2 ${level.borderColor} bg-white/10`}>
         <div className={iconClass}>
