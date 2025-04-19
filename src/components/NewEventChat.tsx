@@ -163,7 +163,8 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             participants:event_participants!inner (
               user_id
             ),
-            banner_url
+            banner_url,
+            end_time
           `)
           .eq('id', eventId)
           .single();
@@ -171,9 +172,9 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         if (error) throw error;
 
         if (data) {
-          // Ensure pool is not an array and extract total_amount
-          const pool = data.pool || {};
-          data.pool_total_amount = pool.total_amount || 0;
+          // Add participant count and pool total amount to the event object
+          data.participant_count = data.participants?.length || 0;
+          data.pool_total_amount = data.pool?.total_amount || 0;
           setEvent(data);
         }
       } catch (error) {
@@ -192,9 +193,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
 
   useEffect(() => {
     if (!event?.end_time) return;
+
     const updateCountdown = () => {
       const endTime = new Date(event.end_time);
       const now = new Date();
+
       if (!isNaN(endTime.getTime())) {
         if (endTime > now) {
           const diff = endTime.getTime() - now.getTime();
@@ -209,6 +212,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         setCountdown('Invalid end time');
       }
     };
+
     updateCountdown();
     const intervalId = setInterval(updateCountdown, 1000);
     return () => clearInterval(intervalId);
