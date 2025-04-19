@@ -11,6 +11,7 @@ import ProfileCard from './ProfileCard';
 import { useProfile } from '../hooks/useProfile';
 import { supabase } from '../lib/supabase';
 import ChatBubble from './ChatBubble';
+import { Picker } from 'emoji-mart';
 
 export interface NewEventChatProps {
   eventId: string;
@@ -76,6 +77,17 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const [countdown, setCountdown] = useState('');
   const [userPoints, setUserPoints] = useState<{ [key: string]: number }>({});
   const [bannerOpen, setBannerOpen] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [gifs, setGifs] = useState([]);
+
+  const fetchGifs = async (query) => {
+    const response = await fetch(
+      `https://api.giphy.com/v1/gifs/search?api_key=YOUR_GIPHY_API_KEY&q=${query}&limit=10`
+    );
+    const data = await response.json();
+    setGifs(data.data);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -436,9 +448,102 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
 
       {/* Input Area */}
       <div className="bg-gray-50 border-t border-gray-200 p-3 flex items-center space-x-3">
-        <button className="text-gray-500 hover:text-purple-700">
-          <Smile size={24} />
-        </button>
+        {/* Emoji Picker */}
+        <div className="relative">
+          <button
+            className="text-gray-500 hover:text-purple-700"
+            onClick={() => setShowEmojiPicker((prev) => !prev)}
+          >
+            <Smile size={24} />
+          </button>
+          {showEmojiPicker && (
+            <div className="absolute bottom-full mb-2">
+              <Picker
+                onSelect={(emoji) => setMessage((prev) => prev + emoji.native)}
+                theme="light"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* GIF Picker */}
+        <div className="relative">
+          <button
+            className="text-gray-500 hover:text-purple-700"
+            onClick={() => setShowGifPicker((prev) => !prev)}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="w-6 h-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 12h6m-3-3v6m-7 4h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+              />
+            </svg>
+          </button>
+          {showGifPicker && (
+            <div className="absolute bottom-full mb-2 bg-white border rounded shadow-lg p-2">
+              <input
+                type="text"
+                placeholder="Search GIFs"
+                className="w-full p-2 border rounded mb-2"
+                onChange={(e) => fetchGifs(e.target.value)}
+              />
+              <div className="grid grid-cols-3 gap-2">
+                {gifs.map((gif) => (
+                  <img
+                    key={gif.id}
+                    src={gif.images.fixed_height_small.url}
+                    alt={gif.title}
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setMessage((prev) => prev + gif.images.fixed_height_small.url);
+                      setShowGifPicker(false);
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Image Upload */}
+        <label className="text-gray-500 hover:text-purple-700 cursor-pointer">
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                console.log('Image selected:', file);
+                // Handle image upload logic
+              }
+            }}
+          />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="w-6 h-6"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M3 16l4-4a2 2 0 012.828 0l2.172 2.172a2 2 0 002.828 0L21 8m-5 5a2 2 0 11-4 0 2 2 0 014 0z"
+            />
+          </svg>
+        </label>
+
+        {/* Message Input */}
         <form onSubmit={handleSubmit} className="flex-grow flex items-center">
           <input
             type="text"
