@@ -146,25 +146,42 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   useEffect(() => {
     const fetchEvent = async () => {
       setLoadingEvent(true);
-      const { data, error } = await supabase
-        .from('events')
-        .select(`
-          *,
-          creator:creator_id(*),
-          pool:event_pools(
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select(`
             id,
-            total_amount,
-            entry_amount,
-            yes_pool,
-            no_pool
-          ),
-          participants:event_participants(user_id),
-          banner_url
-        `)
-        .eq('id', eventId)
-        .single();
-      if (!error && data) setEvent(data);
-      setLoadingEvent(false);
+            title,
+            creator:creator_id(*),
+            pool:event_pools(
+              id,
+              total_amount,
+              entry_amount,
+              yes_pool,
+              no_pool
+            ),
+            participants:event_participants!inner (
+              user_id
+            ),
+            banner_url
+          `)
+          .eq('id', eventId)
+          .single();
+
+        if (error) throw error;
+
+        if (data) {
+          // Ensure pool is not an array and extract total_amount
+          const pool = data.pool || {};
+          data.pool_total_amount = pool.total_amount || 0;
+          setEvent(data);
+        }
+      } catch (error) {
+        console.error('Error fetching event:', error);
+        toast.showError('Failed to load event');
+      } finally {
+        setLoadingEvent(false);
+      }
     };
     fetchEvent();
   }, [eventId]);
@@ -305,11 +322,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
               </span>
               <span className="flex items-center gap-1">
                 <img src="/avatar-count.svg" alt="Members" className="w-4 h-4" />
-                <span className="text-xs">{event?.participants?.length || 0}</span>
+                <span className="text-xs">{event?.participant_count || 0}</span>
               </span>
               <span className="flex items-center gap-1">
                 <img src="/bet_icon.png" alt="Pool" className="w-4 h-4" />
-                <span className="text-xs">₦{event.pool?.total_amount?.toLocaleString() || 0}</span>
+                <span className="text-xs">₦{event.pool_total_amount?.toLocaleString() || 0}</span>
               </span>
             </div>
             <div className="relative flex items-center gap-2 z-10">
