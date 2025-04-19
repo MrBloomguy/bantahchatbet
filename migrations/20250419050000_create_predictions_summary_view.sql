@@ -14,9 +14,3 @@ GROUP BY event_id;
 
 -- Grant access to authenticated users
 GRANT SELECT ON public.event_predictions_summary TO authenticated;
-
--- Create policy for read access
-CREATE POLICY "Anyone can view predictions summary"
-    ON public.event_predictions_summary
-    FOR SELECT
-    USING (true);

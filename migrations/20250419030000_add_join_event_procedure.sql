@@ -80,6 +80,9 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+-- Drop the existing trigger if it exists
+DROP TRIGGER IF EXISTS match_bets_trigger ON public.event_participants;
+
 -- Create trigger for matching
 CREATE TRIGGER match_bets_trigger
 AFTER INSERT OR UPDATE ON public.event_participants
@@ -87,7 +90,10 @@ FOR EACH ROW
 WHEN (NEW.status = 'pending_match')
 EXECUTE FUNCTION match_bets();
 
--- Updated stored procedure with entry_amount verification
+-- Drop the existing function if it exists
+DROP FUNCTION IF EXISTS public.join_event_with_escrow;
+
+-- Recreate the join_event_with_escrow function
 CREATE OR REPLACE FUNCTION public.join_event_with_escrow(
     p_event_id UUID,
     p_user_id UUID,
@@ -208,3 +214,12 @@ AND ep1.status = 'matched';
 
 -- Grant access to the view
 GRANT SELECT ON public.matched_bets_view TO authenticated;
+
+-- Update the profiles table to set a default balance of 10,000 Naira
+ALTER TABLE public.profiles
+ALTER COLUMN balance SET DEFAULT 10000;
+
+-- Ensure all existing users have a balance of at least 10,000 Naira
+UPDATE public.profiles
+SET balance = 10000
+WHERE balance IS NULL OR balance < 10000;

@@ -1,17 +1,42 @@
--- Create escrow table
-CREATE TABLE event_escrow (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    event_id UUID REFERENCES events(id) ON DELETE CASCADE,
-    user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-    amount DECIMAL(10,2) NOT NULL,
-    status VARCHAR(20) NOT NULL DEFAULT 'pending_match',
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
-);
+-- Add conditional check to create the event_escrow table only if it does not exist
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.tables
+        WHERE table_name = 'event_escrow'
+    ) THEN
+        CREATE TABLE event_escrow (
+            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+            event_id UUID REFERENCES events(id) ON DELETE CASCADE,
+            user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+            amount DECIMAL(10,2) NOT NULL,
+            status VARCHAR(20) NOT NULL DEFAULT 'pending_match',
+            created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+            updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+        );
+    END IF;
+END $$;
 
--- Add escrow_id to event_participants
-ALTER TABLE event_participants ADD COLUMN escrow_id UUID REFERENCES event_escrow(id) ON DELETE SET NULL;
-ALTER TABLE event_participants ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending_match';
+-- Add conditional checks for existing columns
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'event_participants' AND column_name = 'escrow_id'
+    ) THEN
+        ALTER TABLE event_participants ADD COLUMN escrow_id UUID REFERENCES event_escrow(id) ON DELETE SET NULL;
+    END IF;
+
+    IF NOT EXISTS (
+        SELECT 1
+        FROM information_schema.columns
+        WHERE table_name = 'event_participants' AND column_name = 'status'
+    ) THEN
+        ALTER TABLE event_participants ADD COLUMN status VARCHAR(20) NOT NULL DEFAULT 'pending_match';
+    END IF;
+END $$;
 
 -- Create notifications table if it doesn't exist
 CREATE TABLE IF NOT EXISTS notifications (
@@ -24,61 +49,66 @@ CREATE TABLE IF NOT EXISTS notifications (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
--- Create function to match bets and update escrow
+-- Create or replace the match_bets_and_update_escrow function
 CREATE OR REPLACE FUNCTION match_bets_and_update_escrow() 
 RETURNS TRIGGER AS $$
+DECLARE
+    v_matched_id UUID;
+    v_matched_escrow_id UUID;
+    v_matched_user_id UUID;
 BEGIN
-    -- Look for a matching opponent with opposite prediction
-    WITH potential_match AS (
-        SELECT 
-            ep.id,
-            ep.user_id,
-            ep.wager_amount,
-            ep.prediction,
-            ep.escrow_id
-        FROM event_participants ep
-        WHERE ep.event_id = NEW.event_id
-        AND ep.prediction != NEW.prediction
-        AND ep.status = 'pending_match'
-        AND ep.id != NEW.id
-        AND ep.wager_amount = NEW.wager_amount
-        LIMIT 1
-        FOR UPDATE SKIP LOCKED
-    ),
-    match_update AS (
-        UPDATE event_participants
-        SET status = 'matched'
-        FROM potential_match
-        WHERE event_participants.id = potential_match.id
-        RETURNING potential_match.*
-    )
-    UPDATE event_participants
-    SET status = CASE 
-        WHEN EXISTS (SELECT 1 FROM match_update) THEN 'matched'
-        ELSE 'pending_match'
-    END
-    WHERE id = NEW.id;
+    -- Look for a matching opponent with opposite prediction and lock the row
+    SELECT id, escrow_id, user_id
+    INTO v_matched_id, v_matched_escrow_id, v_matched_user_id
+    FROM event_participants
+    WHERE event_id = NEW.event_id
+    AND prediction != NEW.prediction
+    AND status = 'pending_match'
+    AND id != NEW.id
+    AND wager_amount = NEW.wager_amount
+    ORDER BY created_at ASC
+    LIMIT 1
+    FOR UPDATE SKIP LOCKED;
 
-    -- If match found, update escrow status and create notifications
-    IF EXISTS (SELECT 1 FROM match_update) THEN
-        -- Update escrow status for both participants
+    -- If found a match, update both participants
+    IF v_matched_id IS NOT NULL THEN
+        -- Update the current participant
+        UPDATE event_participants
+        SET status = 'matched',
+            matched_with = v_matched_id,
+            matched_at = now()
+        WHERE id = NEW.id;
+
+        -- Update the matched participant
+        UPDATE event_participants
+        SET status = 'matched',
+            matched_with = NEW.id,
+            matched_at = now()
+        WHERE id = v_matched_id;
+
+        -- Update escrow status for both
         UPDATE event_escrow
         SET status = 'matched'
-        WHERE id IN (
-            (SELECT escrow_id FROM match_update),
-            NEW.escrow_id
-        );
+        WHERE id IN (NEW.escrow_id, v_matched_escrow_id);
 
-        -- Notify both participants
+        -- Create notifications for both participants
         INSERT INTO notifications (user_id, type, message, event_id)
         VALUES 
-        (NEW.user_id, 'bet_matched', 'Your bet has been matched with an opponent!', NEW.event_id),
-        ((SELECT user_id FROM match_update), 'bet_matched', 'Your bet has been matched with an opponent!', NEW.event_id);
+            (NEW.user_id, 'bet_matched', 'Your bet has been matched with an opponent!', NEW.event_id),
+            (v_matched_user_id, 'bet_matched', 'Your bet has been matched with an opponent!', NEW.event_id);
+    ELSE
+        -- No match found, set status to pending_match
+        UPDATE event_participants
+        SET status = 'pending_match'
+        WHERE id = NEW.id;
     END IF;
 
     RETURN NEW;
 END;
 $$ LANGUAGE plpgsql;
+
+-- Drop the existing trigger if it exists
+DROP TRIGGER IF EXISTS match_bets_trigger ON public.event_participants;
 
 -- Create trigger for bet matching
 CREATE TRIGGER match_bets_trigger
@@ -170,5 +200,97 @@ BEGIN
     -- Log admin action
     INSERT INTO admin_actions (admin_email, action_type, target_type, target_id)
     VALUES (p_admin_email, 'process_payouts', 'event', p_event_id);
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop the existing function if it exists
+DROP FUNCTION IF EXISTS public.join_event_with_escrow;
+
+-- Recreate the join_event_with_escrow function
+CREATE OR REPLACE FUNCTION public.join_event_with_escrow(
+    p_event_id UUID,
+    p_user_id UUID,
+    p_prediction BOOLEAN,
+    p_wager_amount NUMERIC
+) RETURNS json AS $$
+DECLARE
+    v_participant_id UUID;
+    v_escrow_id UUID;
+BEGIN
+    -- Start transaction
+    BEGIN
+        -- Verify entry amount matches pool settings
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM event_pools 
+            WHERE event_id = p_event_id 
+            AND entry_amount = p_wager_amount
+        ) THEN
+            RAISE EXCEPTION 'Invalid wager amount';
+        END IF;
+
+        -- Check user balance and lock the row
+        IF NOT EXISTS (
+            SELECT 1 
+            FROM profiles 
+            WHERE id = p_user_id 
+            AND balance >= p_wager_amount 
+            FOR UPDATE
+        ) THEN
+            RAISE EXCEPTION 'Insufficient balance';
+        END IF;
+
+        -- Deduct balance
+        UPDATE profiles 
+        SET balance = balance - p_wager_amount 
+        WHERE id = p_user_id;
+
+        -- Create escrow entry
+        INSERT INTO event_escrow (
+            event_id,
+            user_id,
+            amount,
+            status
+        ) VALUES (
+            p_event_id,
+            p_user_id,
+            p_wager_amount,
+            'pending_match'
+        ) RETURNING id INTO v_escrow_id;
+
+        -- Create participant entry
+        INSERT INTO event_participants (
+            event_id,
+            user_id,
+            prediction,
+            wager_amount,
+            status,
+            escrow_id
+        ) VALUES (
+            p_event_id,
+            p_user_id,
+            p_prediction,
+            p_wager_amount,
+            'pending_match',
+            v_escrow_id
+        ) RETURNING id INTO v_participant_id;
+
+        -- Update pool amounts including yes_amount and no_amount
+        UPDATE event_pools
+        SET 
+            total_amount = total_amount + p_wager_amount,
+            yes_amount = CASE WHEN p_prediction THEN yes_amount + p_wager_amount ELSE yes_amount END,
+            no_amount = CASE WHEN NOT p_prediction THEN no_amount + p_wager_amount ELSE no_amount END
+        WHERE event_id = p_event_id;
+
+        -- Return the created IDs
+        RETURN json_build_object(
+            'participant_id', v_participant_id,
+            'escrow_id', v_escrow_id
+        );
+    EXCEPTION WHEN OTHERS THEN
+        -- Rollback will happen automatically
+        RAISE;
+    END;
 END;
 $$ LANGUAGE plpgsql;

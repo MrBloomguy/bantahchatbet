@@ -56,7 +56,7 @@ SELECT
     e.title,
     e.wager_amount as event_wager_amount,
     p.total_amount,
-    p.admin_fee,
+    p.platform_fee,
     p.winning_pool,
     p.losing_pool,
     p.status as pool_status,
@@ -66,4 +66,4 @@ FROM events e
 JOIN event_pools p ON e.id = p.event_id
 LEFT JOIN event_participants ep ON e.id = ep.event_id
 WHERE e.title = 'Test Event 2'
-GROUP BY e.title, e.wager_amount, p.total_amount, p.admin_fee, p.winning_pool, p.losing_pool, p.status;
+GROUP BY e.title, e.wager_amount, p.total_amount, p.platform_fee, p.winning_pool, p.losing_pool, p.status;
