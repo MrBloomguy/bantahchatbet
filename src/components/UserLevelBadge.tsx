@@ -12,34 +12,42 @@ const UserLevelBadge: React.FC<UserLevelBadgeProps> = ({
   size = 'md',
   showLabel = true 
 }) => {
+  // Defensive: always use a valid size
+  const safeSize = ['sm', 'md', 'lg'].includes(size) ? size : 'md';
   const getLevelInfo = (points: number) => {
+    if (typeof points !== 'number' || isNaN(points)) return {
+      name: 'Beginner',
+      icon: <Star />, 
+      color: 'from-gray-400 to-gray-500',
+      borderColor: 'border-gray-400'
+    };
     if (points >= 10000) return {
       name: 'Master',
-      icon: <Crown />,
+      icon: <Crown />, 
       color: 'from-yellow-400 to-yellow-500',
       borderColor: 'border-yellow-400'
     };
     if (points >= 5000) return {
       name: 'Expert',
-      icon: <Trophy />,
+      icon: <Trophy />, 
       color: 'from-purple-400 to-purple-500',
       borderColor: 'border-purple-400'
     };
     if (points >= 2000) return {
       name: 'Advanced',
-      icon: <Award />,
+      icon: <Award />, 
       color: 'from-blue-400 to-blue-500',
       borderColor: 'border-blue-400'
     };
     if (points >= 500) return {
       name: 'Intermediate',
-      icon: <Medal />,
+      icon: <Medal />, 
       color: 'from-green-400 to-green-500',
       borderColor: 'border-green-400'
     };
     return {
       name: 'Beginner',
-      icon: <Star />,
+      icon: <Star />, 
       color: 'from-gray-400 to-gray-500',
       borderColor: 'border-gray-400'
     };
@@ -62,16 +70,18 @@ const UserLevelBadge: React.FC<UserLevelBadgeProps> = ({
 
   const level = getLevelInfo(points);
 
+  // Defensive: fallback if sizeClasses[safeSize] is undefined
+  const badgeClass = sizeClasses[safeSize]?.badge || 'h-8 text-sm';
+  const iconClass = sizeClasses[safeSize]?.icon || 'w-4 h-4';
+
   return (
-    <div className={`relative inline-flex items-center ${showLabel ? 'pr-3' : ''} ${sizeClasses[size].badge} rounded-full bg-gradient-to-r ${level.color}`}>
+    <div className={`relative inline-flex items-center ${showLabel ? 'pr-3' : ''} ${badgeClass} rounded-full bg-gradient-to-r ${level.color}`}>
       {/* Icon container with border */}
-      <div className={`relative flex items-center justify-center rounded-full aspect-square ${sizeClasses[size].badge} border-2 ${level.borderColor} bg-white/10`}>
-        <div className={sizeClasses[size].icon}>
+      <div className={`relative flex items-center justify-center rounded-full aspect-square ${badgeClass} border-2 ${level.borderColor} bg-white/10`}>
+        <div className={iconClass}>
           {level.icon}
         </div>
       </div>
-
-      {/* Level name */}
       {showLabel && (
         <span className="ml-1 font-semibold text-white">
           {level.name}

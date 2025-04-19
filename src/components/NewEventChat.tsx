@@ -9,6 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import ProfileCard from './ProfileCard';
 import { useProfile } from '../hooks/useProfile';
 import { supabase } from '../lib/supabase';
+import ChatBubble from './ChatBubble';
 
 export interface NewEventChatProps {
   eventId: string;
@@ -42,37 +43,6 @@ interface CurrentUser extends UserProfile {
   avatar_url?: string;
 }
 
-const CompactBanner: React.FC<{ eventPoolAmount: number; countdown: string }> = ({
-  eventPoolAmount,
-  countdown,
-}) => (
-  <div className="bg-gray-100 border-b border-gray-200 py-2 px-4 shadow-sm flex items-center justify-between">
-    <div className="flex items-center gap-4 text-sm text-gray-600">
-      <span className="flex items-center gap-1">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="inline-block h-4 w-4 mr-1 align-text-top text-gray-500"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.5}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-        </svg>
-        {countdown}
-      </span>
-    </div>
-    <div className="flex items-center gap-2">
-      <button className="bg-green-500 text-white rounded-md px-3 py-1 text-sm font-semibold hover:bg-green-600">
-        YES
-      </button>
-      <button className="bg-red-500 text-white rounded-md px-3 py-1 text-sm font-semibold hover:bg-red-600">
-        NO
-      </button>
-    </div>
-  </div>
-);
-
 const PointsBadge: React.FC<{ points: number }> = ({ points }) => (
   <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
     <Trophy className="w-3 h-3" />
@@ -96,6 +66,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const [selectedProfile, setSelectedProfile] = useState<ChatMessage['sender'] | null>(null);
   const [countdown, setCountdown] = useState('');
   const [userPoints, setUserPoints] = useState<{ [key: string]: number }>({});
+  const [bannerOpen, setBannerOpen] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -209,22 +180,19 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           <div className="flex-1 min-w-0">
             <h6 className="font-semibold text-gray-800 truncate flex items-center gap-2">
               {event.title}
-              <span className="text-xs text-gray-400 font-normal">by @{event.creator?.username}</span>
+              <span className="text-xs text-gray-400 font-normal flex items-center gap-1">
+                by @{event.creator?.username}
+                <UserLevelBadge points={userPoints[event.creator?.id] ?? 0} size="sm" showLabel={false} />
+                <span className="ml-1 align-middle inline-flex items-center" title="Verified">
+                  <svg viewBox="0 0 24 24" aria-label="Verified" className="w-4 h-4 text-blue-500" fill="currentColor">
+                    <g>
+                      <path d="M22.5 12.87c0-.6-.33-1.15-.85-1.42l-1.7-.98.3-1.89c.09-.6-.14-1.22-.6-1.6-.46-.38-1.1-.47-1.64-.23l-1.7.98-1.7-.98c-.54-.24-1.18-.15-1.64.23-.46.38-.69 1-.6 1.6l.3 1.89-1.7.98c-.52.27-.85.82-.85 1.42s.33 1.15.85 1.42l1.7.98-.3 1.89c-.09.6.14 1.22.6 1.6.46.38 1.1.47 1.64.23l1.7-.98 1.7.98c.54.24 1.18.15 1.64-.23.46-.38.69-1 .6-1.6l-.3-1.89 1.7-.98c.52-.27.85-.82.85-1.42z"></path>
+                      <path d="M10.59 14.58l-2.09-2.09a.75.75 0 111.06-1.06l1.56 1.56 3.56-3.56a.75.75 0 111.06 1.06l-4.09 4.09a.75.75 0 01-1.06 0z" fill="#fff"></path>
+                    </g>
+                  </svg>
+                </span>
+              </span>
             </h6>
-            <div className="flex items-center gap-3 mt-1 text-xs text-gray-600">
-              <span className="flex items-center gap-1">
-                <img src="/avatar-count.svg" alt="Members" className="w-4 h-4" />
-                {event.participants?.length || 0}
-              </span>
-              <span className="flex items-center gap-1">
-                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                {countdown}
-              </span>
-<span className="flex items-center gap-1">
-                <img src="/bet_icon.png" alt="Pool" className="w-4 h-4" />
-                ₦{event.pool?.total_amount?.toLocaleString() || 0}
-              </span>
-            </div>
           </div>
         </div>
         {/* Menu Dropdown */}
@@ -232,16 +200,71 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           <button className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Menu">
             <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="1.5"/><circle cx="19.5" cy="12" r="1.5"/><circle cx="4.5" cy="12" r="1.5"/></svg>
           </button>
-          {/* Example dropdown, implement menu logic as needed */}
-          {/* <div className="absolute right-0 mt-2 w-40 bg-white border rounded shadow-lg z-10">
-            <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">Report</button>
-            <button className="block w-full text-left px-4 py-2 hover:bg-gray-100">Leave Chat</button>
-          </div> */}
         </div>
       </div>
 
-      {/* Compact Banner */}
-      <CompactBanner eventPoolAmount={event.pool?.total_amount || 0} countdown={countdown} />
+      {/* Compact Banner with Drawer */}
+      <div className="relative mx-3" style={{ marginTop: 0 }}>
+        <div
+          className={`transition-all duration-300 ${bannerOpen ? 'max-h-[80px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} overflow-hidden`}
+        >
+          <div
+            className="relative border-b border-gray-200 py-2 px-4 shadow-sm flex items-center justify-between min-h-[64px] rounded-xl overflow-hidden"
+            style={{
+              backgroundImage: event.banner_url ? `url(${event.banner_url})` : undefined,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+              backgroundRepeat: 'no-repeat',
+            }}
+          >
+            <div className="absolute inset-0 bg-gray-900/60 pointer-events-none" />
+            <div className="relative flex items-center gap-6 text-sm text-white z-10">
+              <span className="flex items-center gap-1">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="inline-block h-3 w-3 mr-1 align-text-top text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.5}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="text-xs">{countdown}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <img src="/avatar-count.svg" alt="Members" className="w-4 h-4" />
+                <span className="text-xs">{event?.participants?.length || 0}</span>
+              </span>
+              <span className="flex items-center gap-1">
+                <img src="/bet_icon.png" alt="Pool" className="w-4 h-4" />
+                <span className="text-xs">₦{event.pool?.total_amount?.toLocaleString() || 0}</span>
+              </span>
+            </div>
+            <div className="relative flex items-center gap-2 z-10">
+              <button className="bg-green-500 text-white rounded-md px-3 py-1 text-sm font-semibold hover:bg-green-600">
+                YES
+              </button>
+              <button className="bg-red-500 text-white rounded-md px-3 py-1 text-sm font-semibold hover:bg-red-600">
+                NO
+              </button>
+            </div>
+          </div>
+        </div>
+        {/* Drawer Button - far left, aligned with header bottom */}
+        <div className="absolute -left-4 top-0 z-20">
+          <button
+            onClick={() => setBannerOpen((prev) => !prev)}
+            className="bg-white shadow p-1 border border-gray-200 hover:bg-gray-100 transition-all rounded"
+            aria-label="Toggle Banner Drawer"
+            style={{ borderRadius: '4px' }}
+          >
+            <svg className={`w-6 h-6 text-gray-500 transition-transform ${bannerOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+        </div>
+      </div>
 
       {/* Chat Messages Area */}
       <div className="flex-grow overflow-y-auto p-4 space-y-3">
@@ -253,50 +276,18 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         {!isLoading &&
           messages.map((msg: ChatMessage) => {
             const isCurrentUserSender = msg.sender_id === currentUser?.id;
-            const messageAlignment = isCurrentUserSender ? 'justify-end' : 'justify-start';
-            const messageBubbleStyle = isCurrentUserSender
-              ? 'bg-purple-100 text-gray-800 rounded-lg rounded-br-none py-2 px-3'
-              : 'bg-gray-100 text-gray-800 rounded-lg rounded-bl-none py-2 px-3';
-
             return (
-              <div
-                key={msg.id}
-                className={`flex ${messageAlignment} items-start`}
-              >
-                {!isCurrentUserSender && msg.sender && (
-                  <div className="mr-2 cursor-pointer" onClick={() => openProfileCard(msg.sender!)}>
-                    <UserAvatar 
-                      url={msg.sender.avatar_url} 
-                      size="sm"
-                      username={msg.sender.username || msg.sender.name} 
-                    />
-                  </div>
-                )}
-                <div className="max-w-xs">
-                  <div className={messageBubbleStyle}>
-                    {(!isCurrentUserSender && msg.sender) && (
-                      <div className="flex items-center gap-2 text-sm mb-1">
-                        <span className="font-semibold text-gray-700">@{msg.sender.username || msg.sender.name}</span>
-                        {userPoints[msg.sender_id] !== undefined && (
-                          <UserLevelBadge points={userPoints[msg.sender_id]} size="sm" showLabel={false} />
-                        )}
-                      </div>
-                    )}
-                    <p className="text-sm break-words">{msg.content}</p>
-                    <p className="text-xs text-gray-500 mt-1 text-right">
-                      {formatDistanceToNow(new Date(msg.created_at), { addSuffix: true })}
-                    </p>
-                  </div>
-                </div>
-                {isCurrentUserSender && currentUser && (
-                  <div className="ml-2">
-                    <UserAvatar 
-                      url={userProfile?.avatar_url || '/avatar.svg'} 
-                      size="sm"
-                      username={userProfile?.name || userProfile?.username || currentUser.id} 
-                    />
-                  </div>
-                )}
+              <div key={msg.id}>
+                <ChatBubble
+                  content={msg.content}
+                  timestamp={msg.created_at}
+                  isSender={isCurrentUserSender}
+                  senderName={msg.sender?.name}
+                  senderUsername={msg.sender?.username}
+                  isVerified={true}
+                  hasAvatar={!!msg.sender?.avatar_url}
+                  points={userPoints[msg.sender_id]}
+                />
               </div>
             );
           })}
