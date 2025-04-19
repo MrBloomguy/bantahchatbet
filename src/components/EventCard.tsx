@@ -26,6 +26,7 @@ interface Event {
   creator: Creator;
   pool?: {
     total_amount?: number;
+    entry_amount?: number;
   };
   participants?: Array<{ avatar?: string }>;
   current_participants?: number;
@@ -217,19 +218,18 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
         onClose={() => setShowJoinModal(false)}
         onSubmit={handleJoinRequestSubmit}
         eventTitle={event.title}
-        wagerAmount={event.pool?.total_amount || 0}
         creator={{
           id: event.creator.id || '',
           name: event.creator.name || '',
           avatar_url: event.creator.avatar_url || event.creator.avatar || '',
           stats: event.creator.stats || {},
-          username: event.creator.username || ''
         }}
         eventDetails={{
-          category: event.category || '',
-          startTime: event.start_time,
-          maxParticipants: event.max_participants || 0,
-          currentParticipants: event.current_participants || 0
+          currentParticipants: event.participants?.length || 0,
+          maxParticipants: event.max_participants,
+          pool: [{
+            entry_amount: event.pool?.entry_amount || 0
+          }]
         }}
       />
     </>

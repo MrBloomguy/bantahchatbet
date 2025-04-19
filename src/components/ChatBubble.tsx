@@ -14,11 +14,10 @@ interface ChatBubbleProps {
   points?: number; // Optional prop for points badge
 }
 
-// Function to generate a random color
+// Function to generate a random color based on the username
 const getRandomColor = (username: string | undefined) => {
   if (!username) return 'text-gray-800'; // Default color if no username
 
-  // Simple hash function to generate a somewhat consistent color based on the username
   let hash = 0;
   for (let i = 0; i < username.length; i++) {
     hash = username.charCodeAt(i) + ((hash << 5) - hash);
@@ -29,10 +28,11 @@ const getRandomColor = (username: string | undefined) => {
     color += value.toString(16).padStart(2, '0');
   }
 
-  // Basic check to ensure the color is not too light (for better readability)
+  // Basic luminance check to ensure readability
   const luminance = (0.299 * parseInt(color.slice(1, 3), 16) +
                      0.587 * parseInt(color.slice(3, 5), 16) +
                      0.114 * parseInt(color.slice(5, 7), 16)) / 255;
+
   return luminance > 0.7 ? getRandomColor(username + 'salt') : `text-[${color}]`;
 };
 

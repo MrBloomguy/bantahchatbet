@@ -7,6 +7,8 @@ interface EventPool {
   creator_fee: number;
   yes_pool: number;
   no_pool: number;
+  entry_amount: number;
+  updated_at: string;
 }
 
 export const useEventPool = () => {
@@ -68,7 +70,15 @@ export const useEventPool = () => {
     try {
       const { data, error } = await supabase
         .from('event_pools')
-        .select('*')
+        .select(`
+          total_amount,
+          admin_fee,
+          creator_fee,
+          yes_pool,
+          no_pool,
+          entry_amount,
+          updated_at
+        `)
         .eq('event_id', eventId)
         .single();
 

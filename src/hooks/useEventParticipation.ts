@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
 
@@ -20,6 +20,13 @@ interface MatchedBet {
   opponent_id: string;
   prediction: boolean;
   wager_amount: number;
+}
+
+interface EventWithPool {
+  id: string;
+  pool: Array<{
+    entry_amount: number;
+  }>;
 }
 
 export const useEventParticipation = () => {
@@ -46,55 +53,41 @@ export const useEventParticipation = () => {
         return { success: false };
       }
 
-      // Get event details for creator fee
-      const { data: event, error: eventError } = await supabase
+      // Get event details and verify wager amount
+      const { data: eventData, error: eventError } = await supabase
         .from('events')
-        .select('creator_fee_percentage, creator_id')
+        .select(`
+          id,
+          pool:event_pools!inner (
+            entry_amount
+          )
+        `)
         .eq('id', data.eventId)
         .single();
 
       if (eventError) throw eventError;
 
-      // Create escrow transaction
-      const { data: escrow, error: escrowError } = await supabase
-        .from('event_escrow')
-        .insert({
-          event_id: data.eventId,
-          user_id: data.userId,
-          amount: data.wagerAmount,
-          status: 'pending_match'
-        })
-        .select()
-        .single();
+      const event = eventData as EventWithPool;
+      if (!event?.pool?.[0]?.entry_amount || event.pool[0].entry_amount !== data.wagerAmount) {
+        toast.showError('Invalid wager amount');
+        return { success: false };
+      }
 
-      if (escrowError) throw escrowError;
+      // Call the RPC function to handle the transaction
+      const { data: result, error: joinError } = await supabase.rpc(
+        'join_event_with_escrow',
+        {
+          p_event_id: data.eventId,
+          p_user_id: data.userId,
+          p_prediction: data.prediction,
+          p_wager_amount: data.wagerAmount
+        }
+      );
 
-      // Join the event
-      const { data: participant, error } = await supabase
-        .from('event_participants')
-        .insert({
-          event_id: data.eventId,
-          user_id: data.userId,
-          prediction: data.prediction,
-          wager_amount: data.wagerAmount,
-          status: 'pending_match',
-          escrow_id: escrow.id
-        })
-        .select()
-        .single();
+      if (joinError) throw joinError;
 
-      if (error) throw error;
-
-      // Create notification for joining
-      await supabase.from('notifications').insert({
-        user_id: data.userId,
-        type: 'event_join',
-        event_id: data.eventId,
-        message: 'You have joined the event and your stake is now in escrow. Waiting for an opponent...'
-      });
-
-      toast.showSuccess('Successfully joined the event! Waiting for an opponent...');
-      return { success: true, participantId: participant.id };
+      toast.showSuccess('Successfully joined! Waiting for a match...');
+      return { success: true, participantId: result.participant_id };
     } catch (error: any) {
       console.error('Error joining event:', error);
       toast.showError(error.message || 'Failed to join event');

@@ -1,25 +1,23 @@
 import React, { useState } from 'react';
-import { X, Clock, Trophy, Users } from 'lucide-react';
+import { X, Users } from 'lucide-react';
 import UserRankBadge from './UserRankBadge';
 
 interface Creator {
   id: string;
-  username: string;
   name: string;
+  username?: string;
   avatar_url: string;
-  rank?: string;
-  stats: {
-    wins: number;
-    total_matches: number;
-    win_rate: number;
-  };
+  rank?: number;
+  stats?: any;
 }
 
 interface EventDetails {
-  category: string;
-  startTime: string;
-  maxParticipants: number;
-  currentParticipants: number;
+  currentParticipants?: number;
+  maxParticipants?: number;
+  category?: string;
+  pool?: {
+    entry_amount: number;
+  }[];
 }
 
 interface JoinRequestModalProps {
@@ -27,9 +25,8 @@ interface JoinRequestModalProps {
   onClose: () => void;
   onSubmit: (message: string) => void;
   eventTitle: string;
-  wagerAmount: number;
   creator: Creator;
-  eventDetails: EventDetails;
+  eventDetails?: EventDetails;
 }
 
 const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
@@ -37,11 +34,11 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
   onClose,
   onSubmit,
   eventTitle,
-  wagerAmount,
   creator,
   eventDetails
 }) => {
   const [message, setMessage] = useState('');
+  const wagerAmount = eventDetails?.pool?.[0]?.entry_amount || 0;
 
   if (!isOpen) return null;
 
@@ -93,7 +90,7 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
             <div>
               <div className="flex items-center gap-1.5">
                 <p className="text-white text-sm">{creator.name}</p>
-                {creator.rank && <UserRankBadge rank={creator.rank} size="xs" />}
+                {creator.rank !== undefined && <UserRankBadge rank={creator.rank} size="sm" />}
               </div>
               <p className="text-white/60 text-xs">@{creator.username}</p>
             </div>

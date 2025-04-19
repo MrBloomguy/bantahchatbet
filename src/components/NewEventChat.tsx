@@ -2,10 +2,11 @@ import React, { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Send, Smile, Loader, Trophy, X } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
+import { useEventParticipation } from '../hooks/useEventParticipation';
+import { useEventPool } from '../hooks/useEventPool';
 import UserAvatar from './UserAvatar';
 import UserLevelBadge from './UserLevelBadge';
 import { useEventChat } from '../hooks/useEventChat';
-import { formatDistanceToNow } from 'date-fns';
 import ProfileCard from './ProfileCard';
 import { useProfile } from '../hooks/useProfile';
 import { supabase } from '../lib/supabase';
@@ -54,14 +55,22 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   eventId,
   onBack,
 }) => {
-  const { getProfile } = useProfile();
   const { currentUser } = useAuth();
   const toast = useToast();
   const { messages, sendMessage, isLoading } = useEventChat(eventId);
+  const { joinEvent, getUserPrediction, getPredictionCounts } = useEventParticipation();
+  const { updatePoolAmount } = useEventPool();
 
   const [event, setEvent] = useState<any>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
   const [message, setMessage] = useState('');
+  const [prediction, setPrediction] = useState<boolean | null>(null);
+  const [predictionCounts, setPredictionCounts] = useState({
+    yes_count: 0,
+    no_count: 0,
+    total_participants: 0
+  });
+  const [isProcessing, setIsProcessing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [selectedProfile, setSelectedProfile] = useState<ChatMessage['sender'] | null>(null);
   const [countdown, setCountdown] = useState('');
@@ -104,12 +113,54 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     }
   };
 
+  const handlePrediction = async (selectedPrediction: boolean) => {
+    if (!currentUser) {
+      toast.showError('You must be logged in to participate');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const { success } = await joinEvent({
+        eventId,
+        userId: currentUser.id,
+        prediction: selectedPrediction,
+        wagerAmount: event.pool?.[0]?.entry_amount || 0
+      });
+
+      if (success) {
+        setPrediction(selectedPrediction);
+        await updatePoolAmount(eventId, event.pool?.[0]?.entry_amount || 0, selectedPrediction);
+        const counts = await getPredictionCounts(eventId);
+        if (counts) setPredictionCounts(counts);
+        toast.showSuccess('Prediction placed successfully!');
+      }
+    } catch (error) {
+      toast.showError('Failed to place prediction');
+      console.error('Prediction error:', error);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   useEffect(() => {
     const fetchEvent = async () => {
       setLoadingEvent(true);
       const { data, error } = await supabase
         .from('events')
-        .select(`*, creator:creator_id(*), pool:event_pools(*), participants:event_participants(user_id), banner_url`)
+        .select(`
+          *,
+          creator:creator_id(*),
+          pool:event_pools(
+            id,
+            total_amount,
+            entry_amount,
+            yes_pool,
+            no_pool
+          ),
+          participants:event_participants(user_id),
+          banner_url
+        `)
         .eq('id', eventId)
         .single();
       if (!error && data) setEvent(data);
@@ -153,6 +204,26 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
       }
     });
   }, [messages]);
+
+  useEffect(() => {
+    const loadPredictionData = async () => {
+      if (!currentUser?.id || !eventId) return;
+      
+      try {
+        const [userPred, counts] = await Promise.all([
+          getUserPrediction(eventId, currentUser.id),
+          getPredictionCounts(eventId)
+        ]);
+        
+        if (userPred !== null) setPrediction(userPred);
+        if (counts) setPredictionCounts(counts);
+      } catch (error) {
+        console.error('Error loading prediction data:', error);
+      }
+    };
+
+    loadPredictionData();
+  }, [currentUser?.id, eventId]);
 
   const userProfile = currentUser as CurrentUser;
 
@@ -242,11 +313,31 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
               </span>
             </div>
             <div className="relative flex items-center gap-2 z-10">
-              <button className="bg-green-500 text-white rounded-md px-3 py-1 text-sm font-semibold hover:bg-green-600">
-                YES
+              <button 
+                onClick={() => handlePrediction(true)}
+                disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
+                className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${
+                  prediction === true
+                    ? 'bg-green-700 text-white cursor-not-allowed'
+                    : prediction !== null
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-green-500 text-white hover:bg-green-600'
+                }`}
+              >
+                YES {predictionCounts.yes_count > 0 && `(${predictionCounts.yes_count})`}
               </button>
-              <button className="bg-red-500 text-white rounded-md px-3 py-1 text-sm font-semibold hover:bg-red-600">
-                NO
+              <button
+                onClick={() => handlePrediction(false)}
+                disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
+                className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${
+                  prediction === false
+                    ? 'bg-red-700 text-white cursor-not-allowed'
+                    : prediction !== null
+                    ? 'bg-gray-400 text-white cursor-not-allowed'
+                    : 'bg-red-500 text-white hover:bg-red-600'
+                }`}
+              >
+                NO {predictionCounts.no_count > 0 && `(${predictionCounts.no_count})`}
               </button>
             </div>
           </div>

@@ -12,6 +12,9 @@ interface BetConfirmationModalProps {
     title: string;
     endTime: string;
     wagerAmount: number;
+    pool?: {
+      entry_amount: number;
+    }[];
   };
 }
 
@@ -23,8 +26,8 @@ const BetConfirmationModal: React.FC<BetConfirmationModalProps> = ({
   eventDetails
 }) => {
   const { wallet } = useWallet();
-  const balance = wallet?.balance ?? 0;
-  const wagerAmount = eventDetails?.wagerAmount ?? 0;
+  const balance = wallet?.real_balance ?? 0;
+  const wagerAmount = eventDetails?.pool?.[0]?.entry_amount ?? eventDetails?.wagerAmount ?? 0;
   const hasEnoughBalance = balance >= wagerAmount;
 
   const formatAmount = (amount: number) => {
