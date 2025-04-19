@@ -18,20 +18,19 @@ export function useEventChat(eventId: string) {
   const toast = useToast();
 
   const fetchInitialMessages = useCallback(async () => {
-    console.log('fetchMessages called with eventId:', eventId);
+    if (!eventId) return;
+    
     setIsLoading(true);
     try {
       const { data, error } = await supabase
         .from('event_chat_messages')
-        .select(
-          `
+        .select(`
           id,
           content,
           sender_id,
           created_at,
           users (name, avatar_url)
-        `
-        )
+        `)
         .eq('event_id', eventId)
         .order('created_at', { ascending: true });
 
@@ -47,7 +46,10 @@ export function useEventChat(eventId: string) {
           content: message.content,
           sender_id: message.sender_id,
           created_at: message.created_at,
-          sender: { name: message.users?.name || 'Unknown', avatar_url: message.users?.avatar_url || '/default-avatar.png' },
+          sender: { 
+            name: message.users?.name || 'Unknown', 
+            avatar_url: message.users?.avatar_url || '/default-avatar.png' 
+          },
         })
       );
 
@@ -58,7 +60,7 @@ export function useEventChat(eventId: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [eventId, setIsLoading, setMessages, toast]);
+  }, [eventId, toast]);
 
   const sendMessage = useCallback(
     async (message: string): Promise<boolean> => {
@@ -75,18 +77,15 @@ export function useEventChat(eventId: string) {
               event_id: eventId,
               sender_id: currentUser.id,
               content: message,
-              id: crypto.randomUUID()
             },
           ])
-          .select(
-            `
-           id,
+          .select(`
+            id,
             content,
             sender_id,
             created_at,
             users (name, avatar_url)
-          `
-          )
+          `)
           .single();
 
         if (error) {
@@ -98,7 +97,10 @@ export function useEventChat(eventId: string) {
           content: data.content,
           sender_id: data.sender_id,
           created_at: data.created_at,
-          sender: { name: data.users?.name || 'Unknown', avatar_url: data.users?.avatar_url || '/default-avatar.png' }
+          sender: { 
+            name: data.users?.name || 'Unknown', 
+            avatar_url: data.users?.avatar_url || '/default-avatar.png' 
+          }
         };
 
         setMessages((prevMessages) => [...prevMessages, formattedMessage]);
@@ -109,50 +111,70 @@ export function useEventChat(eventId: string) {
         return false;
       }
     },
-    [currentUser, eventId, setIsLoading, setMessages, toast]
+    [currentUser, eventId, toast]
   );
 
+  // Initial message fetch
   useEffect(() => {
     fetchInitialMessages();
   }, [fetchInitialMessages]);
 
+  // Real-time subscription
   useEffect(() => {
-    let subscription: any = null; // Initialize subscription to null
+    if (!eventId) return;
 
-    if (eventId) { // Only subscribe if eventId is valid
-      subscription = supabase
-        .channel(`event_chat:${eventId}`)
-        .on(
-          'postgres_changes',
-          {
-            event: 'INSERT',
-            schema: 'public',
-            table: 'event_chat_messages',
-            filter: `event_id=eq.${eventId}`,
-          },
-          (payload) => {
-            console.log('Realtime event received:', payload);
-            if (!payload.new) return;
-            const formattedMessage: EventChatMessage = {
-              id: payload.new.id,
-              content: payload.new.content,
-              sender_id: payload.new.sender_id,
-              created_at: payload.new.created_at,
-              sender: { name: payload.new.users?.name || 'Unknown', avatar_url: payload.new.users?.avatar_url || '/default-avatar.png' }
-            };
-            setMessages(prevMessages => [...prevMessages, formattedMessage]);
+    const channel = supabase.channel(`event-chat-${eventId}`);
+    
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'event_chat_messages',
+          filter: `event_id=eq.${eventId}`,
+        },
+        async (payload) => {
+          if (!payload.new) return;
+
+          // Fetch the full message data including user details
+          const { data, error } = await supabase
+            .from('event_chat_messages')
+            .select(`
+              id,
+              content,
+              sender_id,
+              created_at,
+              users (name, avatar_url)
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (error || !data) {
+            console.error('Error fetching new message details:', error);
+            return;
           }
-        )
-        .subscribe();
-    }
 
-    // Use a cleanup function that handles potential null subscription
+          const formattedMessage: EventChatMessage = {
+            id: data.id,
+            content: data.content,
+            sender_id: data.sender_id,
+            created_at: data.created_at,
+            sender: {
+              name: data.users?.name || 'Unknown',
+              avatar_url: data.users?.avatar_url || '/default-avatar.png'
+            }
+          };
+
+          setMessages(prevMessages => [...prevMessages, formattedMessage]);
+        }
+      )
+      .subscribe();
+
     return () => {
-      if (subscription) {
-        subscription.unsubscribe();
-      }
+      channel.unsubscribe();
     };
-  }, [eventId]); // eventId is the dependency
+  }, [eventId]);
 
   return {
     messages,

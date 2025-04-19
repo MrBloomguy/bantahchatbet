@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, CheckCheck } from 'lucide-react';
+import { Check, CheckCheck, Loader } from 'lucide-react';
 import UserLevelBadge from './UserLevelBadge';
 
 interface ChatBubbleProps {
@@ -12,10 +12,11 @@ interface ChatBubbleProps {
   isVerified?: boolean;
   hasAvatar?: boolean; // Optional prop to indicate if there's an avatar
   points?: number; // Optional prop for points badge
+  isWaitingForMatch?: boolean; // Optional prop for waiting indicator
 }
 
 // Function to generate a random color based on the username
-const getRandomColor = (username: string | undefined) => {
+const getRandomColor = (username: string | undefined): string => {
   if (!username) return 'text-gray-800'; // Default color if no username
 
   let hash = 0;
@@ -46,6 +47,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   isVerified,
   hasAvatar = false,
   points,
+  isWaitingForMatch = false,
 }) => {
   const dateObj = new Date(timestamp);
   const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -65,9 +67,31 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
 
   return (
     <div className={`flex ${isSender ? 'flex-row-reverse items-end' : 'items-start'} mb-2`}>
-      {/* Avatar */}
-      {!isSender && hasAvatar && <div className="w-8 h-8 mr-2 rounded-full bg-gray-300 self-end"></div>}
-      {isSender && hasAvatar && <div className="w-8 h-8 ml-2 rounded-full bg-gray-300 self-end"></div>}
+      {/* Avatar with Loading Indicator */}
+      {!isSender && hasAvatar && (
+        <div className="relative mr-2">
+          <div className="w-8 h-8 rounded-full bg-gray-300 self-end overflow-hidden">
+            {/* Avatar content */}
+          </div>
+          {isWaitingForMatch && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+              <Loader className="w-3 h-3 text-purple-500 animate-spin" />
+            </div>
+          )}
+        </div>
+      )}
+      {isSender && hasAvatar && (
+        <div className="relative ml-2">
+          <div className="w-8 h-8 rounded-full bg-gray-300 self-end overflow-hidden">
+            {/* Avatar content */}
+          </div>
+          {isWaitingForMatch && (
+            <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
+              <Loader className="w-3 h-3 text-purple-500 animate-spin" />
+            </div>
+          )}
+        </div>
+      )}
 
       <div className="flex flex-col">
         {/* Header with Username and Timestamp */}
