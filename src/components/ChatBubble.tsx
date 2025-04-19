@@ -50,87 +50,102 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   isWaitingForMatch = false,
 }) => {
   const dateObj = new Date(timestamp);
-  const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  const dateStr = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   const timeStr = dateObj.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
 
-  const bubbleClassName = `rounded-xl px-4 py-2 break-words shadow-sm relative ${
-    isSender
-      ? 'bg-blue-600 text-white rounded-br-none'
-      : 'bg-gray-100 text-gray-900 rounded-bl-none'
-  }`;
+  // All bubbles are blue
+  const bubbleClassName = `rounded-full px-2 py-1 break-words shadow-sm relative max-w-[60%] bg-blue-500 text-white rounded-full`;
 
-  const tailClassName = `absolute bottom-1 ${isSender ? 'right-[-10px]' : 'left-[-10px]'} w-0 h-0 border-t-8 border-b-8 ${
-    isSender ? 'border-l-blue-600 border-r-transparent' : 'border-r-gray-100 border-l-transparent'
-  }`;
+  const tailClassName = `absolute bottom-1 ${isSender ? 'right-[-10px]' : 'left-[-10px]'} w-0 h-0 border-t-8 border-b-8 border-l-blue-500 border-r-transparent`;
 
   const usernameColorClass = getRandomColor(senderUsername || senderName);
 
   return (
     <div className={`flex ${isSender ? 'flex-row-reverse items-end' : 'items-start'} mb-2`}>
-      {/* Avatar with Loading Indicator */}
+      {/* Avatar */}
       {!isSender && hasAvatar && (
         <div className="relative mr-2">
           <div className="w-8 h-8 rounded-full bg-gray-300 self-end overflow-hidden">
-            {/* Avatar content */}
+            {senderUsername ? (
+              <img
+                src={`https://example.com/avatars/${senderUsername}.png`} // Replace with your actual avatar URL logic
+                alt={`${senderUsername}'s avatar`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-400 flex items-center justify-center text-white text-xs">
+                {senderName?.charAt(0).toUpperCase() || '?'}
+              </div>
+            )}
           </div>
-          {isWaitingForMatch && (
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-              <Loader className="w-3 h-3 text-purple-500 animate-spin" />
-            </div>
-          )}
         </div>
       )}
       {isSender && hasAvatar && (
         <div className="relative ml-2">
           <div className="w-8 h-8 rounded-full bg-gray-300 self-end overflow-hidden">
-            {/* Avatar content */}
+            {senderUsername ? (
+              <img
+                src={`https://example.com/avatars/${senderUsername}.png`} // Replace with your actual avatar URL logic
+                alt={`${senderUsername}'s avatar`}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-400 flex items-center justify-center text-white text-xs">
+                {senderName?.charAt(0).toUpperCase() || '?'}
+              </div>
+            )}
           </div>
-          {isWaitingForMatch && (
-            <div className="absolute -top-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center">
-              <Loader className="w-3 h-3 text-purple-500 animate-spin" />
-            </div>
-          )}
         </div>
       )}
 
       <div className="flex flex-col">
-        {/* Header with Username and Timestamp */}
-        <div className={`flex items-center gap-2 mb-0.5 ${isSender ? 'justify-end' : ''}`}>
+        {/* Header with Username, Verification Badge, and Level Badge */}
+        <div className={`flex items-center gap-2 mb-1 ${isSender ? 'justify-end' : ''}`}>
           <span className={`font-semibold text-xs ${usernameColorClass} flex items-center gap-1`}>
             {senderUsername || senderName}
-            {/* Level badge */}
-            {typeof points === 'number' && (
-              <span className="ml-1 w-4 h-4 flex items-center justify-center">
-                <UserLevelBadge points={typeof points === 'number' ? points : 0} size="sm" showLabel={false} />
+            {/* Verification Badge */}
+            {isVerified && (
+              <span
+                className="ml-1 w-4 h-4 align-middle inline-flex items-center justify-center rounded-full"
+                title="Verified"
+              >
+                <img
+                  src="https://example.com/verified-badge.svg" // Replace with the actual URL of your verification badge SVG
+                  alt="Verified"
+                  className="w-3 h-3"
+                />
               </span>
             )}
-            {/* Verification badge */}
-            {isVerified && (
-              <span className="ml-1 w-4 h-4 align-middle inline-flex items-center justify-center" title="Verified">
-                <svg viewBox="0 0 24 24" aria-label="Verified" className="w-full h-full text-blue-500" fill="currentColor">
-                  <g>
-                    <path d="M22.5 12.87c0-.6-.33-1.15-.85-1.42l-1.7-.98.3-1.89c.09-.6-.14-1.22-.6-1.6-.46-.38-1.1-.47-1.64-.23l-1.7.98-1.7-.98c-.54-.24-1.18-.15-1.64.23-.46.38-.69 1-.6 1.6l.3 1.89-1.7.98c-.52.27-.85.82-.85 1.42s.33 1.15.85 1.42l1.7.98-.3 1.89c-.09.6.14 1.22.6 1.6.46.38 1.1.47 1.64.23l1.7-.98 1.7.98c.54.24 1.18-.15 1.64-.23.46-.38.69-1 .6-1.6l-.3-1.89 1.7-.98c.52-.27.85-.82.85-1.42z"></path>
-                    <path d="M10.59 14.58l-2.09-2.09a.75.75 0 111.06-1.06l1.56 1.56 3.56-3.56a.75.75 0 111.06 1.06l-4.09 4.09a.75.75 0 01-1.06 0z" fill="#fff"></path>
-                  </g>
-                </svg>
+            {/* Level Badge */}
+            {typeof points === 'number' && (
+              <span className="ml-1 w-3 h-3 flex items-center justify-center">
+                <UserLevelBadge points={points} size="sm" showLabel={false} />
               </span>
             )}
           </span>
-          <span className="text-[10px] text-gray-400">| {dateStr} | {timeStr}</span>
         </div>
+
+        {/* Chat Bubble */}
         <div className="relative">
           <div className={bubbleClassName}>
-            <p className="text-sm leading-snug">{content}</p>
+            <p className="text-sm leading-tight">{content}</p>
           </div>
           <div className={tailClassName}></div>
         </div>
+
+        {/* Time and Date Below the Bubble */}
         <span
-          className={`text-[0.7rem] text-gray-500 mt-0.5 ${isSender ? 'text-right' : 'text-left'}`}
+          className={`text-[8px] text-gray-300 font-thin mt-1 ${isSender ? 'text-right' : 'text-left'}`}
         >
-          {isSender && (
-            <span className="ml-1">{isRead ? <CheckCheck size={10} /> : <Check size={10} />}</span>
-          )}
+          {dateStr} | {timeStr}
         </span>
+
+        {/* Read Indicator */}
+        {isSender && (
+          <span className="text-[0.7rem] text-gray-300 mt-0.5 text-right">
+            {isRead ? <CheckCheck size={10} /> : <Check size={10} />}
+          </span>
+        )}
       </div>
     </div>
   );
