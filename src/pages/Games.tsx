@@ -327,7 +327,7 @@ const Games: React.FC = () => {
 
               <button
                 onClick={() => handleChallenge(user)}
-                className="flex-shrink-0 bg-[#CCFF00] text-black px-4 py-1.5 rounded-full text-sm font-medium hover:bg-opacity-90 transition-colors"
+                className="flex-shrink-0 bg-[#7440FF] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-opacity-90 transition-colors"
               >
                 Challenge
               </button>
@@ -487,20 +487,7 @@ const Games: React.FC = () => {
               </button>
             ))}
             <div className="flex items-center gap-2 ml-auto">
-              <button
-                onClick={() => setShowActiveModal(true)}
-                className="p-2 text-gray-500 hover:text-[#CCFF00] transition-colors"
-                title="Add New"
-              >
-                <Plus className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => navigate('/taxi-share')}
-                className="p-2 text-gray-500 hover:text-[#CCFF00] transition-colors"
-                title="Taxi Share Map"
-              >
-                <Map className="w-5 h-5" />
-              </button>
+          
             </div>
           </div>
 

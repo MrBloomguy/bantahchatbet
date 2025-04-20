@@ -139,8 +139,8 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
                   <img
                     src={
                       event.creator.avatar_url
-                        || event.creator.avatar
-                        || `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.creator.username || event.creator.id || 'user'}`
+                      || event.creator.avatar
+                      || `https://api.dicebear.com/7.x/avataaars/svg?seed=${event.creator.username || event.creator.id || 'user'}`
                     }
                     alt={event.creator.username}
                     className="w-full h-full object-cover"
@@ -175,23 +175,26 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
         <div className="absolute bottom-0 left-0 right-0 p-4 flex items-end justify-between">
           {/* Event Pool section */}
           <div className="flex flex-col justify-end">
-            <span className="text-white text-xl font-bold">Event Pool</span>
+            <span className="text-white text-sm font-bold">Event Pool</span>
             <div className="flex items-center gap-2 mt-1">
-              <div className="bg-white rounded-full px-2 py-1">
+              <div className="bg-white rounded-lg px-2 py-1">
                 <span className="text-black font-bold text-sm">
                   ₦{event.pool?.total_amount?.toLocaleString() || '0'}
                 </span>
               </div>
-              <div className="flex items-center">
-                <div className="overflow-hidden rounded-full h-5 w-5 border-2 border-orange-500 flex items-center justify-center">
+              {/* Participation Avatar + Count */}
+              <div className="flex items-center ml-[1rem]">
+                <div className="relative">
+                  <div className="overflow-hidden rounded-full h-5 w-5 border-2 border-white-200 flex items-center justify-center">
                   <img
-                    src={event.participants?.[0]?.avatar || event.creator.avatar || "/default-avatar.png"}
-                    alt="Participant"
-                    className="w-full h-full object-cover"
-                  />
+  src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${event.id}`}
+  alt="Participant"
+  className="w-full h-full object-cover"
+/>
+                  </div>
                 </div>
-                <div className="bg-white rounded-full ml-[-0.75rem] px-2 py-1 text-black font-bold text-xs">
-                  +{(Array.isArray(event.participants) ? event.participants.length : event.current_participants) || 0}
+                <div className="bg-white rounded-full min-w-[1.5rem] h-5 flex items-center justify-center text-black font-bold text-xs ml-[-0.2rem] pl-1 pr-1">
+                  {event.participants?.length || event.current_participants || 0}
                 </div>
               </div>
             </div>
@@ -204,8 +207,8 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
             className={`${
               ['CANCELLED', 'ENDED'].includes(event.status || getEventStatus().label)
                 ? 'bg-gray-500 cursor-not-allowed text-white'
-                : 'btn-primary'
-            } h-10 flex items-center justify-center gap-1`}
+                : 'btn-primary bg-[#ccff00] text-black'
+            } h-10 flex items-center justify-center gap-1 px-4 rounded-3x1'`}
           >
             {event.is_private && <Lock className="h-4 w-4" />}
             {['CANCELLED', 'ENDED'].includes(event.status || getEventStatus().label) ? 'Closed' : 'Join'}

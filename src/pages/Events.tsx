@@ -52,72 +52,72 @@ const Events = () => {
   };
 
   const categories = [
-    { 
-      id: 'create', 
-      label: 'Create Event', 
+    {
+      id: 'create',
+      label: 'Create Event',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#1A472E]',
-      icon: <img src="/create.png" alt="Create Event" className="w-12 h-12" />
+      icon: <img src="/create.png" alt="Create Event" className="w-12 h-12" />,
     },
-    { 
-      id: 'stories', 
-      label: 'Stories', 
+    {
+      id: 'stories',
+      label: 'Stories',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#2A1F0E]',
-      icon: <img src="/news.svg" alt="Stories" className="w-8 h-8" />
+      icon: <img src="/news.svg" alt="Stories" className="w-8 h-8" />,
     },
-    { 
-      id: 'pop culture', 
-      label: 'Pop Culture', 
+    {
+      id: 'pop culture',
+      label: 'Pop Culture',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#2A1F0E]',
-      icon: <img src="/popcorn.svg" alt="Create Event" className="w-11 h-11" />
+      icon: <img src="/popcorn.svg" alt="Create Event" className="w-11 h-11" />,
     },
-    { 
-      id: 'sports', 
-      label: 'Sports', 
+    {
+      id: 'sports',
+      label: 'Sports',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#2A1215]',
-      icon: <img src="/footballicon.png" alt="Create Event" className="w-12 h-12" />
+      icon: <img src="/footballicon.png" alt="Create Event" className="w-12 h-12" />,
     },
-    { 
-      id: 'music', 
-      label: 'Music', 
+    {
+      id: 'music',
+      label: 'Music',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#1F1435]',
-      icon: <img src="/dj setup.png" alt="Create Event" className="w-12 h-12" />
+      icon: <img src="/dj setup.png" alt="Create Event" className="w-12 h-12" />,
     },
-    { 
-      id: 'gaming', 
-      label: 'Gaming', 
+    {
+      id: 'gaming',
+      label: 'Gaming',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#1A472E]',
-      icon: <img src="/22gamepad.svg" alt="Create Event" className="w-12 h-12" />
+      icon: <img src="/22gamepad.svg" alt="Create Event" className="w-12 h-12" />,
     },
-    { 
-      id: 'crypto', 
-      label: 'Crypto', 
+    {
+      id: 'crypto',
+      label: 'Crypto',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#FFA620FF]',
-      icon: <img src="/bitcoin.svg" alt="Create Event" className="w-12 h-12" />
+      icon: <img src="/bitcoin.svg" alt="Create Event" className="w-12 h-12" />,
     },
-    { 
-      id: 'politics', 
-      label: 'Politics', 
+    {
+      id: 'politics',
+      label: 'Politics',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-light-bg',
-      icon: <img src="/politics.png" alt="Create Event" className="w-9 h-10" />
-    }
+      icon: <img src="/politics.png" alt="Create Event" className="w-9 h-10" />,
+    },
   ];
 
-  const filteredEvents = events.filter(event => 
+  const filteredEvents = events.filter(event =>
     selectedCategory === 'all' ? true : event.category.toLowerCase() === selectedCategory
   );
 
   return (
     <div className="min-h-screen bg-light-bg dark:bg-[#1a1b2e]">
       <Header title="Events" icon={<Gamepad2 className="w-6 h-6" />} showSearch />
-      
+
       {/* Category Bar */}
       <div className="sticky top-16 bg-light-bg z-40 py-2.5">
         <div className="container mx-auto px-4">
@@ -131,19 +131,21 @@ const Events = () => {
                 >
                   <div className="relative">
                     {/* Gradient outline container */}
-                    <div className={`w-16 h-16 rounded-full relative
-                      ${selectedCategory === category.id ? 'opacity-100' : 'opacity-100'}
-                      transition-all duration-300`}
+                    <div
+                      className={`w-16 h-16 rounded-full relative
+                        ${selectedCategory === category.id ? 'opacity-100' : 'opacity-100'}
+                        transition-all duration-300`}
                     >
                       {/* Gradient border */}
                       <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${category.gradient}`} />
-                      
+
                       {/* Inner circle with icon */}
-                      <div className={`absolute inset-[2px] rounded-full 
-                        flex items-center justify-center
-                        bg-light-bg
-                        ${selectedCategory === category.id ? 'scale-105' : 'scale-100'}
-                        transition-all duration-300`}
+                      <div
+                        className={`absolute inset-[2px] rounded-full
+                          flex items-center justify-center
+                          bg-light-bg
+                          ${selectedCategory === category.id ? 'scale-105' : 'scale-100'}
+                          transition-all duration-300`}
                       >
                         <span className="text-2xl">{category.icon}</span>
                       </div>
@@ -151,10 +153,11 @@ const Events = () => {
 
                     {/* Category Label Badge */}
                     <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 z-10">
-                      <div className={`px-2 py-0.5 rounded-full text-[8px] font-sans font-medium whitespace-nowrap
-                        bg-white
-                        ${selectedCategory === category.id ? 'text-black' : 'text-black/60'}
-                        transition-all duration-300`}
+                      <div
+                        className={`px-2 py-0.5 rounded-full text-[8px] font-sans font-medium whitespace-nowrap
+                          bg-white
+                          ${selectedCategory === category.id ? 'text-black' : 'text-black/60'}
+                          transition-all duration-300`}
                       >
                         {category.label}
                       </div>
@@ -175,6 +178,7 @@ const Events = () => {
               key={event.id}
               event={event}
               onChatClick={handleChatClick}
+              joinButtonClassName="bg-[#ccff00] text-black"
             />
           ))}
         </div>
