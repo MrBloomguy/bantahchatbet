@@ -129,8 +129,8 @@ const Profile: React.FC = () => {
             )}
             {/* Followers Row - compact, icon + count only */}
             <div className="flex items-center gap-1 mb-2">
-              <Users className="w-5 h-5 text-[#CCFF00]" />
-              <span className="text-[#CCFF00] text-base font-semibold">{currentUser?.followers_count || 0}</span>
+              <Users className="w-5 h-5 text-[#7440ff]" />
+              <span className="text-[#7440ff] text-base font-semibold">{currentUser?.followers_count || 0}</span>
             </div>
           </div>
 

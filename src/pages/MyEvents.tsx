@@ -71,7 +71,7 @@ const MyEvents = () => {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <h3 
-                  className="text-base font-semibold text-white truncate cursor-pointer hover:text-[#CCFF00]"
+                  className="text-base font-semibold text-white truncate cursor-pointer hover:text-[#7440ff]"
                   onClick={() => navigate(`/chat/${event.id}`)}
                 >
                   {event.title}
@@ -79,7 +79,7 @@ const MyEvents = () => {
                 <span className={`px-2 py-0.5 rounded-full text-xs ${
                   event.status === 'completed' 
                     ? 'bg-green-500 text-white' 
-                    : 'bg-[#CCFF00] text-black'
+                    : 'bg-[#7440ff] text-black'
                 }`}>
                   {event.status}
                 </span>
@@ -88,7 +88,7 @@ const MyEvents = () => {
               <div className="grid grid-cols-2 gap-x-3 text-xs text-gray-400 mb-2">
                 {activeTab !== 'created' && event.creator && (
                   <div 
-                    className="flex items-center gap-1 cursor-pointer hover:text-[#CCFF00]"
+                    className="flex items-center gap-1 cursor-pointer hover:text-[#7440ff]"
                     onClick={() => navigate(`/chat/${event.id}`)}
                   >
                     <Users className="w-3 h-3" />
@@ -107,11 +107,11 @@ const MyEvents = () => {
 
               <div className="flex items-center gap-3 text-xs">
                 <div className="bg-black/30 px-2 py-1 rounded">
-                  <span className="text-[#CCFF00]">₦ {Number(event.pool?.total_amount || 0).toLocaleString()}</span> Pool
+                  <span className="text-[#7440ff]">₦ {Number(event.pool?.total_amount || 0).toLocaleString()}</span> Pool
                 </div>
                 {event.status === 'completed' && (
                   <div className="bg-black/30 px-2 py-1 rounded">
-                    <span className="text-[#CCFF00]">
+                    <span className="text-[#7440ff]">
                       ₦ {Number(event.user_earnings || 0).toLocaleString()}
                     </span>
                     {' '}
@@ -124,7 +124,7 @@ const MyEvents = () => {
             <div className="flex flex-col gap-1">
               <button
                 onClick={() => navigate(`/chat/${event.id}`)}
-                className="px-2 py-1 bg-[#CCFF00] text-black rounded text-xs font-medium whitespace-nowrap"
+                className="px-2 py-1 bg-[#7440ff] text-black rounded text-xs font-medium whitespace-nowrap"
               >
                 Chat
               </button>
@@ -134,7 +134,7 @@ const MyEvents = () => {
                     setSelectedEvent(event);
                     setIsEditModalOpen(true);
                   }}
-                  className="px-2 py-1 border border-[#CCFF00] text-white rounded text-xs font-medium whitespace-nowrap"
+                  className="px-2 py-1 border border-[#7440ff] text-white rounded text-xs font-medium whitespace-nowrap"
                 >
                   Edit
                 </button>
@@ -159,7 +159,7 @@ const MyEvents = () => {
                 onClick={() => setActiveTab(tab.id)}
                 className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-[#CCFF00] text-black shadow'
+                    ? 'bg-[#7440ff] text-white shadow'
                     : 'bg-transparent text-gray-700 hover:bg-gray-100'
                 }`}
                 style={{ minWidth: 0 }}
@@ -188,7 +188,7 @@ const MyEvents = () => {
                 </div>
               ) : (
                 getFilteredEvents().map(event => (
-                  <div key={event.id} className="flex items-center bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 relative group">
+                  <div key={event.id} className="flex items-center bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#7440ff]/40 relative group">
                     {/* Banner */}
                     {event.banner_url && (
                       <div className="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden mr-4 bg-[#F6F7FB] flex items-center justify-center">
@@ -203,7 +203,7 @@ const MyEvents = () => {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
                         <h3 
-                          className="text-base font-semibold text-gray-900 truncate cursor-pointer hover:text-[#CCFF00]"
+                          className="text-base font-semibold text-gray-900 truncate cursor-pointer hover:text-[#7440ff]"
                           onClick={() => navigate(`/chat/${event.id}`)}
                         >
                           {event.title}
@@ -211,7 +211,7 @@ const MyEvents = () => {
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
                           event.status === 'completed' 
                             ? 'bg-green-500 text-white' 
-                            : 'bg-[#CCFF00] text-black'
+                            : 'bg-[#7440ff] text-white'
                         }`}>
                           {event.status}
                         </span>
@@ -219,7 +219,7 @@ const MyEvents = () => {
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-2">
                         {activeTab !== 'created' && event.creator && (
                           <div 
-                            className="flex items-center gap-1 cursor-pointer hover:text-[#CCFF00]"
+                            className="flex items-center gap-1 cursor-pointer hover:text-[#7440ff]"
                             onClick={() => navigate(`/chat/${event.id}`)}
                           >
                             <Users className="w-3 h-3" />
@@ -237,11 +237,11 @@ const MyEvents = () => {
                       </div>
                       <div className="flex items-center gap-3 text-xs">
                         <div className="bg-gray-100 px-2 py-1 rounded">
-                          <span className="text-[#CCFF00] font-semibold">₦ {Number(event.pool?.total_amount || 0).toLocaleString()}</span> Pool
+                          <span className="text-[#000000] font-semibold">₦ {Number(event.pool?.total_amount || 0).toLocaleString()}</span> Pool
                         </div>
                         {event.status === 'completed' && (
                           <div className="bg-gray-100 px-2 py-1 rounded">
-                            <span className="text-[#CCFF00] font-semibold">
+                            <span className="text-[#000000] font-semibold">
                               ₦ {Number(event.user_earnings || 0).toLocaleString()}
                             </span>
                             {' '}
@@ -254,7 +254,7 @@ const MyEvents = () => {
                     <div className="flex flex-col gap-1 ml-4">
                       <button
                         onClick={() => navigate(`/chat/${event.id}`)}
-                        className="px-3 py-1 bg-[#CCFF00] text-black rounded-full text-xs font-medium whitespace-nowrap shadow hover:bg-[#b3ff00] transition"
+                        className="px-3 py-1 bg-[#7440ff] text-white rounded-full text-xs font-medium whitespace-nowrap shadow hover:bg-[#7440ff] transition"
                       >
                         Chat
                       </button>
@@ -264,7 +264,7 @@ const MyEvents = () => {
                             setSelectedEvent(event);
                             setIsEditModalOpen(true);
                           }}
-                          className="px-3 py-1 border border-[#CCFF00] text-gray-900 rounded-full text-xs font-medium whitespace-nowrap shadow hover:bg-[#f7ffe0] transition"
+                          className="px-3 py-1 border border-[#7440ff] text-gray-900 rounded-full text-xs font-medium whitespace-nowrap shadow hover:bg-[#f7ffe0] transition"
                         >
                           Edit
                         </button>

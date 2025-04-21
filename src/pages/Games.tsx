@@ -300,7 +300,7 @@ const Games: React.FC = () => {
                 />
                 <div
                   className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#242538]
-                    ${user.status === 'online' ? 'bg-[#CCFF00]' : 'bg-gray-400'}`}
+                    ${user.status === 'online' ? 'bg-[#7440ff]' : 'bg-gray-400'}`}
                 />
               </div>
 
@@ -311,7 +311,7 @@ const Games: React.FC = () => {
                 </div>
                 <div className="flex items-center gap-3 text-sm">
                   <span className="flex items-center gap-1 text-white/60">
-                    <Trophy className="w-3.5 h-3.5 text-[#CCFF00]" />
+                    <Trophy className="w-3.5 h-3.5 text-[#7440ff]" />
                     {user.stats.challenges_won}
                   </span>
                   <span className="flex items-center gap-1 text-white/60">
@@ -372,7 +372,7 @@ const Games: React.FC = () => {
             {/* Title and Amount */}
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-white font-medium">{challenge.title || 'Untitled Challenge'}</h3>
-              <span className="text-[#CCFF00] font-medium">
+              <span className="text-[#000000] font-medium">
                 ₦{challenge.amount.toLocaleString()}
               </span>
             </div>
@@ -477,7 +477,7 @@ const Games: React.FC = () => {
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
                   activeTab === tab.id
-                    ? 'bg-[#CCFF00] text-black shadow'
+                    ? 'bg-[#7440ff] text-white shadow'
                     : 'bg-transparent text-gray-700 hover:bg-gray-100'
                 }`}
                 style={{ minWidth: 0 }}
@@ -513,22 +513,22 @@ const Games: React.FC = () => {
                           </div>
                           <div className="flex items-center gap-3 text-xs mt-1">
                             <span className="flex items-center gap-1 text-gray-500">
-                              <Trophy className="w-3.5 h-3.5 text-[#CCFF00]" />
+                              <Trophy className="w-3.5 h-3.5 text-[#7440ff]" />
                               {user.stats.challenges_won}
                             </span>
                             <span className="flex items-center gap-1 text-gray-500">
-                              <Zap className="w-3.5 h-3.5 text-[#CCFF00]" />
+                              <Zap className="w-3.5 h-3.5 text-[#7440ff]" />
                               {user.stats.challenges_created}
                             </span>
                             <span className="flex items-center gap-1 text-gray-500">
-                              <DollarSign className="w-3.5 h-3.5 text-[#CCFF00]" />
+                              <DollarSign className="w-3.5 h-3.5 text-[#7440ff]" />
                               ₦{user.stats.total_earnings.toLocaleString()}
                             </span>
                           </div>
                         </div>
                         <button
                           onClick={() => handleChallenge(user)}
-                          className="flex-shrink-0 bg-[#CCFF00] text-black px-4 py-1.5 rounded-full text-sm font-medium hover:bg-opacity-90 transition-colors ml-4"
+                          className="flex-shrink-0 bg-[#7440ff] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-opacity-90 transition-colors ml-4"
                         >
                           Challenge
                         </button>
@@ -549,7 +549,7 @@ const Games: React.FC = () => {
                       <div key={challenge.id} onClick={() => navigate(`/messages?tab=challenges&chatId=${challenge.id}`)} className="bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 cursor-pointer group flex flex-col gap-2">
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="text-gray-900 font-semibold truncate">{challenge.title || 'Untitled Challenge'}</h3>
-                          <span className="text-[#CCFF00] font-semibold">₦{challenge.amount.toLocaleString()}</span>
+                          <span className="text-[#7440ff] font-semibold">₦{challenge.amount.toLocaleString()}</span>
                         </div>
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
