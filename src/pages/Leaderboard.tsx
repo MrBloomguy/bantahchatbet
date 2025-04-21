@@ -35,11 +35,11 @@ const Leaderboard: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#F6F7FB] flex flex-col pb-[72px]">
       <PageHeader title="Leaderboard" />
+
       
-      <div className="flex-1 flex flex-col items-center w-full">
-        <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 py-4">
+        <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 py-4"><div className="flex-1 flex flex-col items-center w-full">
           {/* Time Filter Tabs */}
-          <div className="flex gap-1 mb-6 bg-white rounded-xl shadow-sm p-1 overflow-x-auto">
+          <div className="flex justify-center gap-1 mb-6 bg-white rounded-xl shadow-sm p-1 overflow-x-auto">
             {['all', 'weekly', 'monthly'].map((filter) => (
               <button
                 key={filter}

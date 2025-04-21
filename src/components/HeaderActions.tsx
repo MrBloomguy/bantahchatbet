@@ -35,7 +35,7 @@ const HeaderActions = () => {
           onClick={() => navigate('/messages')}
           className="p-2 rounded-full hover:bg-gray-100 transition-colors"
         >
-          <img src="/messages-brutal.svg" alt="Messages" className="w-6 h-6" />
+          <img src="/mes.svg" alt="Messages" className="w-6 h-6" />
         </button>
 
         <button
