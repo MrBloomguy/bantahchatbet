@@ -34,7 +34,7 @@ const Referral: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-pink-50 flex flex-col">
+    <div className="min-h-screen bg-[#F6F7FB] flex flex-col">
       <PageHeader title="Referrals" />
 
       <div className="max-w-md mx-auto py-6 px-4 sm:px-6 lg:px-8 space-y-4">

@@ -57,7 +57,7 @@ const Profile: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#F6F7FB] to-[#e9eafc] flex flex-col pb-[72px]">
+    <div className="min-h-screen bg-[#F6F7FB] flex flex-col pb-[70px]">
       <PageHeader title="Profile" />
       <div className="flex-1 flex flex-col items-center w-full">
         <div className="w-full max-w-xl mx-auto px-2 sm:px-4 py-4">

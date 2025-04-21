@@ -7,6 +7,7 @@ import { privyDIDtoUUID } from '../utils/auth';
 import LoadingSpinner from '../components/LoadingSpinner';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { toast } from 'react-toastify';
+import PageHeader from '../components/PageHeader';
 
 const ProfileSettings: React.FC = () => {
   const navigate = useNavigate();
@@ -109,22 +110,10 @@ const ProfileSettings: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#1a1b2e]">
+    <div className="min-h-screen bg-[#F6F7FB]">
       {loading && <LoadingOverlay message="Saving changes..." />}
 
-      {/* Header */}
-      <header className="bg-[#7C3AED] text-white p-4 sticky top-0 z-10 safe-top">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate(-1)} 
-            className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-            disabled={loading}
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-xl font-bold">Edit Profile</h1>
-        </div>
-      </header>
+      <PageHeader title="Edit" />
 
       <form onSubmit={handleSubmit} className="p-4 space-y-6 max-w-2xl mx-auto">
         {/* Avatar */}
@@ -227,7 +216,7 @@ const ProfileSettings: React.FC = () => {
         <button
           type="button"
           disabled={loading}
-          className="flex items-center gap-2 text-[#CCFF00] hover:underline disabled:opacity-50"
+          className="flex items-center gap-2 text-[#7440ff] hover:underline disabled:opacity-50"
         >
           <Lock className="w-5 h-5" />
           <span>Change Password</span>
@@ -237,7 +226,7 @@ const ProfileSettings: React.FC = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-[#CCFF00] text-black rounded-xl font-medium hover:bg-[#b3ff00] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full py-3 bg-[#7440ff] text-white rounded-xl font-medium hover:bg-[#7440ff] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? (
             <>

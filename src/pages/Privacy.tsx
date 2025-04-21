@@ -2,6 +2,7 @@ import React from 'react';
 import { ArrowLeft, Shield, Lock, Eye, UserCheck } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import MobileFooterNav from '../components/MobileFooterNav';
+import PageHeader from '../components/PageHeader';
 
 const Privacy: React.FC = () => {
   const navigate = useNavigate();
@@ -30,19 +31,8 @@ const Privacy: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#1a1b2e] pb-[72px]">
-      {/* Header */}
-      <header className="bg-[#7C3AED] text-white p-4 sticky top-0 z-10 safe-top">
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => navigate(-1)}
-            className="p-1 hover:bg-white/10 rounded-lg transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6" />
-          </button>
-          <h1 className="text-xl font-bold">Privacy & Security</h1>
-        </div>
-      </header>
+    <div className="min-h-screen bg-[#F6F7FB] pb-[72px]">
+       <PageHeader title="Privacy" />
 
       <div className="p-4 max-w-2xl mx-auto space-y-6">
         {sections.map((section, index) => (
@@ -68,7 +58,7 @@ const Privacy: React.FC = () => {
               We use advanced encryption technologies and follow industry best practices to safeguard your data. Our privacy policy is regularly updated to reflect the latest security measures and regulations.
             </p>
             <p>
-              If you have any questions or concerns about your privacy, please don't hesitate to contact our support team.
+              If you have any questions or concerns about your privacy, please don't hesitate to contact the Bantah support team.
             </p>
           </div>
         </div>
