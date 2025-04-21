@@ -1,0 +1,6 @@
+/* Create.css */
+@media (max-width: 767px) { /* Adjust the breakpoint as needed */
+    .create-page > div:last-child { /* Select the last div which is MobileFooterNav */
+      display: none;
+    }
+  }
