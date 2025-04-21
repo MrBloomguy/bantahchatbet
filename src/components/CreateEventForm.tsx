@@ -414,7 +414,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
       </div>
 
       {/* Terms & Action Buttons - Fixed at bottom on mobile */}
-      <div className="space-y-4 sticky bottom-[80px] bg-white p-4 rounded-t-xl shadow-lg md:relative md:bottom-0 md:shadow-none">
+      <div className="space-y-4 sticky bottom-[0px] bg-white p-4 rounded-t-xl shadow-lg md:relative md:bottom-0 md:shadow-none">
         <label className="flex items-center gap-2 cursor-pointer">
           <input
             type="checkbox"
