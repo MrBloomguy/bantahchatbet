@@ -1,7 +1,7 @@
-import { Star, Trophy, Crown, Medal, ShieldCheck, Award } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import PageHeader from '../components/PageHeader';
 import MobileFooterNav from '../components/MobileFooterNav';
+import { ShieldCheck, Star } from 'lucide-react';
 
 interface User {
   points?: number;
@@ -10,9 +10,9 @@ interface User {
 const levels = [
   {
     name: 'Beginner',
-    icon: <Star className="w-full h-full transform -rotate-12" />,
+    iconPath: '/star.svg',
     requiredPoints: 0,
-    color: 'from-slate-400 to-slate-500',
+    color: '#000000',
     benefits: [
       'Access to basic events and challenges',
       'Join public betting groups',
@@ -24,9 +24,9 @@ const levels = [
   },
   {
     name: 'Intermediate',
-    icon: <Medal className="w-full h-full transform rotate-12" />,
+    iconPath: '/star.svg',
     requiredPoints: 500,
-    color: 'from-emerald-400 to-teal-500',
+    color: '#000000',
     benefits: [
       '5% bonus on all winnings',
       'Create and host public events',
@@ -38,9 +38,9 @@ const levels = [
   },
   {
     name: 'Advanced',
-    icon: <Award className="w-full h-full transform -rotate-6" />,
+    iconPath: '/star.svg',
     requiredPoints: 2000,
-    color: 'from-blue-400 to-indigo-500',
+    color: '#000000',
     benefits: [
       '10% bonus on all winnings',
       'Create private and exclusive events',
@@ -53,9 +53,9 @@ const levels = [
   },
   {
     name: 'Expert',
-    icon: <Trophy className="w-full h-full transform rotate-6" />,
+    iconPath: '/star.svg',
     requiredPoints: 5000,
-    color: 'from-violet-400 to-purple-500',
+    color: '#000000',
     benefits: [
       '15% bonus on all winnings',
       'VIP customer support 24/7',
@@ -69,9 +69,9 @@ const levels = [
   },
   {
     name: 'Master',
-    icon: <Crown className="w-full h-full transform -rotate-12" />,
+    iconPath: '/star.svg',
     requiredPoints: 10000,
-    color: 'from-amber-400 to-yellow-500',
+    color: '#000000',
     benefits: [
       '20% bonus on all winnings',
       'Unlimited access to all platform features',
@@ -112,15 +112,17 @@ const Levels = () => {
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-gray-50">
       <PageHeader title="Levels" />
-      
+
       <div className="max-w-xl mx-auto px-4 py-6 space-y-6">
         {/* Current Status Card */}
         <div className="bg-white rounded-xl p-4 shadow-lg border border-gray-100">
           {/* Level Header */}
           <div className="flex items-start gap-3">
-            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${currentLevel.color} 
-              flex items-center justify-center p-2 shadow-lg ${currentLevel.shadowColor}`}>
-              {currentLevel.icon}
+            <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${currentLevel.color}
+                  flex items-center justify-center p-2 shadow-lg ${currentLevel.shadowColor}`}>
+              {currentLevel.iconPath && (
+                <img src={currentLevel.iconPath} alt={`${currentLevel.name} Icon`} className="w-full h-full transform -rotate-12" />
+              )}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between">
@@ -129,15 +131,15 @@ const Levels = () => {
                   <p className="text-sm text-gray-500 line-clamp-1">{currentLevel.description}</p>
                 </div>
                 <div className="flex items-center gap-1 bg-[#f8f8f8] px-2 py-1 rounded-lg border border-gray-100">
-                  <Star className="w-4 h-4 text-[#CCFF00]" />
+                  <Star className="w-4 h-4 text-[#7440ff]" />
                   <span className="text-sm font-bold text-gray-900">{currentPoints}</span>
                 </div>
               </div>
-              
+
               {/* Progress Bar */}
               <div className="mt-3 space-y-1">
                 <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                  <div 
+                  <div
                     className="h-full bg-gradient-to-r from-[#CCFF00] to-[#7C3AED] transition-all duration-500"
                     style={{ width: `${progressToNext}%` }}
                   />
@@ -168,9 +170,9 @@ const Levels = () => {
           {levels.map(level => {
             const isUnlocked = currentPoints >= level.requiredPoints;
             const progress = Math.min(100, (currentPoints / level.requiredPoints) * 100);
-            
+
             return (
-              <div 
+              <div
                 key={level.name}
                 className={`bg-white rounded-xl overflow-hidden transition-all duration-300 shadow-lg border ${
                   isUnlocked ? 'border-[#CCFF00]' : 'border-gray-100'
@@ -178,17 +180,19 @@ const Levels = () => {
               >
                 <div className="p-4">
                   <div className="flex items-center gap-4">
-                    <div 
-                      className={`w-14 h-14 rounded-xl bg-gradient-to-br ${level.color} 
-                        flex items-center justify-center p-2.5 transform hover:scale-110 
+                    <div
+                      className={`w-14 h-14 rounded-xl bg-gradient-to-br ${level.color}
+                        flex items-center justify-center p-2.5 transform hover:scale-110
                         transition-all duration-300 shadow-lg ${level.shadowColor} ${
-                        isUnlocked ? 'opacity-100' : 'opacity-40'
-                      }`}
+                          isUnlocked ? 'opacity-100' : 'opacity-40'
+                        }`}
                       style={{
                         transform: 'perspective(1000px) rotateX(10deg) rotateY(-10deg)',
                       }}
                     >
-                      {level.icon}
+                      {level.iconPath && (
+                        <img src={level.iconPath} alt={`${level.name} Icon`} className="w-full h-full" />
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-2">
@@ -197,7 +201,7 @@ const Levels = () => {
                         </h3>
                         <span className="text-sm text-gray-500">{level.requiredPoints} points</span>
                       </div>
-                      
+
                       {/* Level Meter */}
                       <div className="space-y-1">
                         <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -227,7 +231,7 @@ const Levels = () => {
           })}
         </div>
       </div>
-      
+
       <MobileFooterNav />
     </div>
   );

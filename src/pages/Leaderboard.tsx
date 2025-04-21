@@ -46,7 +46,7 @@ const Leaderboard: React.FC = () => {
                 onClick={() => setTimeFilter(filter as any)}
                 className={`px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
                   timeFilter === filter
-                    ? 'bg-[#CCFF00] text-black shadow'
+                    ? 'bg-[#7440ff] text-white shadow'
                     : 'bg-transparent text-gray-700 hover:bg-gray-100'}`}
                 style={{ minWidth: 0 }}
               >
