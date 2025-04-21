@@ -9,9 +9,9 @@ import './Create.css'; // Import the CSS file
 type EventType = 'public' | 'private' | 'challenge';
 
 // Replace these with the actual URLs of your SVG icons
-const globeIconUrl = 'public/gameboy.svg';
+const globeIconUrl = 'public/publievents.svg';
 const lockIconUrl = 'public/lockIcon.svg';
-const gamepadIconUrl = '/public/gameboy.svg';
+const gamepadIconUrl = '/public/versus.svg';
 
 const Create: React.FC = () => {
   const navigate = useNavigate();
