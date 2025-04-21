@@ -10,7 +10,7 @@ interface User {
 const levels = [
   {
     name: 'Beginner',
-    iconPath: '/star.svg',
+    iconPath: '/Beginner.svg',
     requiredPoints: 0,
     color: '#000000',
     benefits: [
@@ -23,8 +23,8 @@ const levels = [
     shadowColor: 'shadow-slate-200'
   },
   {
-    name: 'Intermediate',
-    iconPath: '/star.svg',
+    name: 'Amateur',
+    iconPath: '/amateur.svg',
     requiredPoints: 500,
     color: '#000000',
     benefits: [
@@ -38,7 +38,7 @@ const levels = [
   },
   {
     name: 'Advanced',
-    iconPath: '/star.svg',
+    iconPath: '/advanced.svg',
     requiredPoints: 2000,
     color: '#000000',
     benefits: [
@@ -53,7 +53,7 @@ const levels = [
   },
   {
     name: 'Expert',
-    iconPath: '/star.svg',
+    iconPath: '/expert.svg',
     requiredPoints: 5000,
     color: '#000000',
     benefits: [
@@ -69,7 +69,7 @@ const levels = [
   },
   {
     name: 'Master',
-    iconPath: '/star.svg',
+    iconPath: '/master.svg',
     requiredPoints: 10000,
     color: '#000000',
     benefits: [
@@ -157,7 +157,7 @@ const Levels = () => {
             <div className="grid grid-cols-2 gap-2">
               {currentLevel.benefits.slice(0, 4).map((benefit, index) => (
                 <div key={index} className="flex items-center gap-1.5 text-xs">
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#CCFF00] flex-shrink-0" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#7440ff] flex-shrink-0" />
                   <span className="text-gray-600 line-clamp-1">{benefit}</span>
                 </div>
               ))}
