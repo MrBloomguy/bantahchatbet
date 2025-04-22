@@ -1,7 +1,8 @@
 import React, { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Trophy, Clock, Star, Award, Users, ArrowLeft } from 'lucide-react';
+import { Trophy, Clock, Star, Award, Users, ArrowLeft, MessageCircle } from 'lucide-react';
 import { useEventHistory } from '../hooks/useEventHistory';
+import { useChatEngagement } from '../hooks/useChatEngagement';
 import { useAuth } from '../contexts/AuthContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import EditEventModal from '../components/modals/EditEventModal';
@@ -13,6 +14,7 @@ import PageHeader from '../components/PageHeader';
 const tabs = [
   { id: 'created', label: 'Created Events', icon: Star },
   { id: 'joined', label: 'Participated', icon: Clock },
+  { id: 'engaged', label: 'Engaged', icon: MessageCircle },
   { id: 'won', label: 'Won', icon: Trophy },
   { id: 'lost', label: 'Lost', icon: Award },
 ];
@@ -22,7 +24,9 @@ const MyEvents = () => {
   const [activeTab, setActiveTab] = useState('created');
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const { createdEvents, history: joinedEvents, loading } = useEventHistory();
+  const { createdEvents, history: joinedEvents, loading: eventsLoading, refetchEvents } = useEventHistory();
+  const { engagedEvents, loading: engagedLoading, refetchEngagedEvents } = useChatEngagement();
+  const loading = eventsLoading || engagedLoading;
   const { currentUser } = useAuth();
 
   const getFilteredEvents = () => {
@@ -31,19 +35,17 @@ const MyEvents = () => {
         return createdEvents;
       case 'joined':
         return joinedEvents;
+      case 'engaged':
+        return engagedEvents;
       case 'won':
-        return joinedEvents.filter(event => 
-          event.status === 'completed' && 
-          event.participants?.some(p => 
-            p.user_id === currentUser?.id && p.prediction === true
-          )
+        return joinedEvents.filter(event =>
+          event.status === 'completed' &&
+          event.user_prediction === true
         );
       case 'lost':
-        return joinedEvents.filter(event => 
-          event.status === 'completed' && 
-          event.participants?.some(p => 
-            p.user_id === currentUser?.id && p.prediction === false
-          )
+        return joinedEvents.filter(event =>
+          event.status === 'completed' &&
+          event.user_prediction === false
         );
       default:
         return [];
@@ -54,40 +56,40 @@ const MyEvents = () => {
     <div key={event.id} className="bg-[#242538] rounded-lg overflow-hidden">
       <div className="flex">
         {event.banner_url && (
-          <div 
+          <div
             className="relative w-32 h-24 cursor-pointer"
             onClick={() => navigate(`/chat/${event.id}`)}
           >
-            <img 
-              src={event.banner_url} 
+            <img
+              src={event.banner_url}
               alt={event.title}
               className="w-full h-full object-cover"
             />
           </div>
         )}
-        
+
         <div className="flex-1 p-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <h3 
+                <h3
                   className="text-base font-semibold text-white truncate cursor-pointer hover:text-[#7440ff]"
                   onClick={() => navigate(`/chat/${event.id}`)}
                 >
                   {event.title}
                 </h3>
                 <span className={`px-2 py-0.5 rounded-full text-xs ${
-                  event.status === 'completed' 
-                    ? 'bg-green-500 text-white' 
+                  event.status === 'completed'
+                    ? 'bg-green-500 text-white'
                     : 'bg-[#7440ff] text-black'
                 }`}>
                   {event.status}
                 </span>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-x-3 text-xs text-gray-400 mb-2">
                 {activeTab !== 'created' && event.creator && (
-                  <div 
+                  <div
                     className="flex items-center gap-1 cursor-pointer hover:text-[#7440ff]"
                     onClick={() => navigate(`/chat/${event.id}`)}
                   >
@@ -101,13 +103,13 @@ const MyEvents = () => {
                 </div>
                 <div className="flex items-center gap-1">
                   <Users className="w-3 h-3" />
-                  <span>{event.participant_count?.count || 0}</span>
+                  <span>{typeof event.participant_count === 'number' ? event.participant_count : (event.participant_count?.count || 0)}</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-3 text-xs">
                 <div className="bg-black/30 px-2 py-1 rounded">
-                  <span className="text-[#7440ff]">₦ {Number(event.pool?.total_amount || 0).toLocaleString()}</span> Pool
+                  <span className="text-[#7440ff]">₦ {Number(event.pool_amount || event.pool?.total_amount || 0).toLocaleString()}</span> Pool
                 </div>
                 {event.status === 'completed' && (
                   <div className="bg-black/30 px-2 py-1 rounded">
@@ -181,8 +183,10 @@ const MyEvents = () => {
                   <img src="/noti-lonely.svg" alt="No events" className="w-32 h-32 mb-4 opacity-80" />
                   <p className="text-lg font-semibold text-gray-700 mb-1">No events found</p>
                   <p className="text-sm text-gray-400">
-                    {activeTab === 'created' 
-                      ? "You haven't created any events yet" 
+                    {activeTab === 'created'
+                      ? "You haven't created any events yet"
+                      : activeTab === 'engaged'
+                      ? "You haven't chatted in any events yet"
                       : `No ${activeTab} events found`}
                   </p>
                 </div>
@@ -192,8 +196,8 @@ const MyEvents = () => {
                     {/* Banner */}
                     {event.banner_url && (
                       <div className="flex-shrink-0 w-16 h-16 rounded-xl overflow-hidden mr-4 bg-[#F6F7FB] flex items-center justify-center">
-                        <img 
-                          src={event.banner_url} 
+                        <img
+                          src={event.banner_url}
                           alt={event.title}
                           className="w-full h-full object-cover"
                         />
@@ -202,15 +206,15 @@ const MyEvents = () => {
                     {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 mb-1">
-                        <h3 
+                        <h3
                           className="text-base font-semibold text-gray-900 truncate cursor-pointer hover:text-[#7440ff]"
                           onClick={() => navigate(`/chat/${event.id}`)}
                         >
                           {event.title}
                         </h3>
                         <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${
-                          event.status === 'completed' 
-                            ? 'bg-green-500 text-white' 
+                          event.status === 'completed'
+                            ? 'bg-green-500 text-white'
                             : 'bg-[#7440ff] text-white'
                         }`}>
                           {event.status}
@@ -218,7 +222,7 @@ const MyEvents = () => {
                       </div>
                       <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-2">
                         {activeTab !== 'created' && event.creator && (
-                          <div 
+                          <div
                             className="flex items-center gap-1 cursor-pointer hover:text-[#7440ff]"
                             onClick={() => navigate(`/chat/${event.id}`)}
                           >
@@ -232,12 +236,12 @@ const MyEvents = () => {
                         </div>
                         <div className="flex items-center gap-1">
                           <Users className="w-3 h-3" />
-                          <span>{event.participant_count?.count || 0}</span>
+                          <span>{typeof event.participant_count === 'number' ? event.participant_count : (event.participant_count?.count || 0)}</span>
                         </div>
                       </div>
                       <div className="flex items-center gap-3 text-xs">
                         <div className="bg-gray-100 px-2 py-1 rounded">
-                          <span className="text-[#000000] font-semibold">₦ {Number(event.pool?.total_amount || 0).toLocaleString()}</span> Pool
+                          <span className="text-[#000000] font-semibold">₦ {Number(event.pool_amount || event.pool?.total_amount || 0).toLocaleString()}</span> Pool
                         </div>
                         {event.status === 'completed' && (
                           <div className="bg-gray-100 px-2 py-1 rounded">
@@ -286,7 +290,9 @@ const MyEvents = () => {
               onSuccess={() => {
                 setIsEditModalOpen(false);
                 setSelectedEvent(null);
-                fetchEvents();
+                // Refresh both event lists
+                refetchEvents();
+                refetchEngagedEvents();
               }}
             />
           )}

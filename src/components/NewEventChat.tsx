@@ -133,16 +133,19 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
 
     setIsProcessing(true);
     try {
+      // Get entry amount from pool safely
+      const entryAmount = event.pool && event.pool[0] ? event.pool[0].entry_amount : 0;
+
       const { success } = await joinEvent({
         eventId,
         userId: currentUser.id,
         prediction: selectedPrediction,
-        wagerAmount: event.pool?.[0]?.entry_amount || 0
+        wagerAmount: entryAmount
       });
 
       if (success) {
         setPrediction(selectedPrediction);
-        await updatePoolAmount(eventId, event.pool?.[0]?.entry_amount || 0, selectedPrediction);
+        await updatePoolAmount(eventId, entryAmount, selectedPrediction);
         const counts = await getPredictionCounts(eventId);
         if (counts) setPredictionCounts(counts);
         toast.showSuccess('Prediction placed successfully!');
@@ -172,7 +175,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
               yes_pool,
               no_pool
             ),
-            participants:event_participants!inner (
+            participants:event_participants(
               user_id
             ),
             banner_url,
@@ -185,8 +188,8 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
 
         if (data) {
           // Add participant count and pool total amount to the event object
-          data.participant_count = data.participants?.length || 0;
-          data.pool_total_amount = data.pool?.total_amount || 0;
+          data.participant_count = data.participants ? data.participants.length : 0;
+          data.pool_total_amount = data.pool && data.pool[0] ? data.pool[0].total_amount : 0;
           setEvent(data);
         }
       } catch (error) {
@@ -241,13 +244,13 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   useEffect(() => {
     const loadPredictionData = async () => {
       if (!currentUser?.id || !eventId) return;
-      
+
       try {
         const [userPred, counts] = await Promise.all([
           getUserPrediction(eventId, currentUser.id),
           getPredictionCounts(eventId)
         ]);
-        
+
         if (userPred !== null) setPrediction(userPred);
         if (counts) setPredictionCounts(counts);
       } catch (error) {
@@ -346,7 +349,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
               </span>
             </div>
             <div className="relative flex items-center gap-2 z-10">
-              <button 
+              <button
                 onClick={() => handlePrediction(true)}
                 disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
                 className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${

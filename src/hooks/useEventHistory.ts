@@ -38,9 +38,13 @@ export function useEventHistory() {
       setLoading(true);
 
       // Fetch events where user is a participant with predictions
+      // Use a left join to include events that might have been deleted
       const { data: participatedEvents, error: participatedError } = await supabase
         .from('event_participants')
         .select(`
+          id,
+          event_id,
+          prediction,
           event:events (
             id,
             title,
@@ -60,8 +64,7 @@ export function useEventHistory() {
               avatar_url
             ),
             participant_count:event_participants(count)
-          ),
-          prediction
+          )
         `)
         .eq('user_id', currentUser.id);
 
@@ -102,16 +105,23 @@ export function useEventHistory() {
       }));
 
       const processedParticipatedEvents = (participatedEvents || [])
-        .map(({ event, prediction }) => ({
-          ...event,
-          is_editable: false,
-          pool_amount: event.pool?.total_amount || 0,
-          participant_count: event.participant_count || 0,
-          user_prediction: prediction,
-          // Calculate earnings based on prediction and pool amount if needed
-          user_earnings: 0 // You can implement earnings calculation logic here
-        }))
-        .filter(Boolean);
+        .map(({ event, prediction }) => {
+          // Skip if event is null (might have been deleted)
+          if (!event) {
+            return null;
+          }
+
+          return {
+            ...event,
+            is_editable: false,
+            pool_amount: event.pool?.total_amount || 0,
+            participant_count: event.participant_count || 0,
+            user_prediction: prediction,
+            // Calculate earnings based on prediction and pool amount if needed
+            user_earnings: 0 // You can implement earnings calculation logic here
+          };
+        })
+        .filter(Boolean); // Remove null entries
 
       setCreatedEvents(processedCreatedEvents);
       setHistory(processedParticipatedEvents);

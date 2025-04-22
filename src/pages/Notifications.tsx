@@ -11,9 +11,9 @@ import { supabase } from '../lib/supabase';
 
 const filters = [
   { id: 'all', label: 'All', types: [] },
-  { 
-    id: 'events', 
-    label: 'Events', 
+  {
+    id: 'events',
+    label: 'Events',
     types: [
       'event_win',
       'event_loss',
@@ -22,12 +22,13 @@ const filters = [
       'event_created',
       'event_participation',
       'event_joined',
-      'event_milestone'
+      'event_milestone',
+      'event_deleted_by_admin'
     ]
   },
-  { 
-    id: 'challenges', 
-    label: 'Challenges', 
+  {
+    id: 'challenges',
+    label: 'Challenges',
     types: [
       'challenge_received',
       'challenge_accepted',
@@ -38,15 +39,15 @@ const filters = [
       'challenge_expired'
     ]
   },
-  { 
-    id: 'messages', 
-    label: 'Messages', 
-    types: ['direct_message', 'group_message', 'group_mention'] 
+  {
+    id: 'messages',
+    label: 'Messages',
+    types: ['direct_message', 'group_message', 'group_mention']
   },
-  { 
-    id: 'system', 
-    label: 'System', 
-    types: ['system'] 
+  {
+    id: 'system',
+    label: 'System',
+    types: ['system']
   }
 ];
 
@@ -60,17 +61,19 @@ const Notifications = () => {
 
   const filterNotifications = React.useMemo(() => {
     return notifications.filter(notification => {
-      const { notification_type, metadata } = notification;
-      
+      // Handle both notification_type and type fields
+      const notificationType = notification.notification_type || notification.type;
+      const { metadata } = notification;
+
       if (filter === 'all') return true;
 
       if (filter === 'challenges') {
-        return notification.type === 'challenge_received';
+        return notificationType === 'challenge_received';
       }
-      
+
       const filterConfig = filters.find(f => f.id === filter);
       if (!filterConfig) return false;
-      return filterConfig.types.includes(notification_type);
+      return filterConfig.types.includes(notificationType);
     });
   }, [notifications, filter]);
 
@@ -147,7 +150,7 @@ const Notifications = () => {
                 <img src="/noti-lonely.svg" alt="No notifications" className="w-32 h-32 mb-4 opacity-80" />
                 <p className="text-lg font-semibold text-gray-700 mb-1">No notifications found</p>
                 <p className="text-sm text-gray-400">
-                  {filter === 'all' 
+                  {filter === 'all'
                     ? "You don't have any notifications yet"
                     : `No ${filter} notifications found`}
                 </p>
@@ -176,7 +179,7 @@ const Notifications = () => {
                       </div>
                       <p className="text-gray-500 text-sm truncate">{notification.content}</p>
                       {/* Challenge Accept/Decline Buttons */}
-                      {notification.type === 'challenge_received' && notification.metadata?.challenge_id && !notification.read_at && (
+                      {(notification.type === 'challenge_received' || notification.notification_type === 'challenge_received') && notification.metadata?.challenge_id && !notification.read_at && (
                         <div className="flex gap-2 mt-2">
                           <button
                             className="px-3 py-1 rounded-full bg-[#7440ff] text-white text-xs font-semibold shadow hover:bg-[#b3ff00] transition"
@@ -264,7 +267,7 @@ const Notifications = () => {
                     {/* Time & Actions */}
                     <div className="flex flex-col items-end ml-4 gap-2 min-w-[80px]">
                       <span className="text-xs text-gray-400 whitespace-nowrap">{new Date(notification.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      {!notification.read_at && !notification.notification_type?.startsWith('challenge_') && (
+                      {!notification.read_at && !(notification.notification_type?.startsWith('challenge_') || notification.type?.startsWith('challenge_')) && (
                         <button
                           onClick={() => handleMarkAsRead(notification.id)}
                           className="text-xs px-3 py-1 rounded-full bg-[#7440ff] text-white font-medium shadow hover:bg-[#b3ff00] transition"
