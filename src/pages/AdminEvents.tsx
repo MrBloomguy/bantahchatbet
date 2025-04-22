@@ -31,25 +31,20 @@ const AdminEvents: React.FC = () => {
     loadEvents();
   }, []);
 
-  const handleMarkComplete = async (eventId: string) => {
+  const handleMarkComplete = async (eventId: string, result: boolean) => {
     try {
-      const result = window.confirm('Did the event result in a YES? Click OK for YES, Cancel for NO');
-      
-      const { error: updateError } = await supabase
+      const { error } = await supabase
         .from('events')
         .update({ 
-          status: 'completed',
           result: result,
-          updated_at: new Date().toISOString() 
+          status: 'completed'
         })
         .eq('id', eventId);
 
-      if (updateError) throw updateError;
-
-      await processEventPayouts(eventId);
+      if (error) throw error;
       
-      toast.showSuccess('Event completed and payouts processed');
-      loadEvents();
+      toast.showSuccess('Event marked as complete');
+      loadEvents(); // Changed from refreshEvents to loadEvents
     } catch (error) {
       console.error('Error completing event:', error);
       toast.showError('Failed to complete event');
@@ -58,9 +53,15 @@ const AdminEvents: React.FC = () => {
 
   const handleDeleteEvent = async (eventId: string) => {
     try {
-      await deleteEvent(eventId);
+      const { error } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId);
+
+      if (error) throw error;
+      
       toast.showSuccess('Event deleted successfully');
-      loadEvents();
+      loadEvents(); // Changed from refreshEvents to loadEvents
     } catch (error) {
       console.error('Error deleting event:', error);
       toast.showError('Failed to delete event');
