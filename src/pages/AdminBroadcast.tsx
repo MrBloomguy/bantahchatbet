@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bell, Send, Users, Info } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
+import { Bell, Send, Users, Info, HelpCircle } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import AdminLayout from '../layouts/AdminLayout';
 import { supabase } from '../lib/supabase';
@@ -220,13 +220,32 @@ const AdminBroadcast: React.FC = () => {
 
         try {
           // Option 1: Try to use a stored procedure if available
-          const { error: procError } = await supabase.rpc('create_admin_notifications', {
-            notifications_data: JSON.stringify(notifications)
-          });
+          console.log('Sending notifications via stored procedure');
 
-          if (procError) {
-            console.log('Stored procedure not available, trying alternative approach:', procError);
-            throw procError; // Move to next approach
+          // For better performance with large numbers of recipients,
+          // process in batches of 50 users at a time
+          const batchSize = 50;
+          let hasError = false;
+
+          for (let i = 0; i < notifications.length; i += batchSize) {
+            const batch = notifications.slice(i, i + batchSize);
+            console.log(`Processing notification batch ${i/batchSize + 1} of ${Math.ceil(notifications.length/batchSize)}`);
+
+            const { error: batchError } = await supabase.rpc('create_admin_notifications', {
+              notifications_data: batch
+            });
+
+            if (batchError) {
+              console.error(`Error in batch ${i/batchSize + 1}:`, batchError);
+              hasError = true;
+              // Continue with other batches even if one fails
+            }
+          }
+
+          // If any batch had an error, throw to try alternative approach
+          if (hasError) {
+            console.log('Stored procedure had errors, trying alternative approach');
+            throw new Error('One or more notification batches failed');
           }
 
           console.log('Successfully sent notifications via stored procedure');
@@ -338,13 +357,32 @@ const AdminBroadcast: React.FC = () => {
         // Similar approach for messages as we did for notifications
         try {
           // Option 1: Try to use a stored procedure if available
-          const { error: procError } = await supabase.rpc('create_admin_messages', {
-            messages_data: JSON.stringify(messages)
-          });
+          console.log('Sending messages via stored procedure');
 
-          if (procError) {
-            console.log('Stored procedure not available, trying alternative approach:', procError);
-            throw procError; // Move to next approach
+          // For better performance with large numbers of recipients,
+          // process in batches of 50 users at a time
+          const batchSize = 50;
+          let hasError = false;
+
+          for (let i = 0; i < messages.length; i += batchSize) {
+            const batch = messages.slice(i, i + batchSize);
+            console.log(`Processing message batch ${i/batchSize + 1} of ${Math.ceil(messages.length/batchSize)}`);
+
+            const { error: batchError } = await supabase.rpc('create_admin_messages', {
+              messages_data: batch
+            });
+
+            if (batchError) {
+              console.error(`Error in batch ${i/batchSize + 1}:`, batchError);
+              hasError = true;
+              // Continue with other batches even if one fails
+            }
+          }
+
+          // If any batch had an error, throw to try alternative approach
+          if (hasError) {
+            console.log('Stored procedure had errors, trying alternative approach');
+            throw new Error('One or more message batches failed');
           }
 
           console.log('Successfully sent messages via stored procedure');
@@ -635,7 +673,15 @@ const AdminBroadcast: React.FC = () => {
           </div>
 
           {/* Send Button */}
-          <div className="flex justify-end">
+          <div className="flex justify-between items-center">
+            <Link
+              to="/admin/broadcast-info"
+              className="text-[#CCFF00] hover:text-[#CCFF00]/80 flex items-center gap-1 text-sm"
+            >
+              <HelpCircle className="w-4 h-4" />
+              Setup Guide
+            </Link>
+
             <button
               type="button"
               onClick={handleSendBroadcast}

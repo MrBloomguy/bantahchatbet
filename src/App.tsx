@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation, Routes, Route } from 'react-router-dom';
+import { useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import AdminRoute from './components/AdminRoute';
 import ProtectedRoute from './components/ProtectedRoute';
 import DesktopNav from './components/DesktopNav';
@@ -27,6 +27,8 @@ import AdminStories from './pages/AdminStories';
 import AdminCreateEvent from './pages/AdminCreateEvent';
 import AdminUsers from './pages/AdminUsers';
 import AdminBroadcast from './pages/AdminBroadcast';
+import AdminBroadcastInfo from './pages/AdminBroadcastInfo';
+import AdminChallenges from './pages/AdminChallenges';
 
 // User Pages
 import SignIn from './pages/SignIn';
@@ -55,6 +57,7 @@ import EventChatWrapper from './components/EventChatWrapper';
 const App: React.FC = () => {
   const location = useLocation();
   const isAuthPage = ['/signin', '/admin/login'].includes(location.pathname);
+  const isAdminPage = location.pathname.startsWith('/admin');
 
   return (
     <ToastProvider>
@@ -66,9 +69,9 @@ const App: React.FC = () => {
                 <SplashScreenProvider>
                   <UserPresenceProvider>
                     <PointsProvider>
-                    <div className="min-h-screen bg-gray-50">
-                      {!isAuthPage && <DesktopNav />}
-                      <main className="lg:ml-[200px] flex-1">
+                    <div className={`min-h-screen ${isAdminPage ? 'bg-[#1a1b2e]' : 'bg-gray-50'}`}>
+                      {!isAuthPage && !isAdminPage && <DesktopNav />}
+                      <main className={`${!isAdminPage ? 'lg:ml-[200px]' : ''} flex-1`}>
                         <Routes>
                           {/* Public routes */}
                           <Route path="/" element={<Events />} />
@@ -79,6 +82,11 @@ const App: React.FC = () => {
 
                           {/* Admin routes */}
                           <Route path="/admin/login" element={<AdminLogin />} />
+                          <Route path="/admin" element={
+                            <AdminRoute>
+                              <Navigate to="/admin/dashboard" replace />
+                            </AdminRoute>
+                          } />
                           <Route
                             path="/admin/dashboard"
                             element={
@@ -135,7 +143,7 @@ const App: React.FC = () => {
                               </AdminRoute>
                             }
                           />
-                          <Route path="/admin/create" element={
+                          <Route path="/admin/create-event" element={
                             <AdminRoute>
                               <AdminCreateEvent />
                             </AdminRoute>
@@ -148,6 +156,16 @@ const App: React.FC = () => {
                           <Route path="/admin/broadcast" element={
                             <AdminRoute>
                               <AdminBroadcast />
+                            </AdminRoute>
+                          } />
+                          <Route path="/admin/broadcast-info" element={
+                            <AdminRoute>
+                              <AdminBroadcastInfo />
+                            </AdminRoute>
+                          } />
+                          <Route path="/admin/challenges" element={
+                            <AdminRoute>
+                              <AdminChallenges />
                             </AdminRoute>
                           } />
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from '../layouts/AdminLayout';
+import AdminPageLayout from '../components/AdminPageLayout';
 import { supabase } from '../lib/supabase';
 import LoadingSpinner from '../components/LoadingSpinner';
 
@@ -75,14 +76,12 @@ const AdminUsers: React.FC = () => {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto p-4 lg:p-8">
-        <div className="bg-[#242538] rounded-xl p-6">
-          <h2 className="text-xl font-bold text-white mb-6">User Management</h2>
+      <AdminPageLayout title="User Management">
 
           <div className="space-y-4">
             {users.map((user) => (
               <div key={user.id} className="bg-[#1a1b2e] rounded-lg p-4">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                   <div className="flex items-center gap-4">
                     <img
                       src={user.avatar_url || '/avatar.svg'}
@@ -95,20 +94,23 @@ const AdminUsers: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <button
+                      type="button"
                       onClick={() => handleBanUser(user.id)}
                       className="px-3 py-1.5 text-sm bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20"
                     >
                       Ban
                     </button>
                     <button
+                      type="button"
                       onClick={() => handleBlockUser(user.id)}
                       className="px-3 py-1.5 text-sm bg-yellow-500/10 text-yellow-400 rounded-lg hover:bg-yellow-500/20"
                     >
                       Block
                     </button>
                     <button
+                      type="button"
                       onClick={() => console.log('View details for', user.id)}
                       className="px-3 py-1.5 text-sm bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20"
                     >
@@ -118,53 +120,67 @@ const AdminUsers: React.FC = () => {
                 </div>
 
                 {/* Add sections to display events joined, created, and challenges */}
-                <div className="mt-4">
-                  <h4 className="text-white font-semibold">Events Joined</h4>
-                  <ul className="list-disc pl-5 text-white/60">
-                    {user.events_joined?.length > 0 ? (
-                      user.events_joined.map((event: any) => (
-                        <li key={event.event_id}>{event.event?.title || 'Unknown Event'}</li>
-                      ))
-                    ) : (
-                      <li>No events joined</li>
-                    )}
-                  </ul>
-                </div>
-                <div className="mt-4">
-                  <h4 className="text-white font-semibold">Events Created</h4>
-                  <ul className="list-disc pl-5 text-white/60">
-                    {user.events_created?.length > 0 ? (
-                      user.events_created.map((event: any) => (
-                        <li key={event.id}>{event.title || 'Unknown Event'}</li>
-                      ))
-                    ) : (
-                      <li>No events created</li>
-                    )}
-                  </ul>
-                </div>
-                <div className="mt-4">
-                  <h4 className="text-white font-semibold">Challenges as Challenger</h4>
-                  <ul className="list-disc pl-5 text-white/60">
-                    {user.challenges_as_challenger?.length > 0 ? (
-                      user.challenges_as_challenger.map((challenge: any) => (
-                        <li key={challenge.id}>{challenge.game_type || 'Unknown Challenge'}</li>
-                      ))
-                    ) : (
-                      <li>No challenges as challenger</li>
-                    )}
-                  </ul>
-                </div>
-                <div className="mt-4">
-                  <h4 className="text-white font-semibold">Challenges as Challenged</h4>
-                  <ul className="list-disc pl-5 text-white/60">
-                    {user.challenges_as_challenged?.length > 0 ? (
-                      user.challenges_as_challenged.map((challenge: any) => (
-                        <li key={challenge.id}>{challenge.game_type || 'Unknown Challenge'}</li>
-                      ))
-                    ) : (
-                      <li>No challenges as challenged</li>
-                    )}
-                  </ul>
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="text-white font-semibold">Events Joined</h4>
+                    <ul className="list-disc pl-5 text-white/60 text-sm">
+                      {user.events_joined?.length > 0 ? (
+                        user.events_joined.slice(0, 3).map((event: any) => (
+                          <li key={event.event_id}>{event.event?.title || 'Unknown Event'}</li>
+                        ))
+                      ) : (
+                        <li>No events joined</li>
+                      )}
+                      {user.events_joined?.length > 3 && (
+                        <li className="text-[#CCFF00]/80">+{user.events_joined.length - 3} more</li>
+                      )}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-white font-semibold">Events Created</h4>
+                    <ul className="list-disc pl-5 text-white/60 text-sm">
+                      {user.events_created?.length > 0 ? (
+                        user.events_created.slice(0, 3).map((event: any) => (
+                          <li key={event.id}>{event.title || 'Unknown Event'}</li>
+                        ))
+                      ) : (
+                        <li>No events created</li>
+                      )}
+                      {user.events_created?.length > 3 && (
+                        <li className="text-[#CCFF00]/80">+{user.events_created.length - 3} more</li>
+                      )}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-white font-semibold">Challenges as Challenger</h4>
+                    <ul className="list-disc pl-5 text-white/60 text-sm">
+                      {user.challenges_as_challenger?.length > 0 ? (
+                        user.challenges_as_challenger.slice(0, 3).map((challenge: any) => (
+                          <li key={challenge.id}>{challenge.game_type || 'Unknown Challenge'}</li>
+                        ))
+                      ) : (
+                        <li>No challenges as challenger</li>
+                      )}
+                      {user.challenges_as_challenger?.length > 3 && (
+                        <li className="text-[#CCFF00]/80">+{user.challenges_as_challenger.length - 3} more</li>
+                      )}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="text-white font-semibold">Challenges as Challenged</h4>
+                    <ul className="list-disc pl-5 text-white/60 text-sm">
+                      {user.challenges_as_challenged?.length > 0 ? (
+                        user.challenges_as_challenged.slice(0, 3).map((challenge: any) => (
+                          <li key={challenge.id}>{challenge.game_type || 'Unknown Challenge'}</li>
+                        ))
+                      ) : (
+                        <li>No challenges as challenged</li>
+                      )}
+                      {user.challenges_as_challenged?.length > 3 && (
+                        <li className="text-[#CCFF00]/80">+{user.challenges_as_challenged.length - 3} more</li>
+                      )}
+                    </ul>
+                  </div>
                 </div>
               </div>
             ))}
@@ -175,8 +191,7 @@ const AdminUsers: React.FC = () => {
               </div>
             )}
           </div>
-        </div>
-      </div>
+      </AdminPageLayout>
     </AdminLayout>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAdminAuth } from '../contexts/AdminAuthContext';
 import {
@@ -11,7 +11,8 @@ import {
   Newspaper,
   Plus,
   Bell,
-  Users
+  Users,
+  Gamepad2
 } from 'lucide-react';
 import AdminMobileNav from '../components/AdminMobileNav';
 
@@ -32,6 +33,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Events', href: '/admin/events', icon: Trophy },
+    { name: 'Challenges', href: '/admin/challenges', icon: Gamepad2 },
     { name: 'Create Event', href: '/admin/create-event', icon: Plus },
     { name: 'Stories', href: '/admin/stories', icon: Newspaper },
     { name: 'Broadcast', href: '/admin/broadcast', icon: Bell },
@@ -43,52 +45,71 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-[#1a1b2e]">
-      <nav className="bg-[#242538] shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 flex items-center text-white font-medium">
-                Admin Dashboard
-              </div>
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-4">
-                {navigation.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = location.pathname === item.href;
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
-                        isActive
-                          ? 'text-[#CCFF00] bg-white/5'
-                          : 'text-white/60 hover:text-white hover:bg-white/5'
-                      }`}
-                    >
-                      <Icon className="w-4 h-4 mr-2" />
-                      {item.name}
-                    </Link>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="flex items-center gap-4">
-              <span className="text-white/60 text-sm">
-                {admin?.email}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="px-4 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+    <div className="min-h-screen bg-[#1a1b2e] flex flex-col md:flex-row pb-16 md:pb-0">
+      {/* Sidebar - hidden on mobile, visible on md screens and up */}
+      <aside className="hidden md:flex md:flex-col w-64 bg-[#242538] fixed inset-y-0 z-20">
+        <div className="h-16 flex items-center px-6 border-b border-white/10">
+          <div className="text-white font-medium text-lg">Admin Dashboard</div>
+        </div>
+        <div className="flex-1 flex flex-col overflow-y-auto py-4 px-3">
+          {navigation.map((item) => {
+            const Icon = item.icon;
+            const isActive = location.pathname === item.href;
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={`flex items-center px-4 py-3 mb-1 rounded-lg ${isActive
+                  ? 'bg-[#CCFF00]/10 text-[#CCFF00]'
+                  : 'text-white/70 hover:bg-white/5 hover:text-white'
+                  }`}
               >
-                Logout
-              </button>
-            </div>
+                <Icon className="w-5 h-5 mr-3 flex-shrink-0" />
+                <span className="text-sm">{item.name}</span>
+              </Link>
+            );
+          })}
+        </div>
+        <div className="p-4 border-t border-white/10">
+          <div className="text-white/60 text-sm mb-2 truncate">
+            {admin?.email}
+          </div>
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full px-4 py-2 text-sm text-white/80 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors"
+            aria-label="Logout"
+          >
+            Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Top header - visible only on mobile */}
+      <header className="md:hidden bg-[#242538] shadow-sm sticky top-0 z-10">
+        <div className="px-4 flex justify-between h-16 items-center">
+          <div className="flex-shrink-0 flex items-center text-white font-medium">
+            Admin Dashboard
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="px-3 py-2 text-sm text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+              aria-label="Logout"
+            >
+              Logout
+            </button>
           </div>
         </div>
-      </nav>
-      <main className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+      </header>
+
+      {/* Main content */}
+      <main className="flex-1 md:ml-64 py-4 px-4 md:px-8 md:py-6">
         {children}
       </main>
+
+      {/* Mobile navigation */}
       <AdminMobileNav />
     </div>
   );

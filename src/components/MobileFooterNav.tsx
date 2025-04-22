@@ -7,6 +7,10 @@ import { useMessageNotifications } from '../hooks/useMessageNotifications';
 const MobileFooterNav: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const isAdminPage = location.pathname.startsWith('/admin');
+
+  // Don't render on admin pages
+  if (isAdminPage) return null;
   const currentPath = location.pathname;
   const { currentUser } = useAuth();
   const [eventCount, setEventCount] = useState(0);
@@ -107,10 +111,7 @@ const MobileFooterNav: React.FC = () => {
         <img
           src={currentUser.avatar_url}
           alt="Profile"
-          className="w-8 h-8 rounded-full object-cover border-2 border-transparent"
-          style={{
-            borderColor: currentPath === '/profile' ? '#CCFF00' : 'transparent'
-          }}
+          className={`w-8 h-8 rounded-full object-cover border-2 ${currentPath === '/profile' ? 'border-[#CCFF00]' : 'border-transparent'}`}
         />
       ) : (
         <img src="/avatar.svg" alt="Profile Icon" className="w-8 h-8" />
@@ -126,6 +127,7 @@ const MobileFooterNav: React.FC = () => {
         {navItems.map((item) => (
           <button
             key={item.id}
+            type="button"
             onClick={() => navigate(item.path)}
             className="flex flex-col items-center justify-between h-full pt-2 pb-1"
           >

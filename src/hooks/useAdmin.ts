@@ -92,7 +92,7 @@ export function useAdmin() {
 
     try {
       setLoading(true);
-      
+
       // Get events with their details - fixed query format
       const { data: eventsData, error: eventsError } = await supabase
         .from('events')
@@ -391,7 +391,7 @@ export function useAdmin() {
 
     try {
       setLoading(true);
-      
+
       // Calculate winnings and distribute
       const { error: payoutError } = await supabase.rpc('process_event_payouts', {
         p_event_id: eventId,
@@ -403,7 +403,7 @@ export function useAdmin() {
       // Mark event payouts as processed
       const { error: updateError } = await supabase
         .from('events')
-        .update({ 
+        .update({
           payouts_processed: true,
           updated_at: new Date().toISOString()
         })
@@ -475,22 +475,68 @@ export function useAdmin() {
   }, [admin]);
 
   const getStories = async () => {
+    // Simplified query to avoid join issues
     const { data, error } = await supabase
       .from('stories')
       .select('*')
       .order('created_at', { ascending: false });
-    
+
     if (error) throw error;
-    return data;
+
+    // Get admin profiles in a separate query
+    if (data && data.length > 0) {
+      // Get unique admin IDs
+      const adminIds = [...new Set(data.map(story => story.admin_id))];
+
+      // Fetch admin profiles from users table instead of profiles
+      const { data: adminProfiles, error: profilesError } = await supabase
+        .from('users')
+        .select('id, username, avatar_url')
+        .in('id', adminIds);
+
+      if (profilesError) {
+        console.error('Error fetching admin profiles:', profilesError);
+      }
+
+      // Create a map of admin profiles by ID
+      const adminMap = (adminProfiles || []).reduce((map, profile) => {
+        map[profile.id] = {
+          id: profile.id,
+          name: profile.username || 'Admin', // Use username as name
+          avatar_url: profile.avatar_url
+        };
+        return map;
+      }, {});
+
+      // Add admin info to stories
+      const storiesWithAdmins = data.map(story => ({
+        ...story,
+        admin: adminMap[story.admin_id] || { name: 'Unknown Admin', username: 'admin', avatar_url: null }
+      }));
+
+      return storiesWithAdmins;
+    }
+
+    return [];
   };
 
   const createStory = async (story: Omit<Story, 'id' | 'created_at' | 'admin_id'>) => {
+    // Get the current user's ID
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) {
+      throw new Error('User not authenticated');
+    }
+
+    // Insert the story with the admin_id
     const { data, error } = await supabase
       .from('stories')
-      .insert([{ ...story }])
+      .insert([{
+        ...story,
+        admin_id: session.user.id
+      }])
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   };
@@ -502,7 +548,7 @@ export function useAdmin() {
       .eq('id', id)
       .select()
       .single();
-    
+
     if (error) throw error;
     return data;
   };
@@ -512,14 +558,14 @@ export function useAdmin() {
       .from('stories')
       .delete()
       .eq('id', id);
-    
+
     if (error) throw error;
   };
 
   const deleteEvent = async (eventId: string) => {
     try {
       setLoading(true);
-      
+
       // Delete the event (this will trigger the notification via database trigger)
       const { error: deleteError } = await supabase
         .from('events')

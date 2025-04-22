@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Plus, Edit, Trash } from 'lucide-react';
 import AdminLayout from '../layouts/AdminLayout';
+import AdminPageLayout from '../components/AdminPageLayout';
 import { useToast } from '../contexts/ToastContext';
 import { useAdmin } from '../hooks/useAdmin';
 import { supabase } from '../lib/supabase';
@@ -57,27 +58,36 @@ const AdminStories = () => {
       let imageUrl = selectedStory?.image_url;
 
       if (formData.image) {
-        const fileExt = formData.image.name.split('.').pop();
-        const fileName = `${Math.random()}.${fileExt}`;
+        try {
+          // Generate a unique filename
+          const fileExt = formData.image.name.split('.').pop();
+          const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
 
-        // Try to upload directly without checking bucket existence
-        const { error: uploadError } = await supabase.storage
-          .from('story-images')
-          .upload(fileName, formData.image, {
-            cacheControl: '3600',
-            upsert: false
-          });
+          // Try to upload the image
+          const { error: uploadError } = await supabase.storage
+            .from('story-images')
+            .upload(fileName, formData.image, {
+              cacheControl: '3600',
+              upsert: true // Use upsert to overwrite if file exists
+            });
 
-        if (uploadError) {
-          console.error('Error uploading file:', uploadError);
-          throw new Error(uploadError.message || 'Failed to upload image');
+          if (uploadError) {
+            console.error('Error uploading file:', uploadError);
+            toast.showError(`Image upload failed: ${uploadError.message}`);
+            // Continue without the image
+          } else {
+            // Get the public URL
+            const { data: { publicUrl } } = supabase.storage
+              .from('story-images')
+              .getPublicUrl(fileName);
+
+            imageUrl = publicUrl;
+          }
+        } catch (imageError) {
+          console.error('Error processing image:', imageError);
+          toast.showError('Failed to process image, but will continue with story creation');
+          // Continue without the image
         }
-
-        const { data: { publicUrl } } = supabase.storage
-          .from('story-images')
-          .getPublicUrl(fileName);
-
-        imageUrl = publicUrl;
       }
 
       // Continue with story creation/update
@@ -137,10 +147,11 @@ const AdminStories = () => {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto p-4 lg:p-8">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-white">Stories</h2>
+      <AdminPageLayout
+        title="Stories"
+        actions={
           <button
+            type="button"
             onClick={() => {
               setSelectedStory(null);
               setFormData({ title: '', content: '', image: null });
@@ -151,7 +162,8 @@ const AdminStories = () => {
             <Plus className="w-5 h-5" />
             Add Story
           </button>
-        </div>
+        }
+      >
 
         {showForm && (
           <div className="bg-[#242538] rounded-xl p-6 mb-6">
@@ -160,39 +172,45 @@ const AdminStories = () => {
             </h3>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
+                <label htmlFor="story-title" className="block text-sm font-medium text-gray-400 mb-1">
                   Title
                 </label>
                 <input
+                  id="story-title"
                   type="text"
                   value={formData.title}
                   onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                   className="w-full px-3 py-2 bg-[#1a1b2e] text-white rounded-lg"
+                  placeholder="Enter story title"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
+                <label htmlFor="story-content" className="block text-sm font-medium text-gray-400 mb-1">
                   Content
                 </label>
                 <textarea
+                  id="story-content"
                   value={formData.content}
                   onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                   className="w-full px-3 py-2 bg-[#1a1b2e] text-white rounded-lg"
+                  placeholder="Enter story content"
                   rows={4}
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-400 mb-1">
+                <label htmlFor="story-image" className="block text-sm font-medium text-gray-400 mb-1">
                   Image
                 </label>
                 <input
+                  id="story-image"
                   type="file"
                   onChange={(e) => setFormData({ ...formData, image: e.target.files?.[0] || null })}
                   accept="image/*"
+                  title="Select an image for the story"
                   className="block w-full text-sm text-gray-400
                     file:mr-4 file:py-2 file:px-4
                     file:rounded-full file:border-0
@@ -231,20 +249,27 @@ const AdminStories = () => {
             {stories.map((story) => (
               <div
                 key={story.id}
-                className="bg-[#242538] rounded-xl p-4 flex items-start justify-between"
+                className="bg-[#242538] rounded-xl p-4 flex flex-col sm:flex-row items-start gap-4"
               >
-                <div className="flex items-start gap-4 flex-1">
+                <div className="flex items-start gap-4 flex-1 w-full">
                   {story.image_url && (
                     <img
                       src={story.image_url}
                       alt={story.title}
-                      className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                      className="w-20 h-20 rounded-lg object-cover flex-shrink-0 hidden sm:block"
                     />
                   )}
-                  <div>
+                  <div className="flex-1">
+                    {story.image_url && (
+                      <img
+                        src={story.image_url}
+                        alt={story.title}
+                        className="w-full h-32 rounded-lg object-cover mb-3 sm:hidden"
+                      />
+                    )}
                     <h3 className="text-lg font-medium text-white">{story.title}</h3>
                     <p className="text-white/60 mt-1 line-clamp-2">{story.content}</p>
-                    <div className="flex items-center gap-4 mt-2">
+                    <div className="flex flex-wrap items-center gap-4 mt-2">
                       <p className="text-sm text-white/40">
                         By {story.admin?.name}
                       </p>
@@ -252,18 +277,40 @@ const AdminStories = () => {
                         {new Date(story.created_at).toLocaleDateString()}
                       </p>
                     </div>
+                    <div className="flex items-center gap-2 mt-3 sm:hidden">
+                      <button
+                        type="button"
+                        onClick={() => handleEdit(story)}
+                        className="px-3 py-1.5 text-sm bg-white/10 text-white rounded-lg hover:bg-white/20 flex items-center gap-1"
+                      >
+                        <Edit className="w-4 h-4" />
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleDelete(story.id)}
+                        className="px-3 py-1.5 text-sm bg-red-500/10 text-red-400 rounded-lg hover:bg-red-500/20 flex items-center gap-1"
+                      >
+                        <Trash className="w-4 h-4" />
+                        Delete
+                      </button>
+                    </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="hidden sm:flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={() => handleEdit(story)}
                     className="p-2 text-white/60 hover:text-white rounded-lg hover:bg-white/10"
+                    aria-label="Edit story"
                   >
                     <Edit className="w-5 h-5" />
                   </button>
                   <button
+                    type="button"
                     onClick={() => handleDelete(story.id)}
                     className="p-2 text-white/60 hover:text-red-500 rounded-lg hover:bg-white/10"
+                    aria-label="Delete story"
                   >
                     <Trash className="w-5 h-5" />
                   </button>
@@ -278,7 +325,7 @@ const AdminStories = () => {
             )}
           </div>
         )}
-      </div>
+      </AdminPageLayout>
     </AdminLayout>
   );
 };
