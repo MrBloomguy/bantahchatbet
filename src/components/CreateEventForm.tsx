@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
-import { X, Upload, Trophy, Clock, Users } from 'lucide-react';
+import { X, Upload } from 'lucide-react';
 import { useEvent } from '../hooks/useEvent';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from './LoadingSpinner';
 import LoadingOverlay from './LoadingOverlay';
 import { supabase } from '../lib/supabase';
-
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+import { useAuth } from '../contexts/AuthContext';
 
 interface CreateEventFormProps {
   onClose: () => void;
@@ -17,6 +16,7 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   onClose,
   eventType,
 }) => {
+  const { currentUser } = useAuth();
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('Sports');
@@ -28,7 +28,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
   const [bannerFile, setBannerFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [rules, setRules] = useState('');
 
@@ -124,6 +123,10 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!currentUser) {
+      toast.showError('You must be signed in to create an event');
+      return;
+    }
     if (!acceptedTerms) {
       toast.showError('Please accept the terms and conditions');
       return;
@@ -150,13 +153,27 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
 
     try {
       setLoading(true);
+      console.log('Creating event with user ID:', currentUser.id);
 
       let bannerUrl = '';
       if (bannerFile) {
+        if (bannerFile.size > 2 * 1024 * 1024) {
+          toast.showError('File size must be less than 2MB');
+          setLoading(false);
+          return;
+        }
+
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'video/quicktime'];
+        if (!validTypes.includes(bannerFile.type)) {
+          toast.showError('Please upload a JPG, PNG, GIF, or MOV file');
+          setLoading(false);
+          return;
+        }
+
         const fileExt = bannerFile.name.split('.').pop();
         const fileName = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         
-        const { data, error } = await supabase.storage
+        const { error } = await supabase.storage
           .from('event-banners')
           .upload(fileName, bannerFile, {
             cacheControl: '3600',
@@ -166,7 +183,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
 
         if (error) throw error;
 
-        // Get the public URL
         const { data: { publicUrl } } = supabase.storage
           .from('event-banners')
           .getPublicUrl(fileName);
@@ -182,16 +198,17 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         end_time: endDate,
         wager_amount: amount,
         max_participants: parseInt(maxParticipants),
-        banner_url: bannerUrl, // Now using the full public URL
+        banner_url: bannerUrl,
         is_private: eventType === 'private',
         rules: rules.trim(),
+        type: eventType
       });
 
       toast.showSuccess('Event created successfully');
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error creating event:', error);
-      toast.showError('Failed to create event. Please try again.');
+      toast.showError(error.message || 'Failed to create event. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -204,18 +221,6 @@ const CreateEventForm: React.FC<CreateEventFormProps> = ({
         .slice(0, 16)
     : '';
 
-  const testEventData = {
-    title: "Test Event",
-    description: "This is a test event",
-    category: "Sports",
-    startTime: new Date(Date.now() + 3600000).toISOString().slice(0, 16), // 1 hour from now
-    endTime: new Date(Date.now() + 7200000).toISOString().slice(0, 16),   // 2 hours from now
-    wagerAmount: "100",
-    maxParticipants: "2",
-    rules: "1. Test rule\n2. Another test rule",
-  };
-
-  // Predefined participant options
   const participantOptions = [2, 4, 8, 16, 32, 64, 'custom'];
 
   const handleParticipantChange = (value: string) => {

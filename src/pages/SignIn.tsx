@@ -260,103 +260,89 @@ const SignIn: React.FC = () => {
           <Logo className="w-24 h-24" />
         </div>
         
-        <div className="bg-gray-800/40 backdrop-blur-xl rounded-2xl shadow-xl p-6">
-          <div className="space-y-3">
-            {/* Primary Sign In - Google */}
+        <div className="bg-gray-800/30 backdrop-blur-lg rounded-lg shadow-md p-4 border border-gray-600/50">
+          <div className="flex justify-center space-x-3 mb-4">
             <button
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full flex items-center justify-center gap-3 bg-white/90 backdrop-blur-sm text-gray-900 rounded-xl px-4 py-2.5 font-medium hover:bg-white transition-colors"
+              className="flex flex-col items-center gap-1 text-gray-900 hover:text-gray-700 transition-all"
             >
-              <img src="/google-icon.svg" alt="Google" className="w-5 h-5" />
-              Continue with Google
+              <img src="/public/5296499_fb_facebook_facebook logo_icon.svg" alt="Google" className="w-8 h-8" />
+              <span className="text-xs font-medium">Google</span>
             </button>
 
-            {/* Other Sign In Methods Row */}
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                onClick={handleTwitterSignIn}
-                disabled={loading}
-                className="flex items-center justify-center gap-2 bg-[#1DA1F2]/80 hover:bg-[#1DA1F2] text-white rounded-xl px-3 py-2 font-medium transition-colors backdrop-blur-sm"
-              >
-                <img src="/twitter-icon.svg" alt="Twitter" className="w-5 h-5" />
-                Twitter
-              </button>
+            <button
+              onClick={handleTwitterSignIn}
+              disabled={loading}
+              className="flex flex-col items-center gap-1 text-white hover:text-gray-300 transition-all"
+            >
+              <img src="/public/4375108_logo_telegram_icon.svg" alt="Twitter" className="w-8 h-8" />
+              <span className="text-xs font-medium">Twitter</span>
+            </button>
 
-              <button
-                onClick={toggleEmailForm}
-                className="flex items-center justify-center gap-2 bg-gray-700/80 hover:bg-gray-700 text-white rounded-xl px-3 py-2 font-medium transition-colors backdrop-blur-sm"
-              >
-                <Mail className="w-5 h-5" />
-                Email
-              </button>
+            <button
+              onClick={() => setShowPhoneModal(true)}
+              className="flex flex-col items-center gap-1 text-white hover:text-gray-300 transition-all"
+            >
+              <img src="/public/5296520_bubble_chat_mobile_whatsapp_whatsapp logo_icon.svg" alt="Phone" className="w-8 h-8" />
+              <span className="text-xs font-medium">Phone</span>
+            </button>
+          </div>
 
-              <button
-                onClick={() => setShowPhoneModal(true)}
-                className="flex items-center justify-center gap-2 bg-gray-700/80 hover:bg-gray-700 text-white rounded-xl px-3 py-2 font-medium transition-colors backdrop-blur-sm"
-              >
-                <Phone className="w-5 h-5" />
-                Phone
-              </button>
-            </div>
+          <div className="space-y-3">
+            <button
+              onClick={toggleEmailForm}
+              className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-md px-3 py-2 text-sm font-medium transition-all shadow-sm"
+            >
+              Login
+            </button>
 
-            {/* Email Form */}
-            {showEmailForm && (
-              <form onSubmit={isSignIn ? handleEmailSignIn : handleSignUp} className="mt-4 space-y-3">
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="Email"
-                  required
-                  className="w-full bg-gray-700/50 text-white rounded-xl px-4 py-2 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                />
+            <button
+              onClick={() => setIsSignIn(false)}
+              className="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-md px-3 py-2 text-sm font-medium transition-all shadow-sm"
+            >
+              Sign Up
+            </button>
+          </div>
+
+          {/* Email Form */}
+          {showEmailForm && (
+            <form onSubmit={isSignIn ? handleEmailSignIn : handleSignUp} className="mt-3 space-y-2">
+              <input
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="Email"
+                required
+                className="w-full bg-gray-700/40 text-white rounded-md px-3 py-2 text-sm backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-inner"
+              />
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                required
+                className="w-full bg-gray-700/40 text-white rounded-md px-3 py-2 text-sm backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-inner"
+              />
+              {!isSignIn && (
                 <input
                   type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="Confirm Password"
                   required
-                  className="w-full bg-gray-700/50 text-white rounded-xl px-4 py-2 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
+                  className="w-full bg-gray-700/40 text-white rounded-md px-3 py-2 text-sm backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-blue-500/50 shadow-inner"
                 />
-                {!isSignIn && (
-                  <input
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm Password"
-                    required
-                    className="w-full bg-gray-700/50 text-white rounded-xl px-4 py-2 backdrop-blur-sm focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                  />
-                )}
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full bg-blue-600/80 hover:bg-blue-600 text-white rounded-xl px-4 py-2 font-medium transition-colors backdrop-blur-sm"
-                >
-                  {loading ? 'Loading...' : isSignIn ? 'Sign in' : 'Sign up'}
-                </button>
-                <div className="flex justify-between">
-                  <button
-                    type="button"
-                    onClick={() => setIsSignIn(!isSignIn)}
-                    className="text-sm text-blue-400 hover:text-blue-300"
-                  >
-                    {isSignIn ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-                  </button>
-                  {isSignIn && (
-                    <button
-                      type="button"
-                      onClick={() => setShowForgotPassword(true)}
-                      className="text-sm text-blue-400 hover:text-blue-300"
-                    >
-                      Forgot Password?
-                    </button>
-                  )}
-                </div>
-              </form>
-            )}
-          </div>
+              )}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-md px-3 py-2 text-sm font-medium transition-all shadow-sm"
+              >
+                {loading ? 'Loading...' : isSignIn ? 'Sign in' : 'Sign up'}
+              </button>
+            </form>
+          )}
         </div>
       </div>
 

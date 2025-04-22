@@ -36,6 +36,7 @@ interface CreateEventData {
   banner_url: string;
   is_private: boolean;
   rules: string;
+  type: 'public' | 'private';
 }
 
 export function useEvent() {
@@ -106,6 +107,13 @@ export function useEvent() {
 
       if (error) throw error;
 
+      // Get current user's profile
+      const { data: profile } = await supabase
+        .from('users')
+        .select('name, username')
+        .eq('id', currentUser.id)
+        .single();
+
       // Notify creator about new participant
       await supabase
         .from('notifications')
@@ -113,7 +121,7 @@ export function useEvent() {
           user_id: event.creator_id,
           type: 'event_participation',
           title: 'New Event Participant',
-          content: `${currentUser?.name || 'Someone'} joined your event: ${event.title}`,
+          content: `${profile?.name || profile?.username || 'Someone'} joined your event: ${event.title}`,
           metadata: {
             event_id: eventId,
             participant_id: currentUser.id,
@@ -128,7 +136,7 @@ export function useEvent() {
         .eq('event_id', eventId);
 
       const milestones = [10, 50, 100];
-      if (milestones.includes(count)) {
+      if (count !== null && milestones.includes(count)) {
         await supabase
           .from('notifications')
           .insert({
@@ -159,7 +167,14 @@ export function useEvent() {
     }
 
     try {
-      // Format the data properly
+      // Get current user's profile
+      const { data: profile } = await supabase
+        .from('users')
+        .select('name, username')
+        .eq('id', currentUser.id)
+        .single();
+
+      // Format the data properly and ensure creator_id matches auth.uid()
       const eventPayload = {
         title: eventData.title,
         description: eventData.description,
@@ -172,8 +187,11 @@ export function useEvent() {
         is_private: eventData.is_private,
         rules: eventData.rules,
         creator_id: currentUser.id,
-        status: 'active'
+        status: 'active',
+        type: eventData.type || (eventData.is_private ? 'private' : 'public')
       };
+
+      console.log('Creating event with payload:', { ...eventPayload, creator_id: currentUser.id });
 
       const { data, error } = await supabase
         .from('events')
@@ -201,7 +219,7 @@ export function useEvent() {
           user_id: user.id,
           type: 'event_created',
           title: 'New Event Created',
-          content: `@${currentUser.username} just created a new event - ${eventData.title}`,
+          content: `@${profile?.username || profile?.name || 'Someone'} just created a new event - ${eventData.title}`,
           metadata: {
             event_id: data.id,
             banner_url: eventData.banner_url,
