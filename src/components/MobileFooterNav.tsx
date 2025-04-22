@@ -81,11 +81,11 @@ const MobileFooterNav: React.FC = () => {
       badge: eventCount > 0 ? formatNotificationCount(eventCount) : undefined,
     },
     {
-      id: 'messages',
-      path: '/messages',
-      icon: <img src="/mes.svg" alt="Messages Icon" className="w-7 h-7" />,
-      label: 'Messages',
-      badge: totalMessageNotifications > 0 ? formatNotificationCount(totalMessageNotifications) : undefined,
+      id: 'games',
+      path: '/games',
+      icon: <img src="/gamessvg.svg" alt="Games Icon" className="w-8 h-8" />,
+      label: 'Challenge',
+      badge: challengeCount > 0 ? formatNotificationCount(challengeCount) : undefined,
     },
     {
       id: 'create',
@@ -95,11 +95,10 @@ const MobileFooterNav: React.FC = () => {
       isMain: true,
     },
     {
-      id: 'games',
-      path: '/games',
-      icon: <img src="/gamessvg.svg" alt="Games Icon" className="w-8 h-8" />,
-      label: 'Challenge',
-      badge: challengeCount > 0 ? formatNotificationCount(challengeCount) : undefined,
+      id: 'myevents',
+      path: '/myevents',
+      icon: <img src="/listsvg.svg" alt="My Events Icon" className="w-8 h-8" />,
+      label: 'My Events',
     },
     {
       id: 'profile',
@@ -117,6 +116,7 @@ const MobileFooterNav: React.FC = () => {
         <img src="/avatar.svg" alt="Profile Icon" className="w-8 h-8" />
       ),
       label: 'Profile',
+      badge: totalMessageNotifications > 0 ? formatNotificationCount(totalMessageNotifications) : undefined,
     },
   ];
 
