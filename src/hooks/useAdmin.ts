@@ -516,6 +516,36 @@ export function useAdmin() {
     if (error) throw error;
   };
 
+  const deleteEvent = async (eventId: string) => {
+    try {
+      setLoading(true);
+      
+      // Delete the event (this will trigger the notification via database trigger)
+      const { error: deleteError } = await supabase
+        .from('events')
+        .delete()
+        .eq('id', eventId);
+
+      if (deleteError) throw deleteError;
+
+      // Log admin action
+      await supabase.from('admin_actions').insert({
+        admin_email: admin.email,
+        action_type: 'delete_event',
+        target_type: 'event',
+        target_id: eventId,
+        details: { status: 'completed' }
+      });
+
+      toast.showSuccess('Event deleted successfully');
+    } catch (error) {
+      console.error('Error deleting event:', error);
+      toast.showError('Failed to delete event');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     getStats,
@@ -533,5 +563,6 @@ export function useAdmin() {
     createStory,
     updateStory,
     deleteStory,
+    deleteEvent,
   };
 }

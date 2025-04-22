@@ -10,7 +10,7 @@ import { supabase } from '../lib/supabase';
 const AdminEvents: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { getEvents, processEventPayouts, deleteEvent } = useAdmin();
+  const { getEvents, deleteEvent } = useAdmin();
   const toast = useToast();
   const navigate = useNavigate();
 
@@ -44,7 +44,7 @@ const AdminEvents: React.FC = () => {
       if (error) throw error;
       
       toast.showSuccess('Event marked as complete');
-      loadEvents(); // Changed from refreshEvents to loadEvents
+      loadEvents();
     } catch (error) {
       console.error('Error completing event:', error);
       toast.showError('Failed to complete event');
@@ -53,18 +53,20 @@ const AdminEvents: React.FC = () => {
 
   const handleDeleteEvent = async (eventId: string) => {
     try {
-      const { error } = await supabase
-        .from('events')
-        .delete()
-        .eq('id', eventId);
+      // Show confirmation dialog
+      if (!window.confirm('Are you sure you want to delete this event?')) {
+        return;
+      }
 
-      if (error) throw error;
-      
+      setLoading(true);
+      await deleteEvent(eventId);
       toast.showSuccess('Event deleted successfully');
-      loadEvents(); // Changed from refreshEvents to loadEvents
-    } catch (error) {
+      await loadEvents();
+    } catch (error: any) {
       console.error('Error deleting event:', error);
-      toast.showError('Failed to delete event');
+      toast.showError(error.message || 'Failed to delete event');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -82,26 +84,28 @@ const AdminEvents: React.FC = () => {
     <AdminLayout>
       <div className="container mx-auto px-4 py-8">
         <h1 className="text-2xl font-bold mb-6">Manage Events</h1>
-        
-        <div className="bg-gray-800 rounded-lg overflow-hidden">
-          <table className="min-w-full divide-y divide-gray-700">
-            <thead className="bg-gray-900">
+        <div className="bg-[#242538] rounded-xl overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-[#1a1b2e]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Event</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Creator</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">Actions</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Event</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Date</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Creator</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-700">
+            <tbody className="divide-y divide-[#1a1b2e]">
               {events.map((event) => (
                 <tr key={event.id}>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-white">{event.title}</div>
+                    <div className="text-sm font-medium text-white">{event.title}</div>
+                  </td>
+                  <td className="px-6 py-4">
                     <div className="text-sm text-gray-400">{new Date(event.start_time).toLocaleString()}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm text-white">{event.creator?.name}</div>
+                    <div className="text-sm text-white">{event.creator?.username}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2 py-1 text-xs rounded-full ${
@@ -122,7 +126,7 @@ const AdminEvents: React.FC = () => {
                       </button>
                       {event.status === 'active' && (
                         <button
-                          onClick={() => handleMarkComplete(event.id)}
+                          onClick={() => handleMarkComplete(event.id, true)}
                           className="px-3 py-1.5 text-sm bg-green-500/10 text-green-400 rounded-lg hover:bg-green-500/20"
                         >
                           Complete & Process

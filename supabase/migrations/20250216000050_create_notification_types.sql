@@ -30,8 +30,12 @@ BEGIN
             'friend_request_accepted',
             'friend_request_declined',
             'event_join_request_accepted',
-            'event_join_request_declined'
+            'event_join_request_declined',
+            'event_deleted_by_admin'
         );
+    ELSE
+        -- Add new enum value if type already exists
+        ALTER TYPE notification_type ADD VALUE IF NOT EXISTS 'event_deleted_by_admin';
     END IF;
 END $$;
 
