@@ -9,7 +9,9 @@ import {
   Coins,
   ClipboardList,
   Newspaper,
-  Plus
+  Plus,
+  Bell,
+  Users
 } from 'lucide-react';
 import AdminMobileNav from '../components/AdminMobileNav';
 
@@ -32,6 +34,8 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'Events', href: '/admin/events', icon: Trophy },
     { name: 'Create Event', href: '/admin/create-event', icon: Plus },
     { name: 'Stories', href: '/admin/stories', icon: Newspaper },
+    { name: 'Broadcast', href: '/admin/broadcast', icon: Bell },
+    { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Reports', href: '/admin/reports', icon: AlertCircle },
     { name: 'Withdrawals', href: '/admin/withdrawals', icon: Wallet },
     { name: 'Platform Fees', href: '/admin/platform-fees', icon: Coins },

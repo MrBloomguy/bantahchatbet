@@ -7,49 +7,49 @@ interface UserLevelBadgeProps {
   showLabel?: boolean;
 }
 
-const UserLevelBadge: React.FC<UserLevelBadgeProps> = ({ 
-  points, 
+const UserLevelBadge: React.FC<UserLevelBadgeProps> = ({
+  points,
   size = 'md',
-  showLabel = true 
+  showLabel = true
 }) => {
   // Defensive: always use a valid size
   const safeSize = ['sm', 'md', 'lg'].includes(size) ? size : 'md';
   const getLevelInfo = (points: number) => {
     if (typeof points !== 'number' || isNaN(points)) return {
       name: 'Beginner',
-      icon: <Star />, 
-      color: 'from-gray-400 to-gray-500',
-      borderColor: 'border-gray-400'
+      iconPath: '/Beginner.svg',
+      color: 'bg-black',
+      textColor: 'text-gray-900'
     };
     if (points >= 10000) return {
       name: 'Master',
-      icon: <Crown />, 
-      color: 'from-yellow-400 to-yellow-500',
-      borderColor: 'border-yellow-400'
+      iconPath: '/master.svg',
+      color: 'bg-black',
+      textColor: 'text-amber-700'
     };
     if (points >= 5000) return {
       name: 'Expert',
-      icon: <Trophy />, 
-      color: 'from-purple-400 to-purple-500',
-      borderColor: 'border-purple-400'
+      iconPath: '/expert.svg',
+      color: 'bg-black',
+      textColor: 'text-purple-700'
     };
     if (points >= 2000) return {
       name: 'Advanced',
-      icon: <Award />, 
-      color: 'from-blue-400 to-blue-500',
-      borderColor: 'border-blue-400'
+      iconPath: '/advanced.svg',
+      color: 'bg-black',
+      textColor: 'text-blue-700'
     };
     if (points >= 500) return {
-      name: 'Intermediate',
-      icon: <Medal />, 
-      color: 'from-green-400 to-green-500',
-      borderColor: 'border-green-400'
+      name: 'Amateur',
+      iconPath: '/amateur.svg',
+      color: 'bg-black',
+      textColor: 'text-emerald-700'
     };
     return {
       name: 'Beginner',
-      icon: <Star />, 
-      color: 'from-gray-400 to-gray-500',
-      borderColor: 'border-gray-400'
+      iconPath: '/Beginner.svg',
+      color: 'bg-black',
+      textColor: 'text-gray-900'
     };
   };
 
@@ -75,15 +75,15 @@ const UserLevelBadge: React.FC<UserLevelBadgeProps> = ({
   const iconClass = sizeClasses[safeSize]?.icon || 'w-4 h-4';
 
   return (
-    <div className={`relative inline-flex items-center ${showLabel ? 'pr-3' : ''} ${sizeClasses[size].badge} rounded-full bg-gradient-to-r ${level.color}`}>
-      {/* Icon container with border */}
-      <div className={`relative flex items-center justify-center rounded-full aspect-square ${badgeClass} border-2 ${level.borderColor} bg-white/10`}>
-        <div className={iconClass}>
-          {level.icon}
-        </div>
+    <div className={`relative inline-flex items-center ${showLabel ? 'pr-3' : ''} ${sizeClasses[size].badge} rounded-full bg-gray-100`}>
+      {/* Icon container with badge */}
+      <div className={`relative flex items-center justify-center rounded-full aspect-square ${badgeClass} overflow-hidden`}>
+        {level.iconPath && (
+          <img src={level.iconPath} alt={`${level.name} Badge`} className="w-full h-full" />
+        )}
       </div>
       {showLabel && (
-        <span className="ml-1 font-semibold text-white">
+        <span className={`ml-1 font-semibold ${level.textColor}`}>
           {level.name}
         </span>
       )}

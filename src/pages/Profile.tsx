@@ -7,6 +7,7 @@ import MobileFooterNav from '../components/MobileFooterNav';
 import UserRankBadge from '../components/UserRankBadge';
 import PageHeader from '../components/PageHeader';
 import UserLevelBadge from '../components/UserLevelBadge';
+import UserAvatar from '../components/UserAvatar';
 
 const Profile: React.FC = () => {
   const { currentUser, logout } = useAuth();
@@ -89,10 +90,13 @@ const Profile: React.FC = () => {
               </button>
             </div>
             <div className="relative mb-3">
-              <img
+              <UserAvatar
                 src={currentUser?.avatar_url || '/avatar.svg'}
-                alt={currentUser?.name}
-                className="w-28 h-28 rounded-full border-4 border-[#F6F7FB] shadow-lg object-cover bg-[#F6F7FB]"
+                alt={currentUser?.name || 'User'}
+                size="xl"
+                className="w-28 h-28"
+                points={currentUser?.points || 0}
+                showLevelBadge={true}
               />
               {/* Edit icon at the edge of avatar */}
               <button
@@ -114,7 +118,7 @@ const Profile: React.FC = () => {
             </div>
             <h2 className="text-2xl font-bold text-gray-900 mb-1 tracking-tight">{currentUser?.name}</h2>
             <p className="text-gray-500 text-base mb-2">@{currentUser?.username}</p>
-            
+
             {/* Level and Points Section */}
             <div className="flex items-center gap-3 mb-4">
               <UserLevelBadge points={currentUser?.points || 0} size="md" />
@@ -123,7 +127,7 @@ const Profile: React.FC = () => {
                 <span className="font-medium">{currentUser?.points || 0} Points</span>
               </div>
             </div>
-            
+
             {currentUser?.bio && (
               <p className="text-gray-700 text-center mb-3 max-w-xs leading-relaxed">{currentUser.bio}</p>
             )}

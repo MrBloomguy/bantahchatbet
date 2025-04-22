@@ -4,6 +4,7 @@ import { useProfile, Profile } from '../hooks/useProfile';
 import LoadingSpinner from './LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
 import UserLevelBadge from './UserLevelBadge';
+import UserAvatar from './UserAvatar';
 
 interface ProfileCardProps {
   profile?: Profile;
@@ -33,7 +34,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
 
   const handleFollow = async () => {
     if (!profile) return;
-    
+
     const success = await followUser(profile.id);
     if (success) {
       setProfile(prev => prev ? {
@@ -46,7 +47,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
 
   const handleUnfollow = async () => {
     if (!profile) return;
-    
+
     const success = await unfollowUser(profile.id);
     if (success) {
       setProfile(prev => prev ? {
@@ -77,10 +78,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
       </button>
 
       <div className="text-center">
-        <img
+        <UserAvatar
           src={profile.avatar_url}
           alt={profile.name}
-          className="w-24 h-24 rounded-full mx-auto mb-4"
+          size="xl"
+          className="w-24 h-24 mx-auto mb-4"
+          points={profile.points || 0}
+          showLevelBadge={true}
         />
         <h2 className="text-xl font-bold mb-1">{profile.name}</h2>
         <p className="text-white/60">@{profile.username}</p>

@@ -11,6 +11,7 @@ import { WalletProvider } from './contexts/WalletContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { SplashScreenProvider } from './contexts/SplashScreenContext';
 import { PointsProvider } from './contexts/PointsContext';
+import { UserPresenceProvider } from './contexts/UserPresenceContext';
 import LevelUpDialog from './components/LevelUpDialog';
 import PointsNotification from './components/PointsNotification';
 
@@ -23,8 +24,9 @@ import AdminWithdrawals from './pages/AdminWithdrawals';
 import AdminAuditLog from './pages/AdminAuditLog';
 import AdminPlatformFees from './pages/AdminPlatformFees';
 import AdminStories from './pages/AdminStories';
-import AdminCreateEvent from './pages/AdminCreateEvent'; // Fix import path
-import AdminUsers from './pages/AdminUsers'; // Import AdminUsers page
+import AdminCreateEvent from './pages/AdminCreateEvent';
+import AdminUsers from './pages/AdminUsers';
+import AdminBroadcast from './pages/AdminBroadcast';
 
 // User Pages
 import SignIn from './pages/SignIn';
@@ -62,7 +64,8 @@ const App: React.FC = () => {
             <WalletProvider>
               <SettingsProvider>
                 <SplashScreenProvider>
-                  <PointsProvider>
+                  <UserPresenceProvider>
+                    <PointsProvider>
                     <div className="min-h-screen bg-gray-50">
                       {!isAuthPage && <DesktopNav />}
                       <main className="lg:ml-[200px] flex-1">
@@ -73,7 +76,7 @@ const App: React.FC = () => {
                           <Route path="/help" element={<Help />} />
                           <Route path="/privacy" element={<Privacy />} />
                           <Route path="/stories" element={<Stories />} />
-                          
+
                           {/* Admin routes */}
                           <Route path="/admin/login" element={<AdminLogin />} />
                           <Route
@@ -142,23 +145,28 @@ const App: React.FC = () => {
                               <AdminUsers />
                             </AdminRoute>
                           } />
+                          <Route path="/admin/broadcast" element={
+                            <AdminRoute>
+                              <AdminBroadcast />
+                            </AdminRoute>
+                          } />
 
                           {/* Protected routes */}
-                          <Route 
-                            path="/events" 
+                          <Route
+                            path="/events"
                             element={
                               <ProtectedRoute>
                                 <Events />
                               </ProtectedRoute>
-                            } 
+                            }
                           />
-                          <Route 
-                            path="/wallet" 
+                          <Route
+                            path="/wallet"
                             element={
                               <ProtectedRoute>
                                 <Wallet />
                               </ProtectedRoute>
-                            } 
+                            }
                           />
                           <Route path="/games" element={
                             <ProtectedRoute>
@@ -241,7 +249,8 @@ const App: React.FC = () => {
                         <PointsNotification />
                       </main>
                     </div>
-                  </PointsProvider>
+                    </PointsProvider>
+                  </UserPresenceProvider>
                 </SplashScreenProvider>
               </SettingsProvider>
             </WalletProvider>

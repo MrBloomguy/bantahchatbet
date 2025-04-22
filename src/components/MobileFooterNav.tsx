@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { useMessageNotifications } from '../hooks/useMessageNotifications';
 
 const MobileFooterNav: React.FC = () => {
   const navigate = useNavigate();
@@ -10,6 +11,10 @@ const MobileFooterNav: React.FC = () => {
   const { currentUser } = useAuth();
   const [eventCount, setEventCount] = useState(0);
   const [challengeCount, setChallengeCount] = useState(0);
+  const { unreadMessages, pendingFriendRequests } = useMessageNotifications();
+
+  // Calculate total message notifications
+  const totalMessageNotifications = unreadMessages + pendingFriendRequests;
 
   useEffect(() => {
     const fetchCounts = async () => {
@@ -35,10 +40,10 @@ const MobileFooterNav: React.FC = () => {
     // Set up real-time subscription for updates
     const eventsSubscription = supabase
       .channel('events-changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'events' 
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'events'
       }, () => {
         fetchCounts();
       })
@@ -46,10 +51,10 @@ const MobileFooterNav: React.FC = () => {
 
     const challengesSubscription = supabase
       .channel('challenges-changes')
-      .on('postgres_changes', { 
-        event: '*', 
-        schema: 'public', 
-        table: 'challenges' 
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'challenges'
       }, () => {
         fetchCounts();
       })
@@ -61,41 +66,48 @@ const MobileFooterNav: React.FC = () => {
     };
   }, []);
 
+  // Format the notification count for display
+  const formatNotificationCount = (count: number) => {
+    if (count > 99) return '99+';
+    return count.toString();
+  };
+
   const navItems = [
     {
       id: 'events',
       path: '/events',
       icon: <img src="/eventssvg.svg" alt="Events Icon" className="w-7 h-7" />,
       label: 'Events',
-      badge: eventCount > 0 ? eventCount.toString() : undefined,
+      badge: eventCount > 0 ? formatNotificationCount(eventCount) : undefined,
     },
     {
-      id: 'games',
-      path: '/games',
-      icon: <img src="/gamessvg.svg" alt="Events Icon" className="w-8 h-8" />,
-      label: 'Challenge',
-      badge: challengeCount > 0 ? challengeCount.toString() : undefined,
+      id: 'messages',
+      path: '/messages',
+      icon: <img src="/mes.svg" alt="Messages Icon" className="w-7 h-7" />,
+      label: 'Messages',
+      badge: totalMessageNotifications > 0 ? formatNotificationCount(totalMessageNotifications) : undefined,
     },
     {
       id: 'create',
       path: '/create',
-      icon: <img src="/create.png" alt="Events Icon" className="w-10 h-10" />,
+      icon: <img src="/create.png" alt="Create Icon" className="w-10 h-10" />,
       label: '',
       isMain: true,
     },
     {
-      id: 'myevents',
-      path: '/myevents',
-      icon: <img src="/listsvg.svg" alt="Events Icon" className="w-8 h-8" />,
-      label: 'My Events',
+      id: 'games',
+      path: '/games',
+      icon: <img src="/gamessvg.svg" alt="Games Icon" className="w-8 h-8" />,
+      label: 'Challenge',
+      badge: challengeCount > 0 ? formatNotificationCount(challengeCount) : undefined,
     },
     {
       id: 'profile',
       path: '/profile',
       icon: currentUser?.avatar_url ? (
-        <img 
-          src={currentUser.avatar_url} 
-          alt="Profile" 
+        <img
+          src={currentUser.avatar_url}
+          alt="Profile"
           className="w-8 h-8 rounded-full object-cover border-2 border-transparent"
           style={{
             borderColor: currentPath === '/profile' ? '#CCFF00' : 'transparent'
@@ -121,7 +133,7 @@ const MobileFooterNav: React.FC = () => {
               {item.badge && (
                 <span className="absolute -top-1 -right-2 bg-[#FF2E2EFF] text-white text-[10px] font-medium rounded-md px-1 py-0.5 min-w-[15px] h-[15px] flex items-center justify-center">
                   {item.badge}
-                </span>              
+                </span>
               )}
               <div
                 className={`${

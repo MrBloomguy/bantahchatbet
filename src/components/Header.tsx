@@ -36,6 +36,9 @@ const Header: React.FC<HeaderProps> = ({
   const { currentUser, login } = useAuth();
   const { unreadCount } = useNotification();
   const { unreadMessages, pendingFriendRequests } = useMessageNotifications();
+
+  // Calculate total message notifications
+  const totalMessageNotifications = unreadMessages + pendingFriendRequests;
   const isMobile = useMediaQuery('(max-width: 768px)');
   const { wallet } = useWallet();
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,7 +50,11 @@ const Header: React.FC<HeaderProps> = ({
   const balance = wallet?.real_balance || 0;
   const usdEquivalent = convertNGNtoUSD(balance);
 
-  const totalMessageCount = unreadMessages + pendingFriendRequests;
+  // Format the notification count for display
+  const formatNotificationCount = (count: number) => {
+    if (count > 99) return '99+';
+    return count.toString();
+  };
 
   const formatNumber = (num, currency) => {
     if (num >= 1_000_000) return currency + (num / 1_000_000).toFixed(2).replace(/\.00$/, '') + 'M';
@@ -120,9 +127,9 @@ const Header: React.FC<HeaderProps> = ({
                     alt="mes"
                     className="h-6 w-6 opacity-100 hover:opacity-100 transition-opacity"
                   />
-                  {(unreadMessages + pendingFriendRequests) > 0 && (
+                  {totalMessageNotifications > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-                      {unreadMessages + pendingFriendRequests}
+                      {formatNotificationCount(totalMessageNotifications)}
                     </span>
                   )}
                 </button>
@@ -138,7 +145,7 @@ const Header: React.FC<HeaderProps> = ({
                     alt="Notifications"
                     className="h-7 w-7"
                   />
-                  {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">{unreadCount}</span>}
+                  {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">{formatNotificationCount(unreadCount)}</span>}
                 </button>
 
                 {/* Wallet */}

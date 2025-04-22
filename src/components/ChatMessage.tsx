@@ -5,6 +5,7 @@ import defaultAvatar from '../../public/avatar.svg';
 import ProfileCard from '../components/ProfileCard';
 import { Smile, ArrowLeft } from 'lucide-react';
 import { Camera, Paperclip, Image, PaperPlaneRight } from 'phosphor-react';
+import UserAvatar from './UserAvatar';
 
 interface Message {
  id: string;
@@ -264,10 +265,13 @@ const ChatMessage: React.FC = () => {
       onMouseEnter={() => setShowProfileCard(true)}
       onMouseLeave={() => setShowProfileCard(false)}
      >
-      <img
+      <UserAvatar
        src={senderProfile?.avatar_url || defaultAvatar}
-       alt="Sender Avatar"
-       className="w-8 h-8 rounded-full cursor-pointer"
+       alt={senderProfile?.name || "Sender"}
+       size="sm"
+       points={senderProfile?.points || 0}
+       showLevelBadge={true}
+       className="cursor-pointer"
       />
       {showProfileCard && senderProfile && (
        <div className="absolute left-10 -top-2 z-10 w-max">
@@ -364,10 +368,12 @@ const ChatMessage: React.FC = () => {
      {/* Recipient Info */}
      {recipientProfile ? (
       <div className="flex items-center space-x-3 cursor-pointer" /* onClick could navigate to profile */ >
-       <img
+       <UserAvatar
         src={recipientProfile.avatar_url || defaultAvatar}
-        alt={recipientProfile.name || 'Recipient Avatar'}
-        className="w-9 h-9 rounded-full"
+        alt={recipientProfile.name || 'Recipient'}
+        size="md"
+        points={recipientProfile.points || 0}
+        showLevelBadge={true}
        />
        <div>
         <h2 className="font-semibold text-gray-800 text-sm leading-tight">{recipientProfile.name || recipientProfile.username || 'Chat'}</h2>
