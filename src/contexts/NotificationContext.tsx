@@ -2,20 +2,34 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useToast } from './ToastContext';
 
+// Service worker registration status
+let swRegistration = null;
+let isSubscribed = false;
+
 interface NotificationContextType {
   unreadCount: number;
   markAllAsRead: () => Promise<void>;
+  isPushSupported: boolean;
+  isPushEnabled: boolean;
+  subscribeToPush: () => Promise<void>;
+  unsubscribeFromPush: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType>({
   unreadCount: 0,
   markAllAsRead: async () => {},
+  isPushSupported: false,
+  isPushEnabled: false,
+  subscribeToPush: async () => {},
+  unsubscribeFromPush: async () => {},
 });
 
 export const useNotifications = () => useContext(NotificationContext);
 
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isPushSupported, setIsPushSupported] = useState(false);
+  const [isPushEnabled, setIsPushEnabled] = useState(false);
   const toast = useToast();
 
   const loadUnreadCount = async () => {
@@ -50,17 +64,33 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   useEffect(() => {
+    const user = supabase.auth.user();
+    if (!user) return;
+
     loadUnreadCount();
 
     // Subscribe to new notifications
     const channel = supabase
-      .channel('notifications')
+      .channel('notifications-context')
       .on('postgres_changes', {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
         table: 'notifications',
-        filter: `user_id=eq.${supabase.auth.user()?.id}`
+        filter: `user_id=eq.${user.id}`
+      }, (payload) => {
+        console.log('New notification in context:', payload);
+        // Increment unread count
+        setUnreadCount(prev => prev + 1);
+        // Show a toast notification
+        toast.showInfo(payload.new.title || 'New notification received');
+      })
+      .on('postgres_changes', {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${user.id}`
       }, () => {
+        // Refresh count when notifications are updated (marked as read)
         loadUnreadCount();
       })
       .subscribe();
@@ -68,10 +98,158 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     return () => {
       supabase.removeChannel(channel);
     };
+  }, [toast]);
+
+  // Check if push notifications are supported
+  useEffect(() => {
+    // Check if service workers and push messaging are supported by the browser
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      setIsPushSupported(true);
+
+      // Register service worker
+      navigator.serviceWorker.register('/service-worker.js')
+        .then(registration => {
+          console.log('Service Worker registered with scope:', registration.scope);
+          swRegistration = registration;
+
+          // Check if already subscribed
+          return registration.pushManager.getSubscription();
+        })
+        .then(subscription => {
+          isSubscribed = !(subscription === null);
+          setIsPushEnabled(isSubscribed);
+
+          if (isSubscribed) {
+            console.log('User is already subscribed to push notifications');
+            // You could update your backend with the subscription here
+          }
+        })
+        .catch(error => {
+          console.error('Service Worker registration failed:', error);
+        });
+    }
   }, []);
 
+  // Function to subscribe to push notifications
+  const subscribeToPush = async () => {
+    if (!swRegistration) return;
+
+    try {
+      const applicationServerKey = urlBase64ToUint8Array(
+        'BMRTg6RSFC44oDE9Nf7drNX-cqAKhvCfHwbzVmuSE9VEMcjTJ9QclzWFBjZo_Kfz7psQ6KPTorG04XgF75QKMPY'
+      );
+
+      const subscription = await swRegistration.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: applicationServerKey
+      });
+
+      console.log('User is subscribed:', subscription);
+
+      // Send the subscription to your server
+      await saveSubscription(subscription);
+
+      isSubscribed = true;
+      setIsPushEnabled(true);
+      toast.showSuccess('Push notifications enabled!');
+    } catch (error) {
+      console.error('Failed to subscribe the user:', error);
+      toast.showError('Could not enable push notifications');
+    }
+  };
+
+  // Function to unsubscribe from push notifications
+  const unsubscribeFromPush = async () => {
+    if (!swRegistration) return;
+
+    try {
+      const subscription = await swRegistration.pushManager.getSubscription();
+
+      if (subscription) {
+        // Remove subscription from server
+        await deleteSubscription(subscription);
+
+        // Unsubscribe locally
+        await subscription.unsubscribe();
+
+        isSubscribed = false;
+        setIsPushEnabled(false);
+        toast.showSuccess('Push notifications disabled!');
+      }
+    } catch (error) {
+      console.error('Error unsubscribing:', error);
+      toast.showError('Could not disable push notifications');
+    }
+  };
+
+  // Helper function to convert base64 to Uint8Array for VAPID key
+  const urlBase64ToUint8Array = (base64String) => {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/-/g, '+')
+      .replace(/_/g, '/');
+
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+
+    return outputArray;
+  };
+
+  // Save subscription to your backend
+  const saveSubscription = async (subscription) => {
+    const user = supabase.auth.user();
+    if (!user) return;
+
+    try {
+      // Store the subscription in your database
+      const { error } = await supabase
+        .from('push_subscriptions')
+        .upsert({
+          user_id: user.id,
+          subscription: JSON.stringify(subscription),
+          created_at: new Date().toISOString()
+        });
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error saving subscription:', error);
+      throw error;
+    }
+  };
+
+  // Delete subscription from your backend
+  const deleteSubscription = async (subscription) => {
+    const user = supabase.auth.user();
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('push_subscriptions')
+        .delete()
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+    } catch (error) {
+      console.error('Error deleting subscription:', error);
+      throw error;
+    }
+  };
+
   return (
-    <NotificationContext.Provider value={{ unreadCount, markAllAsRead }}>
+    <NotificationContext.Provider
+      value={{
+        unreadCount,
+        markAllAsRead,
+        isPushSupported,
+        isPushEnabled,
+        subscribeToPush,
+        unsubscribeFromPush
+      }}
+    >
       {children}
     </NotificationContext.Provider>
   );

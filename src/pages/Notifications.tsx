@@ -77,7 +77,8 @@ const Notifications = () => {
     });
   }, [notifications, filter]);
 
-  console.log('Filtered Notifications:', filterNotifications);
+  // Debug log for filtered notifications
+  // console.log('Filtered Notifications:', filterNotifications);
 
   const handleMarkAllRead = async () => {
     try {

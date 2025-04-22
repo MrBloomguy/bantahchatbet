@@ -15,11 +15,11 @@ export function useNotification() {
 
     try {
       setLoading(true);
-      
+
       // Add error handling and retry logic
       let retries = 3;
       let error;
-      
+
       while (retries > 0) {
         try {
           const { data, error: fetchError } = await supabase
@@ -27,11 +27,11 @@ export function useNotification() {
             .select('*')
             .eq('user_id', currentUser.id)
             .order('created_at', { ascending: false })
-            
+
           if (fetchError) throw fetchError;
 
           setUnreadCount(data?.filter(n => !n.read_at).length || 0);
-          
+
           setNotifications(data || []);
           return; // Success, exit the retry loop
         } catch (e) {
@@ -42,7 +42,7 @@ export function useNotification() {
           }
         }
       }
-      
+
       // If we get here, all retries failed
       throw error;
 
@@ -52,20 +52,20 @@ export function useNotification() {
     } finally {
       setLoading(false);
     }
-  }, [currentUser?.id, toast]); 
+  }, [currentUser?.id, toast]);
 
     const markAsRead = useCallback(async (notificationId: string) => {
         if (!currentUser?.id) return;
-    
+
         try {
           const { error } = await supabase
             .from('notifications')
             .update({ read_at: new Date() })
             .eq('id', notificationId)
             .eq('user_id', currentUser.id);
-    
+
           if (error) throw error;
-    
+
           // Update local state
           setNotifications(notifications.map(n =>
             n.id === notificationId ? { ...n, read_at: new Date() } : n
@@ -77,19 +77,19 @@ export function useNotification() {
           toast.showError('Failed to mark notification as read');
         }
       }, [currentUser?.id, notifications, unreadCount, toast]);
-    
+
       const markAllAsRead = useCallback(async () => {
         if (!currentUser?.id) return;
-    
+
         try {
           const { error } = await supabase
             .from('notifications')
             .update({ read_at: new Date() })
             .eq('user_id', currentUser.id)
             .is('read_at', null);
-    
+
           if (error) throw error;
-    
+
           // Update local state
           setNotifications(notifications.map(n => ({ ...n, read_at: new Date() })));
           setUnreadCount(0);
@@ -102,7 +102,34 @@ export function useNotification() {
 
   useEffect(() => {
     fetchNotifications();
-  }, [fetchNotifications]);
+
+    // Set up real-time subscription for new notifications
+    if (!currentUser?.id) return;
+
+    // Create a channel for real-time updates
+    const channel = supabase
+      .channel('notification-changes')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'notifications',
+        filter: `user_id=eq.${currentUser.id}`
+      }, (payload) => {
+        console.log('New notification received:', payload);
+        // Add the new notification to the state
+        setNotifications(prev => [payload.new, ...prev]);
+        // Update unread count
+        setUnreadCount(prev => prev + 1);
+        // Show a toast notification
+        toast.showInfo(payload.new.title || 'New notification received');
+      })
+      .subscribe();
+
+    // Cleanup subscription on unmount
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [fetchNotifications, currentUser?.id, toast]);
 
   return {
         notifications,

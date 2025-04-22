@@ -3,6 +3,7 @@ import { ArrowRight, Bell, Moon, Eye, Globe, Volume2, Mail, Radio, Activity, Use
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import PageHeader from '../components/PageHeader';
+import PushNotificationToggle from '../components/PushNotificationToggle';
 
 const Settings: React.FC = () => {
   const navigate = useNavigate();
@@ -31,10 +32,14 @@ const Settings: React.FC = () => {
               Notifications
             </h2>
             <div className="space-y-2">
+              {/* Web Push Notifications Toggle */}
+              <PushNotificationToggle className="py-1" />
+
+              {/* App Push Notifications Toggle */}
               <div className="flex items-center justify-between py-1">
                 <div className="flex items-center gap-3">
                   <Radio className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-                  <span className="text-gray-800 dark:text-gray-200 text-sm">Push Notifications</span>
+                  <span className="text-gray-800 dark:text-gray-200 text-sm">In-App Notifications</span>
                 </div>
                 <button
                   onClick={() => toggleSetting('notifications', 'push')}
