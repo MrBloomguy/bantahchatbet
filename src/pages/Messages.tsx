@@ -4,9 +4,10 @@ import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import MobileFooterNav from '../components/MobileFooterNav';
 import { supabase } from '../lib/supabase';
-import { Search, MessageSquare, MessageSquareText, ArrowLeft } from 'lucide-react';
+import { Search, MessageSquare, MessageSquareText, ArrowLeft, Trophy } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import ChatWindow from '../components/ChatWindow';
+import ChallengeChatTab from '../components/ChallengeChatTab';
 
 interface User {
   id: string;
@@ -157,14 +158,10 @@ const Messages: React.FC = () => {
     fetchChatList();
   }, [currentUser, refreshChatList]);
 
+  // Handle chat ID from URL
   useEffect(() => {
     const params = new URLSearchParams(location.search);
-    const tab = params.get('tab');
     const chatId = params.get('chatId');
-
-    if (tab === 'challenges') {
-      setActiveFilter('challenges');
-    }
 
     if (chatId) {
       setTimeout(() => {
@@ -235,6 +232,7 @@ const Messages: React.FC = () => {
             </div>
             <div className="flex space-x-2 mb-2">
               <button
+                type="button"
                 onClick={() => setActiveFilter('all')}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors duration-150 ${activeFilter === 'all'
                   ? 'bg-purple-600 text-white shadow-sm'
@@ -243,6 +241,7 @@ const Messages: React.FC = () => {
                 All
               </button>
               <button
+                type="button"
                 onClick={() => setActiveFilter('unread')}
                 className={`px-3 py-1 rounded-full text-sm font-medium transition-colors duration-150 ${activeFilter === 'unread'
                   ? 'bg-purple-600 text-white shadow-sm'
@@ -251,10 +250,9 @@ const Messages: React.FC = () => {
                 Unread
               </button>
               <button
-                onClick={() => setActiveFilter('challenges')}
-                className={`px-3 py-1 rounded-full text-sm font-medium transition-colors duration-150 ${activeFilter === 'challenges'
-                  ? 'bg-purple-600 text-white shadow-sm'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                type="button"
+                onClick={() => navigate('/challenges')}
+                className="px-3 py-1 rounded-full text-sm font-medium transition-colors duration-150 bg-gray-100 text-gray-700 hover:bg-gray-200"
               >
                 Challenges
                 {chatListItems.some(item => item.unread_count > 0 && item.last_message?.content.includes('challenge')) && (
@@ -334,12 +332,18 @@ const Messages: React.FC = () => {
             )}
           </div>
         </div>
+
         <div className={`flex-grow ${!showMobileChat ? 'hidden lg:block' : 'block'}`}>
           {activeChatUserId ? (
             <div className="h-full flex flex-col">
               {showMobileChat && (
                 <div className="lg:hidden flex items-center gap-2 p-4 bg-white border-b border-gray-200">
-                  <button onClick={handleBackToList} className="p-2 hover:bg-gray-100 rounded-full">
+                  <button
+                    type="button"
+                    onClick={handleBackToList}
+                    className="p-2 hover:bg-gray-100 rounded-full"
+                    title="Back to chat list"
+                  >
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                   </button>
                   <div className="flex-1">
@@ -348,8 +352,8 @@ const Messages: React.FC = () => {
                 </div>
               )}
               <div className="flex-1">
-                <ChatWindow 
-                  userId={activeChatUserId} 
+                <ChatWindow
+                  userId={activeChatUserId}
                   onNewMessageSent={() => setRefreshChatList(prev => !prev)}
                 />
               </div>

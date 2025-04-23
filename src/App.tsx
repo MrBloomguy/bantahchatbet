@@ -49,6 +49,7 @@ import ProfileSettings from './pages/ProfileSettings';
 import Settings from './pages/Settings';
 import Referral from './pages/Referral';
 import Levels from './pages/Levels';
+import Challenges from './pages/Challenges';
 
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -189,6 +190,11 @@ const App: React.FC = () => {
                           <Route path="/games" element={
                             <ProtectedRoute>
                               <Games />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/challenges" element={
+                            <ProtectedRoute>
+                              <Challenges />
                             </ProtectedRoute>
                           } />
                           <Route path="/myevents" element={

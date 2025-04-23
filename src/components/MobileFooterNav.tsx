@@ -88,9 +88,10 @@ const MobileFooterNav: React.FC = () => {
       id: 'games',
       path: '/games',
       icon: <img src="/gamessvg.svg" alt="Games Icon" className="w-8 h-8" />,
-      label: 'Challenge',
+      label: 'Games',
       badge: challengeCount > 0 ? formatNotificationCount(challengeCount) : undefined,
     },
+
     {
       id: 'create',
       path: '/create',

@@ -26,8 +26,9 @@ const DesktopNav: React.FC = () => {
       id: 'games',
       path: '/games',
       icon: <img src="/gamessvg.svg" alt="Games Icon" className="w-9 h-9" />,
-      label: 'Challenge',
+      label: 'Games',
     },
+
     {
       id: 'create',
       path: '/create',
@@ -101,8 +102,10 @@ const DesktopNav: React.FC = () => {
 
       {/* Menu Drawer Button (always visible as the first item) */}
       <button
+        type="button"
         onClick={toggleMenu}
         className={`w-full flex items-center px-3 py-3 rounded-md transition-all hover:bg-white/5`}
+        title={isMenuOpen ? "Collapse menu" : "Expand menu"}
       >
         <div className={`min-w-[32px] flex justify-center mr-3 text-black/80`}>
           {isMenuOpen ? (
@@ -120,11 +123,13 @@ const DesktopNav: React.FC = () => {
           const isActive = location.pathname === item.path;
           return (
             <button
+              type="button"
               key={item.id}
               onClick={() => navigate(item.path)}
               className={`w-full flex items-center px-3 py-3 rounded-md transition-all ${
                 isActive ? 'bg-white/10' : 'hover:bg-white/5'
               }`}
+              title={item.label}
             >
               <div className={`min-w-[32px] flex justify-center mr-3 ${isActive ? 'text-[#CCFF00]' : 'text-black/80'}`}>
                 {item.icon}

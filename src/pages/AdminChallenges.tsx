@@ -6,6 +6,7 @@ import AdminLayout from '../layouts/AdminLayout';
 import AdminPageLayout from '../components/AdminPageLayout';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { format } from 'date-fns';
+import ChallengePayoutDetails from '../components/admin/ChallengePayoutDetails';
 
 interface Challenge {
   id: string;
@@ -460,6 +461,13 @@ const AdminChallenges: React.FC = () => {
                   </div>
                 </div>
               </div>
+
+              {selectedChallenge.status === 'completed' && (
+                <div className="border-t border-[#333] pt-6 space-y-4">
+                  <h3 className="text-lg font-medium text-white">Payout Details</h3>
+                  <ChallengePayoutDetails challengeId={selectedChallenge.id} />
+                </div>
+              )}
 
               {selectedChallenge.status === 'accepted' && (
                 <div className="border-t border-[#333] pt-6 space-y-4">
