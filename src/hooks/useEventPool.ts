@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 
 interface EventPool {
   total_amount: number;
-  admin_fee: number;
+  platform_fee: number;
   creator_fee: number;
   yes_pool: number;
   no_pool: number;
@@ -15,8 +15,8 @@ export const useEventPool = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const updatePoolAmount = useCallback(async (
-    eventId: string, 
-    amount: number, 
+    eventId: string,
+    amount: number,
     prediction: boolean
   ) => {
     setIsLoading(true);
@@ -32,7 +32,7 @@ export const useEventPool = () => {
       const { data: fees, error: feeError } = await supabase
         .rpc('calculate_pool_fees', {
           amount: amount,
-          creator_fee_pct: event.creator_fee_percentage
+          creator_fee_pct: event.creator_fee_percentage || 0
         });
 
       if (feeError) throw feeError;
@@ -49,7 +49,7 @@ export const useEventPool = () => {
         .from('event_pools')
         .update({
           total_amount: pool.total_amount + amount,
-          admin_fee: pool.admin_fee + fees.admin_fee,
+          platform_fee: pool.platform_fee + fees.platform_fee, // Use platform_fee consistently
           creator_fee: pool.creator_fee + fees.creator_fee,
           yes_pool: prediction ? pool.yes_pool + fees.net_amount : pool.yes_pool,
           no_pool: !prediction ? pool.no_pool + fees.net_amount : pool.no_pool,
@@ -72,7 +72,7 @@ export const useEventPool = () => {
         .from('event_pools')
         .select(`
           total_amount,
-          admin_fee,
+          platform_fee,
           creator_fee,
           yes_pool,
           no_pool,

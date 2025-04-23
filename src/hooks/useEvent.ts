@@ -64,7 +64,7 @@ export function useEvent() {
           banner_url
         `)
         .order('created_at', { ascending: false });
-      
+
       if (searchQuery) {
         query = query.ilike('title', `%${searchQuery}%`);
       }
@@ -150,7 +150,7 @@ export function useEvent() {
             }
           });
       }
-      
+
       await fetchEvents();
       toast.showSuccess('Successfully joined event');
     } catch (error) {
@@ -204,36 +204,40 @@ export function useEvent() {
         throw error;
       }
 
-      // Broadcast notification to all users
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('id, username');
+      // Try to broadcast notification to all users, but don't fail if it doesn't work
+      try {
+        const { data: users, error: usersError } = await supabase
+          .from('users')
+          .select('id, username');
 
-      if (usersError) {
-        console.error('Error fetching users:', usersError);
-        throw usersError;
-      }
+        if (usersError) {
+          console.error('Error fetching users:', usersError);
+        } else if (users && users.length > 0) {
+          // Create notifications for each user
+          const notifications = users.map(user => ({
+            user_id: user.id,
+            notification_type: 'event_created', // Use notification_type instead of type
+            title: 'New Event Created',
+            content: `@${profile?.username || profile?.name || 'Someone'} just created a new event - ${eventData.title}`,
+            metadata: {
+              event_id: data.id,
+              banner_url: eventData.banner_url,
+            },
+          }));
 
-      if (users && users.length > 0) {
-        const notifications = users.map(user => ({
-          user_id: user.id,
-          type: 'event_created',
-          title: 'New Event Created',
-          content: `@${profile?.username || profile?.name || 'Someone'} just created a new event - ${eventData.title}`,
-          metadata: {
-            event_id: data.id,
-            banner_url: eventData.banner_url,
-          },
-        }));
+          // Try to insert notifications, but don't fail if it doesn't work
+          const { error: notificationsError } = await supabase
+            .from('notifications')
+            .insert(notifications);
 
-        const { error: notificationsError } = await supabase
-          .from('notifications')
-          .insert(notifications);
-
-        if (notificationsError) {
-          console.error('Error inserting notifications:', notificationsError);
-          throw notificationsError;
+          if (notificationsError) {
+            console.error('Error inserting notifications:', notificationsError);
+            // Log error but don't throw - event creation should still succeed
+          }
         }
+      } catch (notificationError) {
+        // Log notification error but don't fail event creation
+        console.error('Error with notifications system:', notificationError);
       }
 
       await fetchEvents();
