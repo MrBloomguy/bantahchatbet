@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
-import AdminLayout from '../layouts/AdminLayout';
-import AdminPageLayout from '../components/AdminPageLayout';
-import { useAdmin } from '../hooks/useAdmin';
-import { useToast } from '../contexts/ToastContext';
-import LoadingSpinner from '../components/LoadingSpinner';
-import { supabase } from '../lib/supabase';
-import SimpleEventPayoutDetails from '../components/admin/SimpleEventPayoutDetails';
+import { supabase } from '@/lib/supabase-client';
+import AdminLayout from '@/components/layouts/AdminLayout';
+import AdminPageLayout from '@/components/layouts/AdminPageLayout';
+import { Spinner } from '@/components/ui/Spinner';
+import { useToast } from '@/hooks/useToast';
+import { useAdmin } from '@/hooks/useAdmin';
+import EventPayoutDetails from '@/components/admin/EventPayoutDetails';
 
 const AdminEvents: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
@@ -18,10 +17,10 @@ const AdminEvents: React.FC = () => {
   const navigate = useNavigate();
 
   const loadEvents = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await getEvents();
-      setEvents(data);
+      const eventsData = await getEvents();
+      setEvents(eventsData);
     } catch (error) {
       console.error('Error loading events:', error);
       toast.showError('Failed to load events');
@@ -37,7 +36,7 @@ const AdminEvents: React.FC = () => {
   const handleMarkComplete = async (eventId: string, result: boolean) => {
     try {
       setLoading(true);
-
+      
       // First, set the result
       const { error: resultError } = await supabase
         .from('events')
@@ -45,10 +44,10 @@ const AdminEvents: React.FC = () => {
         .eq('id', eventId);
 
       if (resultError) throw resultError;
-
+      
       // Then use the admin hook to mark as complete
       const success = await markEventComplete(eventId);
-
+      
       if (success) {
         toast.showSuccess('Event marked as complete');
         await loadEvents();
@@ -64,12 +63,11 @@ const AdminEvents: React.FC = () => {
   };
 
   const handleDeleteEvent = async (eventId: string) => {
-    try {
-      // Show confirmation dialog
-      if (!window.confirm('Are you sure you want to delete this event?')) {
-        return;
-      }
+    if (!window.confirm('Are you sure you want to delete this event?')) {
+      return;
+    }
 
+    try {
       setLoading(true);
       await deleteEvent(eventId);
       toast.showSuccess('Event deleted successfully');
@@ -82,24 +80,15 @@ const AdminEvents: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <AdminLayout>
-        <div className="flex justify-center items-center h-96">
-          <LoadingSpinner size="lg" />
-        </div>
-      </AdminLayout>
-    );
-  }
-
   return (
     <AdminLayout>
-      <AdminPageLayout title="Manage Events">
+      <AdminPageLayout title="Events">
+        {loading && <Spinner />}
 
         {/* Desktop Table View */}
-        <div className="hidden md:block bg-[#242538] rounded-xl overflow-hidden">
+        <div className="hidden md:block">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="min-w-full divide-y divide-[#333]">
               <thead className="bg-[#1a1b2e]">
                 <tr>
                   <th className="px-6 py-3 text-left text-xs font-medium text-white/60 uppercase tracking-wider">Event</th>
@@ -112,21 +101,26 @@ const AdminEvents: React.FC = () => {
               <tbody className="divide-y divide-[#1a1b2e]">
                 {events.map((event) => (
                   <React.Fragment key={event.id}>
-                    <tr
+                    <tr 
                       className={`border-b border-[#333] hover:bg-[#2a2c42] ${selectedEvent === event.id ? 'bg-[#2a2c42]' : ''}`}
                       onClick={() => setSelectedEvent(selectedEvent === event.id ? null : event.id)}
                       style={{ cursor: 'pointer' }}
                     >
                       <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-white">{event.title}</div>
+                        <div className="flex items-center">
+                          <div className="ml-4">
+                            <div className="text-sm font-medium text-white">{event.title}</div>
+                            <div className="text-sm text-white/60">{event.category}</div>
+                          </div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-gray-400">{new Date(event.start_time).toLocaleString()}</div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">
+                        {new Date(event.start_time).toLocaleString()}
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm text-white">{event.creator?.username}</div>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-white/60">
+                        @{event.creator?.username}
                       </td>
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs rounded-full ${
                           event.status === 'active' ? 'bg-green-500/20 text-green-400' :
                           event.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
@@ -135,8 +129,8 @@ const AdminEvents: React.FC = () => {
                           {event.status.toUpperCase()}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <div className="flex space-x-2">
                           <button
                             type="button"
                             onClick={(e) => {
@@ -169,16 +163,6 @@ const AdminEvents: React.FC = () => {
                           >
                             Delete
                           </button>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedEvent(selectedEvent === event.id ? null : event.id);
-                            }}
-                            className="px-3 py-1.5 text-sm bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20"
-                          >
-                            {selectedEvent === event.id ? 'Hide Details' : 'Show Details'}
-                          </button>
                         </div>
                       </td>
                     </tr>
@@ -186,7 +170,7 @@ const AdminEvents: React.FC = () => {
                       <tr>
                         <td colSpan={5} className="p-0">
                           <div className="p-4 bg-[#1e1f33]">
-                            <SimpleEventPayoutDetails eventId={event.id} />
+                            <EventPayoutDetails eventId={event.id} />
                           </div>
                         </td>
                       </tr>
@@ -253,26 +237,23 @@ const AdminEvents: React.FC = () => {
                 </button>
                 <button
                   type="button"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setSelectedEvent(selectedEvent === event.id ? null : event.id);
-                  }}
+                  onClick={() => setSelectedEvent(selectedEvent === event.id ? null : event.id)}
                   className="px-3 py-1.5 text-sm bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20"
                 >
                   {selectedEvent === event.id ? 'Hide Details' : 'Show Details'}
                 </button>
               </div>
-
+              
               {selectedEvent === event.id && event.status === 'completed' && (
                 <div className="mt-4">
-                  <SimpleEventPayoutDetails eventId={event.id} />
+                  <EventPayoutDetails eventId={event.id} />
                 </div>
               )}
             </div>
           ))}
         </div>
 
-        {events.length === 0 && (
+        {events.length === 0 && !loading && (
           <div className="bg-[#242538] rounded-xl p-8 text-center">
             <p className="text-white/60 text-lg">No events found</p>
           </div>
