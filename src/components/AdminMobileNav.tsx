@@ -28,6 +28,7 @@ const AdminMobileNav = () => {
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Events', href: '/admin/events', icon: Trophy },
     { name: 'Event Pools', href: '/admin/event-pools', icon: Coins },
+    { name: 'Event Boost', href: '/admin/event-boost', icon: Users },
     { name: 'Challenges', href: '/admin/challenges', icon: Gamepad2 },
     { name: 'Create Event', href: '/admin/create-event', icon: Plus },
     { name: 'Stories', href: '/admin/stories', icon: Newspaper },

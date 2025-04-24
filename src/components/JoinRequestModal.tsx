@@ -15,6 +15,7 @@ interface EventDetails {
   currentParticipants?: number;
   maxParticipants?: number;
   category?: string;
+  display_participant_boost?: number;
   pool?: {
     entry_amount: number;
   }[];
@@ -75,11 +76,11 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
               </span>
               <span className="bg-[#1a1b2e] px-2 py-1 rounded-full flex items-center gap-1">
                 <Users size={12} />
-                {eventDetails?.currentParticipants || 0}/{eventDetails?.maxParticipants || 0}
+                {(eventDetails?.currentParticipants || 0) + (eventDetails?.display_participant_boost || 0)}/{eventDetails?.maxParticipants || 0}
               </span>
             </div>
           </div>
-          
+
           {/* Creator Info */}
           <div className="flex items-center gap-3 mb-4">
             <img

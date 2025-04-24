@@ -31,6 +31,7 @@ import AdminBroadcastInfo from './pages/AdminBroadcastInfo';
 import AdminChallenges from './pages/AdminChallenges';
 import AdminEventPools from './pages/AdminEventPools';
 import AdminBonusPoints from './pages/AdminBonusPoints';
+import AdminEventBoost from './pages/AdminEventBoost';
 
 // User Pages
 import SignIn from './pages/SignIn';
@@ -180,6 +181,11 @@ const App: React.FC = () => {
                           <Route path="/admin/bonus-points" element={
                             <AdminRoute>
                               <AdminBonusPoints />
+                            </AdminRoute>
+                          } />
+                          <Route path="/admin/event-boost" element={
+                            <AdminRoute>
+                              <AdminEventBoost />
                             </AdminRoute>
                           } />
 

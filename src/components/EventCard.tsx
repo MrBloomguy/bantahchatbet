@@ -32,6 +32,7 @@ interface Event {
   };
   participants?: Array<{ avatar?: string }>;
   current_participants?: number;
+  display_participant_boost?: number;
   max_participants: number;
   category: string;
 }
@@ -215,7 +216,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
                   </div>
                 </div>
                 <div className="bg-white rounded-full min-w-[1.5rem] h-5 flex items-center justify-center text-black font-bold text-xs ml-[-0.2rem] pl-1 pr-1">
-                  {event.participants?.length || event.current_participants || 0}
+                  {(event.participants?.length || event.current_participants || 0) + (event.display_participant_boost || 0)}
                 </div>
               </div>
             </div>
@@ -251,6 +252,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
         }}
         eventDetails={{
           currentParticipants: event.participants?.length || 0,
+          display_participant_boost: event.display_participant_boost || 0,
           maxParticipants: event.max_participants,
           pool: [{
             entry_amount: event.pool?.entry_amount || 0
