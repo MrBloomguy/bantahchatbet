@@ -31,7 +31,11 @@ export function useEventJoinRequest() {
 
     // Disable automatic notifications from triggers
     // We'll create them manually to avoid the "type" column issue
-    await supabase.rpc('disable_triggers');
+    try {
+      await supabase.rpc('disable_triggers');
+    } catch (err) {
+      console.error('Error disabling triggers:', err);
+    }
 
     try {
       // Check if already requested
@@ -98,7 +102,8 @@ export function useEventJoinRequest() {
         },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        read: false
+        read: false,
+        read_at: null
       };
 
       const { error: notificationError } = await supabase
@@ -121,7 +126,8 @@ export function useEventJoinRequest() {
         },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        read: false
+        read: false,
+        read_at: null
       };
 
       const { error: userNotificationError } = await supabase
@@ -155,9 +161,11 @@ export function useEventJoinRequest() {
       return false;
     } finally {
       // Re-enable triggers
-      await supabase.rpc('enable_triggers').catch(err => {
+      try {
+        await supabase.rpc('enable_triggers');
+      } catch (err) {
         console.error('Error re-enabling triggers:', err);
-      });
+      }
 
       setIsProcessing(false);
     }
@@ -196,7 +204,11 @@ export function useEventJoinRequest() {
 
     // Disable automatic notifications from triggers
     // We'll create them manually to avoid the "type" column issue
-    await supabase.rpc('disable_triggers');
+    try {
+      await supabase.rpc('disable_triggers');
+    } catch (err) {
+      console.error('Error disabling triggers:', err);
+    }
 
     try {
       // Get request details first
@@ -241,7 +253,8 @@ export function useEventJoinRequest() {
         },
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
-        read: false
+        read: false,
+        read_at: null
       };
 
       const { error: notificationError } = await supabase
@@ -263,9 +276,11 @@ export function useEventJoinRequest() {
       return false;
     } finally {
       // Re-enable triggers
-      await supabase.rpc('enable_triggers').catch(err => {
+      try {
+        await supabase.rpc('enable_triggers');
+      } catch (err) {
         console.error('Error re-enabling triggers:', err);
-      });
+      }
 
       setIsProcessing(false);
     }

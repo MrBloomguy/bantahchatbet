@@ -57,7 +57,7 @@ export const usePaystack = () => {
 
       try {
         setLoading(true);
-        
+
         const { data: transaction, error: txError } = await supabase
           .from('transactions')
           .insert({
@@ -92,39 +92,54 @@ export const usePaystack = () => {
             amount: amount * 100, // Convert to kobo
             currency: 'NGN',
             ref: transaction.reference,
-            callback: function(response: PaystackResponse) {
+            callback: async function(response: PaystackResponse) {
               try {
                 if (response.status === 'success') {
-                  supabase.rpc(
-                    'verify_paystack_transaction',
-                    {
-                      p_reference: response.reference,
-                      p_amount: Math.floor(amount),
-                      p_status: 'success',
-                      p_transaction_id: response.transaction
-                    }
-                  ).then(({ error: verifyError }) => {
+                  try {
+                    const { data, error: verifyError } = await supabase.rpc(
+                      'verify_paystack_transaction',
+                      {
+                        p_reference: response.reference,
+                        p_amount: Math.floor(amount),
+                        p_status: 'completed',
+                        p_transaction_id: response.transaction
+                      }
+                    );
+
                     if (verifyError) {
                       console.error('Verification error:', verifyError);
-                      toast.showError('Payment verification failed');
+                      toast.showError('Payment verification failed. Please contact support if your account is not credited.');
                       resolve(false);
                       return;
                     }
-                    refreshWallet();
-                    toast.showSuccess('Payment successful');
+
+                    await refreshWallet();
+                    toast.showSuccess('Payment successful! Your wallet has been credited.');
                     resolve(true);
-                  });
+                  } catch (err) {
+                    console.error('Verification processing error:', err);
+                    toast.showError('An error occurred during payment verification. Please check your wallet balance or contact support.');
+                    resolve(false);
+                  }
                 } else {
-                  supabase.rpc(
-                    'verify_paystack_transaction',
-                    {
-                      p_reference: response.reference,
-                      p_amount: Math.floor(amount),
-                      p_status: 'failed',
-                      p_transaction_id: response.transaction
-                    }
-                  );
-                  resolve(false);
+                  try {
+                    await supabase.rpc(
+                      'verify_paystack_transaction',
+                      {
+                        p_reference: response.reference,
+                        p_amount: Math.floor(amount),
+                        p_status: 'failed',
+                        p_transaction_id: response.transaction
+                      }
+                    );
+
+                    toast.showError('Payment was not successful. Please try again.');
+                    resolve(false);
+                  } catch (err) {
+                    console.error('Failed status update error:', err);
+                    toast.showError('Payment failed. Please try again later.');
+                    resolve(false);
+                  }
                 }
               } catch (error) {
                 console.error('Callback processing error:', error);
@@ -169,7 +184,7 @@ export const usePaystack = () => {
 
       try {
         setLoading(true);
-        
+
         const reference = `WD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
         // Call Supabase RPC to initiate transfer

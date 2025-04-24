@@ -6,16 +6,6 @@ import { toast } from 'react-toastify';
 interface WalletData {
   id: string;
   user_id: string;
-  balance: number;
-  bonus_balance: number;
-  coins: number;
-  created_at: string;
-  updated_at: string;
-}
-
-interface NormalizedWallet {
-  id: string;
-  user_id: string;
   real_balance: number;
   bonus_balance: number;
   coins: number;
@@ -89,14 +79,9 @@ export const useWallet = () => {
   if (context === undefined) {
     throw new Error('useWallet must be used within a WalletProvider');
   }
-  
-  const normalizedWallet: NormalizedWallet | null = context.wallet ? {
-    ...context.wallet,
-    real_balance: context.wallet.balance,
-  } : null;
 
   return {
-    wallet: normalizedWallet,
+    wallet: context.wallet,
     loading: context.loading,
     error: context.error,
     refreshWallet: context.refreshWallet,
