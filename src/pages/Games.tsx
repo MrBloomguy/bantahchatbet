@@ -282,6 +282,9 @@ const Games: React.FC = () => {
 
   const handleCreateChallenge = async (challengeData: any) => {
     try {
+      // Show optimistic UI feedback immediately
+      toast.showInfo('Creating challenge...');
+
       const { data: challenge, error } = await supabase
         .from('challenges')
         .insert([challengeData])
@@ -290,8 +293,8 @@ const Games: React.FC = () => {
 
       if (error) throw error;
 
-      // Send notification to challenged user
-      await sendChallengeNotification('challenge_received', {
+      // Send notification to challenged user with improved error handling
+      const notificationResult = await sendChallengeNotification('challenge_received', {
         userId: challengeData.challenged_id,
         challengeId: challenge.id,
         challengeTitle: challengeData.title,
@@ -300,8 +303,14 @@ const Games: React.FC = () => {
         opponentUsername: currentUser?.username || ''
       });
 
+      if (!notificationResult.success) {
+        console.warn('Challenge created but notification may be delayed:', notificationResult.error);
+        // Continue anyway since the challenge was created successfully
+      }
+
       // Refresh challenges list
       fetchChallenges();
+      toast.showSuccess('Challenge created successfully!');
     } catch (error) {
       console.error('Error creating challenge:', error);
       toast.showError('Failed to create challenge');
@@ -310,6 +319,9 @@ const Games: React.FC = () => {
 
   const handleChallengeResponse = async (challengeId: string, accept: boolean) => {
     try {
+      // Show immediate feedback
+      toast.showInfo(accept ? 'Accepting challenge...' : 'Declining challenge...');
+
       const { data: challenge, error } = await supabase
         .from('challenges')
         .update({ status: accept ? 'accepted' : 'declined' })
@@ -319,8 +331,8 @@ const Games: React.FC = () => {
 
       if (error) throw error;
 
-      // Send notification to challenger
-      await sendChallengeNotification(
+      // Send notification to challenger with improved error handling
+      const notificationResult = await sendChallengeNotification(
         accept ? 'challenge_accepted' : 'challenge_declined',
         {
           userId: challenge.challenger_id,
@@ -332,9 +344,16 @@ const Games: React.FC = () => {
         }
       );
 
+      if (!notificationResult.success) {
+        console.warn('Challenge response processed but notification may be delayed:', notificationResult.error);
+      }
+
       // Initialize chat for the challenge if accepted
       if (accept) {
-        await initializeChallengeChat(challenge.id, challenge.challenger.id, challenge.challenged.id);
+        await initializeChallengeChat(challenge.id, challenge.challenger_id, challenge.challenged_id);
+        toast.showSuccess('Challenge accepted! Chat initialized.');
+      } else {
+        toast.showSuccess('Challenge declined successfully.');
       }
 
       fetchChallenges();

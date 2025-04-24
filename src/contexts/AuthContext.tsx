@@ -32,7 +32,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const refreshUser = useCallback(async () => {
     try {
       const { data: { user: supabaseUser } } = await supabase.auth.getUser();
-      
+
       if (!supabaseUser) {
         setCurrentUser(null);
         return;
@@ -61,7 +61,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (insertError) throw insertError;
         setCurrentUser(newProfile);
       } else {
-        setCurrentUser(profile);
+        // Map reputation_score to points for consistency
+        setCurrentUser({
+          ...profile,
+          points: profile.reputation_score || 0
+        });
       }
     } catch (error) {
       console.error('Error refreshing user:', error);
