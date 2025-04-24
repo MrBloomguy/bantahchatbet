@@ -30,23 +30,7 @@ const ChallengeChat: React.FC = () => {
   if (loading) return <LoadingSpinner />;
 
   return (
-    <div className="flex flex-col h-screen bg-[#1A1B2E]">
-      {/* Header */}
-      <div className="bg-[#242538] p-4 flex items-center">
-        <button
-          type="button"
-          onClick={() => navigate(-1)}
-          className="p-2 hover:bg-white/10 rounded-lg transition-colors mr-4"
-          title="Go back"
-        >
-          <ArrowLeft className="w-5 h-5 text-white" />
-        </button>
-
-        <div className="text-white font-semibold">
-          Challenge Chat
-        </div>
-      </div>
-
+    <div className="flex flex-col h-screen bg-white">
       {/* Enhanced Challenge Chat Component */}
       <div className="flex-1 overflow-hidden">
         <EnhancedChallengeChat challengeId={id} />

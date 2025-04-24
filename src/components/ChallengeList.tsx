@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabaseClient';
+import ChallengeDetailsModal from './ChallengeDetailsModal';
 
 interface Challenge {
   id: string;
@@ -27,6 +28,8 @@ export const ChallengeList = () => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('active');
+  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
 
   useEffect(() => {
     fetchChallenges();
@@ -35,7 +38,7 @@ export const ChallengeList = () => {
   const fetchChallenges = async () => {
     try {
       setLoading(true);
-      
+
       // Map the status from UI to database values
       const statusMap: { [key: string]: string } = {
         'active': 'accepted',
@@ -103,7 +106,18 @@ export const ChallengeList = () => {
           {challenges.map((challenge) => (
             <div
               key={challenge.id}
-              onClick={() => navigate(`/challenge/${challenge.id}`)}
+              onClick={() => {
+                // For active challenges, go directly to the challenge chat
+                if (challenge.status === 'accepted') {
+                  navigate(`/challenge-chat/${challenge.id}`);
+                } else if (activeTab === 'scheduled' || challenge.status === 'pending') {
+                  // For scheduled challenges, show the details modal
+                  setSelectedChallenge(challenge);
+                  setShowDetailsModal(true);
+                } else {
+                  navigate(`/challenge/${challenge.id}`);
+                }
+              }}
               className="p-4 bg-[#242538] rounded-xl hover:bg-[#2A2C42] transition-colors cursor-pointer"
             >
               <div className="flex flex-col gap-3">
@@ -129,6 +143,14 @@ export const ChallengeList = () => {
             </div>
           ))}
         </div>
+      )}
+
+      {/* Challenge Details Modal */}
+      {showDetailsModal && selectedChallenge && (
+        <ChallengeDetailsModal
+          challenge={selectedChallenge}
+          onClose={() => setShowDetailsModal(false)}
+        />
       )}
     </div>
   );

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  Gamepad2, 
-  Trophy, 
-  Plus, 
-  Map, 
-  Zap, 
+import {
+  Users,
+  Gamepad2,
+  Trophy,
+  Plus,
+  Map,
+  Zap,
   Phone,
   DollarSign
 } from 'lucide-react';
@@ -17,6 +17,7 @@ import MobileFooterNav from '../components/MobileFooterNav';
 import Header from '../components/Header';
 import { ChallengeList } from '../components/ChallengeList';
 import ChallengeModal from '../components/ChallengeModal';
+import ChallengeDetailsModal from '../components/ChallengeDetailsModal';
 import { ContactsList } from '../components/ContactsList';
 import ActiveContentModal from '../components/modals/ActiveContentModal';
 
@@ -75,6 +76,8 @@ const Games: React.FC = () => {
   const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showActiveModal, setShowActiveModal] = useState(false);
+  const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
+  const [showChallengeDetailsModal, setShowChallengeDetailsModal] = useState(false);
   const { currentUser } = useAuth();
   const navigate = useNavigate();
 
@@ -486,7 +489,7 @@ const Games: React.FC = () => {
               </button>
             ))}
             <div className="flex items-center gap-2 ml-auto">
-          
+
             </div>
           </div>
 
@@ -545,7 +548,21 @@ const Games: React.FC = () => {
                 challenges.length > 0 ? (
                   <div className="flex flex-col gap-4">
                     {challenges.map((challenge) => (
-                      <div key={challenge.id} onClick={() => navigate(`/messages?tab=challenges&chatId=${challenge.id}`)} className="bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 cursor-pointer group flex flex-col gap-2">
+                      <div
+                        key={challenge.id}
+                        onClick={() => {
+                          // For active challenges, go directly to the challenge chat
+                          if (challenge.status === 'accepted') {
+                            navigate(`/challenge-chat/${challenge.id}`);
+                          } else if (activeTab === 'scheduled') {
+                            // For scheduled challenges, show the details modal
+                            setSelectedChallenge(challenge);
+                            setShowChallengeDetailsModal(true);
+                          } else {
+                            navigate(`/messages?tab=challenges&chatId=${challenge.id}`);
+                          }
+                        }}
+                        className="bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 cursor-pointer group flex flex-col gap-2">
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="text-gray-900 font-semibold truncate">{challenge.title || 'Untitled Challenge'}</h3>
                           <span className="text-[#7440ff] font-semibold">₦{challenge.amount.toLocaleString()}</span>
@@ -606,6 +623,12 @@ const Games: React.FC = () => {
             <ActiveContentModal
               onClose={() => setShowActiveModal(false)}
               content={renderActiveContent()}
+            />
+          )}
+          {showChallengeDetailsModal && selectedChallenge && (
+            <ChallengeDetailsModal
+              challenge={selectedChallenge}
+              onClose={() => setShowChallengeDetailsModal(false)}
             />
           )}
         </div>

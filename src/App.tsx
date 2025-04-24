@@ -50,6 +50,7 @@ import Settings from './pages/Settings';
 import Referral from './pages/Referral';
 import Levels from './pages/Levels';
 import Challenges from './pages/Challenges';
+import ChallengeChat from './pages/ChallengeChat';
 
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -205,6 +206,11 @@ const App: React.FC = () => {
                           <Route path="/challenge/:id" element={
                             <ProtectedRoute>
                               <ChallengeDetails />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/challenge-chat/:id" element={
+                            <ProtectedRoute>
+                              <ChallengeChat />
                             </ProtectedRoute>
                           } />
                           <Route path="/create" element={
