@@ -29,6 +29,10 @@ export function useEventJoinRequest() {
 
     setIsProcessing(true);
 
+    // Disable automatic notifications from triggers
+    // We'll create them manually to avoid the "type" column issue
+    await supabase.rpc('disable_triggers');
+
     try {
       // Check if already requested
       const { data: existingRequest, error: checkError } = await supabase
@@ -54,11 +58,17 @@ export function useEventJoinRequest() {
       // Get event details for notification
       const { data: event, error: eventError } = await supabase
         .from('events')
-        .select('title, creator_id')
+        .select('title, creator_id, is_private')
         .eq('id', eventId)
         .single();
 
       if (eventError) throw eventError;
+
+      // Check if the event is private (only private events need join requests)
+      if (!event.is_private) {
+        toast.showInfo('This event is public and does not require a join request');
+        return false;
+      }
 
       // Create new request
       const { error: insertError } = await supabase
@@ -73,33 +83,82 @@ export function useEventJoinRequest() {
 
       if (insertError) throw insertError;
 
-      // Create notification for event creator
+      // Create notification for event creator - use only notification_type
+      const notificationData = {
+        user_id: event.creator_id,
+        notification_type: 'join_request_received',
+        title: 'New Join Request',
+        content: `${currentUser.username || 'A user'} has requested to join your event: ${event.title}`,
+        metadata: {
+          event_id: eventId,
+          event_title: event.title,
+          requester_id: currentUser.id,
+          requester_name: currentUser.username,
+          request_message: message
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        read: false
+      };
+
       const { error: notificationError } = await supabase
         .from('notifications')
-        .insert({
-          user_id: event.creator_id,
-          notification_type: 'join_request_received', // Changed from 'type' to 'notification_type'
-          title: 'New Join Request',
-          content: `${currentUser.username || 'A user'} has requested to join your event: ${event.title}`,
-          metadata: {
-            event_id: eventId,
-            event_title: event.title,
-            requester_id: currentUser.id,
-            requester_name: currentUser.username,
-            request_message: message
-          }
-        });
+        .insert(notificationData);
 
       if (notificationError) throw notificationError;
+
+      // Create notification for the requesting user as well
+      const userNotificationData = {
+        user_id: currentUser.id,
+        notification_type: 'event_join_request_sent',
+        title: 'Join Request Sent',
+        content: `You have sent a request to join "${event.title}"`,
+        metadata: {
+          event_id: eventId,
+          event_title: event.title,
+          creator_id: event.creator_id,
+          request_message: message
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        read: false
+      };
+
+      const { error: userNotificationError } = await supabase
+        .from('notifications')
+        .insert(userNotificationData);
+
+      if (userNotificationError) {
+        console.error('Error creating user notification:', userNotificationError);
+        // Don't throw here, as the main operation succeeded
+      }
 
       toast.showSuccess('Join request sent successfully');
       return true;
 
     } catch (error: any) {
       console.error('Error requesting to join:', error);
-      toast.showError(error.message || 'Failed to send join request');
+
+      // Provide more specific error messages based on the error
+      if (error.code === '23505') {
+        toast.showError('You have already sent a join request for this event');
+      } else if (error.code === '23503') {
+        toast.showError('The event or user does not exist');
+      } else if (error.code === '42P01') {
+        toast.showError('Database table not found. Please contact support.');
+      } else if (error.code === '42703') {
+        toast.showError('Database column not found. Please contact support.');
+      } else {
+        toast.showError(error.message || 'Failed to send join request');
+      }
+
       return false;
     } finally {
+      // Re-enable triggers
+      await supabase.rpc('enable_triggers').catch(err => {
+        console.error('Error re-enabling triggers:', err);
+      });
+
       setIsProcessing(false);
     }
   }, [currentUser, toast]);
@@ -135,6 +194,10 @@ export function useEventJoinRequest() {
   ) => {
     setIsProcessing(true);
 
+    // Disable automatic notifications from triggers
+    // We'll create them manually to avoid the "type" column issue
+    await supabase.rpc('disable_triggers');
+
     try {
       // Get request details first
       const { data: request, error: requestError } = await supabase
@@ -163,32 +226,47 @@ export function useEventJoinRequest() {
 
       if (updateError) throw updateError;
 
-      // Create notification for requester
+      // Create notification for requester - use only notification_type
+      const notificationData = {
+        user_id: request.user_id,
+        notification_type: `event_join_request_${status}`,
+        title: `Join Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+        content: status === 'accepted'
+          ? `Your request to join "${request.events.title}" has been accepted`
+          : `Your request to join "${request.events.title}" has been declined${responseMessage ? `: ${responseMessage}` : ''}`,
+        metadata: {
+          event_id: request.event_id,
+          event_title: request.events.title,
+          response_message: responseMessage
+        },
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        read: false
+      };
+
       const { error: notificationError } = await supabase
         .from('notifications')
-        .insert({
-          user_id: request.user_id,
-          notification_type: `event_join_request_${status}`,
-          title: `Join Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-          content: status === 'accepted' 
-            ? `Your request to join "${request.events.title}" has been accepted`
-            : `Your request to join "${request.events.title}" has been declined${responseMessage ? `: ${responseMessage}` : ''}`,
-          metadata: {
-            event_id: request.event_id,
-            event_title: request.events.title,
-            response_message: responseMessage
-          }
-        });
+        .insert(notificationData);
 
       if (notificationError) throw notificationError;
 
-      toast.showSuccess(`Request ${status} successfully`);
+      // Show a more detailed success message
+      if (status === 'accepted') {
+        toast.showSuccess(`User has been added to the event successfully`);
+      } else {
+        toast.showSuccess(`Request has been declined successfully`);
+      }
       return true;
     } catch (error: any) {
       console.error('Error responding to request:', error);
       toast.showError(error.message || 'Failed to process request');
       return false;
     } finally {
+      // Re-enable triggers
+      await supabase.rpc('enable_triggers').catch(err => {
+        console.error('Error re-enabling triggers:', err);
+      });
+
       setIsProcessing(false);
     }
   }, [toast]);

@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import JoinRequestModal from './JoinRequestModal';
 import { useEventPoolRefresh } from '../hooks/useEventPoolRefresh';
+import { useEventJoinRequest } from '../hooks/useEventJoinRequest';
 import { formatCurrency } from '../utils/formatNumber';
+import { supabase } from '../lib/supabase';
 
 const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800&auto=format&fit=crop';
 
@@ -45,7 +48,10 @@ interface EventCardProps {
 const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
+  const toast = useToast();
   const [showJoinModal, setShowJoinModal] = useState(false);
+  const [requestSent, setRequestSent] = useState(false);
+  const { requestToJoin, isProcessing } = useEventJoinRequest();
 
   // Use the custom hook to get the latest pool data
   const { poolData, loading: poolLoading } = useEventPoolRefresh(event.id);
@@ -65,6 +71,32 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
       });
     }
   }, [event, poolData]);
+
+  // Check if user has already sent a join request
+  useEffect(() => {
+    const checkExistingRequest = async () => {
+      if (!currentUser || !event.is_private) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('event_join_requests')
+          .select('status')
+          .eq('event_id', event.id)
+          .eq('user_id', currentUser.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (data && data.status === 'pending') {
+          setRequestSent(true);
+        }
+      } catch (error) {
+        console.error('Error checking join request status:', error);
+      }
+    };
+
+    checkExistingRequest();
+  }, [currentUser, event.id, event.is_private]);
 
   const getEventStatus = () => {
     const now = new Date();
@@ -131,12 +163,24 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
     }
   };
 
-  const handleJoinRequestSubmit = () => {
-    setShowJoinModal(false);
-    // In a real application, you would handle the join request submission here
-    // Upon successful request (or immediate join for non-private events),
-    // you would navigate to the chat page.
-    navigate(`/event/${event.id}/chat`);
+  const handleJoinRequestSubmit = async (message: string) => {
+    try {
+      const success = await requestToJoin(event.id, message);
+      if (success) {
+        setRequestSent(true);
+        setShowJoinModal(false);
+
+        // Show a more informative toast message
+        toast.showSuccess(
+          `Your request to join "${event.title}" has been sent to the event creator. You'll be notified when they respond.`,
+          { duration: 5000 } // Show for 5 seconds
+        );
+
+        // Don't navigate to chat yet - wait for approval
+      }
+    } catch (error) {
+      console.error('Error submitting join request:', error);
+    }
   };
 
   return (
@@ -226,15 +270,27 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
           <button
             type="button"
             onClick={handleJoinClick}
-            disabled={['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label)}
+            disabled={['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label) || isProcessing || requestSent}
             className={`${
               ['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label)
                 ? 'bg-gray-500 cursor-not-allowed text-white'
-                : 'btn-primary bg-[#ccff00] text-black'
+                : requestSent
+                  ? 'bg-blue-500 text-white'
+                  : isProcessing
+                    ? 'bg-gray-400 text-white'
+                    : 'btn-primary bg-[#ccff00] text-black'
             } h-10 flex items-center justify-center gap-1 px-4 rounded-3x1'`}
           >
-            {updatedEvent.is_private && <Lock className="h-4 w-4" />}
-            {['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label) ? 'Closed' : 'Join'}
+            {updatedEvent.is_private && !requestSent && <Lock className="h-4 w-4" />}
+            {['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label)
+              ? 'Closed'
+              : isProcessing
+                ? 'Processing...'
+                : requestSent
+                  ? 'Request Sent'
+                  : updatedEvent.is_private
+                    ? 'Request'
+                    : 'Join'}
           </button>
         </div>
       </div>
@@ -244,6 +300,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
         onClose={() => setShowJoinModal(false)}
         onSubmit={handleJoinRequestSubmit}
         eventTitle={event.title}
+        isLoading={isProcessing}
         creator={{
           id: event.creator.id || '',
           name: event.creator.name || '',
@@ -254,6 +311,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
           currentParticipants: event.participants?.length || 0,
           display_participant_boost: event.display_participant_boost || 0,
           maxParticipants: event.max_participants,
+          category: event.category,
           pool: [{
             entry_amount: event.pool?.entry_amount || 0
           }]

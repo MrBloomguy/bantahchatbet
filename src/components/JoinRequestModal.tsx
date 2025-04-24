@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Users } from 'lucide-react';
+import { X, Users, Tag, Trophy, Gamepad, Zap } from 'lucide-react';
 import UserRankBadge from './UserRankBadge';
 
 interface Creator {
@@ -28,6 +28,7 @@ interface JoinRequestModalProps {
   eventTitle: string;
   creator: Creator;
   eventDetails?: EventDetails;
+  isLoading?: boolean;
 }
 
 const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
@@ -36,10 +37,29 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
   onSubmit,
   eventTitle,
   creator,
-  eventDetails
+  eventDetails,
+  isLoading = false
 }) => {
   const [message, setMessage] = useState('');
   const wagerAmount = eventDetails?.pool?.[0]?.entry_amount || 0;
+
+  // Function to get the appropriate icon based on category
+  const getCategoryIcon = (category?: string) => {
+    if (!category) return <Tag size={12} />;
+
+    const lowerCategory = category.toLowerCase();
+
+    if (lowerCategory.includes('game') || lowerCategory.includes('gaming')) {
+      return <Gamepad size={12} />;
+    } else if (lowerCategory.includes('sport') || lowerCategory.includes('football') ||
+               lowerCategory.includes('basketball') || lowerCategory.includes('soccer')) {
+      return <Trophy size={12} />;
+    } else if (lowerCategory.includes('event') || lowerCategory.includes('challenge')) {
+      return <Zap size={12} />;
+    }
+
+    return <Tag size={12} />;
+  };
 
   if (!isOpen) return null;
 
@@ -52,29 +72,35 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div
-        className="bg-[#242538] rounded-xl w-full max-w-sm bg-cover bg-center"
-        style={{ backgroundImage: 'url(/public/dialogue-bakcground.svg)' }}
+        className="bg-white rounded-xl w-full max-w-sm bg-cover bg-center shadow-xl overflow-hidden"
+        style={{ backgroundImage: 'url(/dialogue-bakcground.svg)' }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-white/10">
-          <h2 className="text-lg font-bold text-white">Join Event</h2>
+        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+          <h2 className="text-lg font-bold text-gray-900">Request to Join</h2>
           <button
+            type="button"
             onClick={onClose}
-            className="p-1.5 hover:bg-white/10 rounded-lg transition-colors"
+            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Close modal"
+            title="Close"
           >
-            <X className="w-5 h-5 text-white/60" />
+            <X className="w-5 h-5 text-gray-500" />
           </button>
         </div>
 
         <div className="p-4">
           {/* Event Info */}
           <div className="mb-4">
-            <h3 className="text-white font-medium mb-2">{eventTitle}</h3>
-            <div className="flex flex-wrap gap-2 text-white/60 text-xs">
-              <span className="bg-[#1a1b2e] px-2 py-1 rounded-full">
-                {eventDetails?.category || 'Unknown Category'}
+            <h3 className="text-gray-900 font-medium mb-2">{eventTitle}</h3>
+            <div className="flex flex-wrap gap-2 text-gray-600 text-xs">
+              <span className="bg-gray-100 px-2 py-1 rounded-full flex items-center gap-1">
+                {getCategoryIcon(eventDetails?.category)}
+                {eventDetails?.category
+                  ? eventDetails.category.charAt(0).toUpperCase() + eventDetails.category.slice(1).toLowerCase()
+                  : 'Unknown Category'}
               </span>
-              <span className="bg-[#1a1b2e] px-2 py-1 rounded-full flex items-center gap-1">
+              <span className="bg-gray-100 px-2 py-1 rounded-full flex items-center gap-1">
                 <Users size={12} />
                 {(eventDetails?.currentParticipants || 0) + (eventDetails?.display_participant_boost || 0)}/{eventDetails?.maxParticipants || 0}
               </span>
@@ -84,23 +110,26 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
           {/* Creator Info */}
           <div className="flex items-center gap-3 mb-4">
             <img
-              src={creator.avatar_url}
+              src={creator.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${creator.id || 'user'}`}
               alt={creator.name}
-              className="w-10 h-10 rounded-full"
+              className="w-10 h-10 rounded-full object-cover"
+              onError={(e) => {
+                e.currentTarget.src = `https://api.dicebear.com/7.x/avataaars/svg?seed=${creator.id || 'user'}`;
+              }}
             />
             <div>
               <div className="flex items-center gap-1.5">
-                <p className="text-white text-sm">{creator.name}</p>
+                <p className="text-gray-900 text-sm font-medium">{creator.name}</p>
                 {creator.rank !== undefined && <UserRankBadge rank={creator.rank} size="sm" />}
               </div>
-              <p className="text-white/60 text-xs">@{creator.username}</p>
+              <p className="text-gray-500 text-xs">@{creator.username}</p>
             </div>
           </div>
 
           {/* Wager Amount */}
-          <div className="bg-[#1a1b2e] rounded-lg p-3 mb-4 flex items-center justify-between">
-            <span className="text-white/60 text-sm">Wager Amount</span>
-            <span className="text-[#CCFF00] font-bold">
+          <div className="bg-gray-100 rounded-lg p-3 mb-4 flex items-center justify-between">
+            <span className="text-gray-600 text-sm">Wager Amount</span>
+            <span className="text-[#7440ff] font-bold">
               ₦{wagerAmount.toLocaleString()}
             </span>
           </div>
@@ -109,7 +138,7 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
           <div className="mb-4">
             <textarea
               rows={2}
-              className="w-full bg-[#1a1b2e] text-white text-sm px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#CCFF00] transition-shadow"
+              className="w-full bg-white border border-gray-300 text-gray-900 text-sm px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#7440ff] transition-shadow"
               placeholder="Add a message (optional)"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
@@ -121,15 +150,18 @@ const JoinRequestModal: React.FC<JoinRequestModalProps> = ({
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 bg-gray-700 text-white rounded-lg hover:bg-gray-600 transition"
+              disabled={isLoading}
+              className="flex-1 px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition disabled:opacity-50"
             >
               Cancel
             </button>
             <button
+              type="button"
               onClick={handleSubmit}
-              className="flex-1 px-4 py-2 bg-[#CCFF00] text-black rounded-lg hover:bg-[#b3ff00] transition"
+              disabled={isLoading}
+              className="flex-1 px-4 py-2 bg-[#7440ff] text-white rounded-lg hover:bg-[#6030e0] transition disabled:opacity-50"
             >
-              Join Event
+              {isLoading ? 'Sending Request...' : 'Send Request'}
             </button>
           </div>
         </div>
