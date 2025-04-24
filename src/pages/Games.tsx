@@ -7,7 +7,14 @@ import {
   Map,
   Zap,
   Phone,
-  DollarSign
+  DollarSign,
+  Search,
+  X,
+  Calendar,
+  Clock,
+  CheckCircle,
+  XCircle,
+  AlertCircle
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -23,6 +30,7 @@ import ActiveContentModal from '../components/modals/ActiveContentModal';
 
 // Hooks and contexts
 import { useAuth } from '../contexts/AuthContext';
+import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { sendChallengeNotification } from '../utils/challengeNotifications';
 
@@ -71,14 +79,18 @@ const Games: React.FC = () => {
   // Change the default tab from 'users' to 'active'
   const [activeTab, setActiveTab] = useState<'users' | 'active' | 'scheduled' | 'ended'>('active');
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loading, setLoading] = useState(true);
+  const [searching, setSearching] = useState(false);
   const [showChallengeModal, setShowChallengeModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [showActiveModal, setShowActiveModal] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [showChallengeDetailsModal, setShowChallengeDetailsModal] = useState(false);
   const { currentUser } = useAuth();
+  const toast = useToast();
   const navigate = useNavigate();
 
   const formatDate = (dateString: string | null) => {
@@ -98,6 +110,84 @@ const Games: React.FC = () => {
     }
   }, [activeTab]);
 
+  // Filter users based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredUsers(users);
+      return;
+    }
+
+    const query = searchQuery.toLowerCase();
+    const filtered = users.filter(
+      user =>
+        user.name.toLowerCase().includes(query) ||
+        user.username.toLowerCase().includes(query)
+    );
+    setFilteredUsers(filtered);
+  }, [searchQuery, users]);
+
+  // Search for users across the platform
+  const searchUsers = async (query: string) => {
+    if (!query.trim() || query.length < 2) {
+      setFilteredUsers(users);
+      return;
+    }
+
+    try {
+      setSearching(true);
+
+      // Search for users with the query
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name, username, avatar_url')
+        .or(`name.ilike.%${query}%,username.ilike.%${query}%`)
+        .neq('id', currentUser?.id)
+        .limit(20);
+
+      if (error) throw error;
+
+      if (data && data.length > 0) {
+        const formattedUsers = data.map(user => ({
+          id: user.id,
+          name: user.name || 'Anonymous',
+          username: user.username || `user_${user.id.slice(0, 8)}`,
+          avatar_url: user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.id}`,
+          bio: '',
+          status: 'offline' as const,
+          stats: {
+            challenges_created: 0,
+            challenges_won: 0,
+            total_earnings: 0
+          }
+        }));
+        setFilteredUsers(formattedUsers);
+      } else {
+        setFilteredUsers([]);
+      }
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // Handle search input with debounce
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    if (query.length >= 2) {
+      // Debounce search for better performance
+      const timeoutId = setTimeout(() => {
+        searchUsers(query);
+      }, 300);
+
+      return () => clearTimeout(timeoutId);
+    } else {
+      setFilteredUsers(users);
+    }
+  };
+
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -110,10 +200,11 @@ const Games: React.FC = () => {
 
       if (!usersData) {
         setUsers([]);
+        setFilteredUsers([]);
         return;
       }
 
-      const filteredUsers = usersData
+      const formattedUsers = usersData
         .filter(user => user.id !== currentUser?.id)
         .map(user => ({
           id: user.id,
@@ -129,7 +220,8 @@ const Games: React.FC = () => {
           }
         }));
 
-      setUsers(filteredUsers);
+      setUsers(formattedUsers);
+      setFilteredUsers(formattedUsers);
     } catch (error) {
       console.error('Error in fetchUsers:', error);
     } finally {
@@ -329,6 +421,7 @@ const Games: React.FC = () => {
               </div>
 
               <button
+                type="button"
                 onClick={() => handleChallenge(user)}
                 className="flex-shrink-0 bg-[#7440FF] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-opacity-90 transition-colors"
               >
@@ -475,6 +568,7 @@ const Games: React.FC = () => {
               { id: 'ended', label: 'Ended', icon: <Trophy className="w-4 h-4" /> }
             ].map((tab) => (
               <button
+                type="button"
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id as typeof activeTab)}
                 className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
@@ -482,7 +576,6 @@ const Games: React.FC = () => {
                     ? 'bg-[#7440ff] text-white shadow'
                     : 'bg-transparent text-gray-700 hover:bg-gray-100'
                 }`}
-                style={{ minWidth: 0 }}
               >
                 {tab.icon}
                 {tab.label}
@@ -500,49 +593,81 @@ const Games: React.FC = () => {
           ) : (
             <>
               {activeTab === 'users' && (
-                users.length > 0 ? (
-                  <div className="flex flex-col gap-4">
-                    {users.map((user) => (
-                      <div key={user.id} className="flex items-center bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 group">
-                        <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#F6F7FB] flex items-center justify-center mr-4 relative">
-                          <img src={user.avatar_url} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
-                          <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${user.status === 'online' ? 'bg-[#CCFF00]' : 'bg-gray-400'}`}></span>
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-900 truncate">{user.name}</span>
-                            <span className="text-sm text-gray-500">@{user.username}</span>
-                          </div>
-                          <div className="flex items-center gap-3 text-xs mt-1">
-                            <span className="flex items-center gap-1 text-gray-500">
-                              <Trophy className="w-3.5 h-3.5 text-[#7440ff]" />
-                              {user.stats.challenges_won}
-                            </span>
-                            <span className="flex items-center gap-1 text-gray-500">
-                              <Zap className="w-3.5 h-3.5 text-[#7440ff]" />
-                              {user.stats.challenges_created}
-                            </span>
-                            <span className="flex items-center gap-1 text-gray-500">
-                              <DollarSign className="w-3.5 h-3.5 text-[#7440ff]" />
-                              ₦{user.stats.total_earnings.toLocaleString()}
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => handleChallenge(user)}
-                          className="flex-shrink-0 bg-[#7440ff] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-opacity-90 transition-colors ml-4"
-                        >
-                          Challenge
-                        </button>
+                <>
+                  {/* Search Bar */}
+                  <div className="relative mb-4">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Search className="h-5 w-5 text-gray-400" />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Search users to challenge..."
+                      value={searchQuery}
+                      onChange={handleSearchChange}
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#7440FF] focus:border-transparent"
+                    />
+                    {searching && (
+                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#7440FF]" />
                       </div>
-                    ))}
+                    )}
                   </div>
-                ) : (
-                  <div className="flex flex-col items-center justify-center py-16">
-                    <img src="/noti-lonely.svg" alt="No users" className="w-32 h-32 mb-4 opacity-80" />
-                    <p className="text-lg font-semibold text-gray-700 mb-1">No users found</p>
-                  </div>
-                )
+
+                  {filteredUsers.length > 0 ? (
+                    <div className="flex flex-col gap-4">
+                      {filteredUsers.map((user) => (
+                        <div key={user.id} className="flex items-center bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 group">
+                          <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#F6F7FB] flex items-center justify-center mr-4 relative">
+                            <img src={user.avatar_url} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+                            <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${user.status === 'online' ? 'bg-[#CCFF00]' : 'bg-gray-400'}`}></span>
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold text-gray-900 truncate">{user.name}</span>
+                              <span className="text-sm text-gray-500">@{user.username}</span>
+                            </div>
+                            <div className="flex items-center gap-3 text-xs mt-1">
+                              <span className="flex items-center gap-1 text-gray-500">
+                                <Trophy className="w-3.5 h-3.5 text-[#7440ff]" />
+                                {user.stats.challenges_won}
+                              </span>
+                              <span className="flex items-center gap-1 text-gray-500">
+                                <Zap className="w-3.5 h-3.5 text-[#7440ff]" />
+                                {user.stats.challenges_created}
+                              </span>
+                              <span className="flex items-center gap-1 text-gray-500">
+                                <DollarSign className="w-3.5 h-3.5 text-[#7440ff]" />
+                                ₦{user.stats.total_earnings.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleChallenge(user)}
+                            className="flex-shrink-0 bg-[#7440ff] text-white px-4 py-1.5 rounded-full text-sm font-medium hover:bg-opacity-90 transition-colors ml-4"
+                          >
+                            Challenge
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center py-16">
+                      {searchQuery ? (
+                        <>
+                          <img src="/noti-lonely.svg" alt="No users" className="w-32 h-32 mb-4 opacity-80" />
+                          <p className="text-lg font-semibold text-gray-700 mb-1">No users found matching "{searchQuery}"</p>
+                          <p className="text-sm text-gray-500">Try a different search term</p>
+                        </>
+                      ) : (
+                        <>
+                          <img src="/noti-lonely.svg" alt="No users" className="w-32 h-32 mb-4 opacity-80" />
+                          <p className="text-lg font-semibold text-gray-700 mb-1">No users found</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
               {activeTab !== 'users' && (
                 challenges.length > 0 ? (
@@ -615,7 +740,7 @@ const Games: React.FC = () => {
               onClose={() => setShowChallengeModal(false)}
               onSuccess={() => {
                 setShowChallengeModal(false);
-                setActiveTab('challenges' as any);
+                setActiveTab('active');
               }}
             />
           )}

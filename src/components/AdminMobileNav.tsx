@@ -26,6 +26,7 @@ const AdminMobileNav = () => {
   const navigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Events', href: '/admin/events', icon: Trophy },
+    { name: 'Event Pools', href: '/admin/event-pools', icon: Coins },
     { name: 'Challenges', href: '/admin/challenges', icon: Gamepad2 },
     { name: 'Create Event', href: '/admin/create-event', icon: Plus },
     { name: 'Stories', href: '/admin/stories', icon: Newspaper },
@@ -41,8 +42,8 @@ const AdminMobileNav = () => {
   const mobileNavItems = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Events', href: '/admin/events', icon: Trophy },
+    { name: 'Pools', href: '/admin/event-pools', icon: Coins },
     { name: 'Challenges', href: '/admin/challenges', icon: Gamepad2 },
-    { name: 'Create', href: '/admin/create-event', icon: Plus },
     { name: 'More', href: '#', icon: Menu, action: () => setMenuOpen(true) }
   ];
 

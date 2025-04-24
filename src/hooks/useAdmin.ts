@@ -438,7 +438,8 @@ export function useAdmin() {
 
     try {
       setLoading(true);
-      const { data, error } = await supabase.rpc('get_platform_fee_stats');
+      // Use get_platform_summary instead of get_platform_fee_stats based on the error message
+      const { data, error } = await supabase.rpc('get_platform_summary');
       if (error) throw error;
       return data;
     } catch (error) {
