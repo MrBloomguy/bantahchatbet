@@ -8,6 +8,7 @@ import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { supabase } from '../lib/supabase';
 import SimpleEventPayoutDetails from '../components/admin/SimpleEventPayoutDetails';
+import EventLiquidityManager from '../components/admin/EventLiquidityManager';
 
 const AdminEvents: React.FC = () => {
   const [events, setEvents] = useState<any[]>([]);
@@ -186,7 +187,17 @@ const AdminEvents: React.FC = () => {
                       <tr>
                         <td colSpan={5} className="p-0">
                           <div className="p-4 bg-[#1e1f33]">
-                            <SimpleEventPayoutDetails eventId={event.id} />
+                            <div className="mb-6">
+                              <h3 className="text-lg font-semibold text-white mb-4">Event Liquidity</h3>
+                              <EventLiquidityManager eventId={event.id} />
+                            </div>
+
+                            {event.status === 'completed' && (
+                              <div className="mt-6">
+                                <h3 className="text-lg font-semibold text-white mb-4">Payout Details</h3>
+                                <SimpleEventPayoutDetails eventId={event.id} />
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
@@ -263,9 +274,19 @@ const AdminEvents: React.FC = () => {
                 </button>
               </div>
 
-              {selectedEvent === event.id && event.status === 'completed' && (
-                <div className="mt-4">
-                  <SimpleEventPayoutDetails eventId={event.id} />
+              {selectedEvent === event.id && (
+                <div className="mt-4 space-y-6">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white mb-4">Event Liquidity</h3>
+                    <EventLiquidityManager eventId={event.id} />
+                  </div>
+
+                  {event.status === 'completed' && (
+                    <div>
+                      <h3 className="text-lg font-semibold text-white mb-4">Payout Details</h3>
+                      <SimpleEventPayoutDetails eventId={event.id} />
+                    </div>
+                  )}
                 </div>
               )}
             </div>

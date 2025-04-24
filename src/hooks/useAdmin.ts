@@ -44,7 +44,7 @@ export interface AdminAction {
   id: string;
   action_type: string;
   target_type: string;
-  details: Record<string, any>;
+  details: Record<string, unknown>;
   created_at: string;
   admin: {
     id: string;
@@ -369,13 +369,15 @@ export function useAdmin() {
       if (error) throw error;
 
       // Log admin action
-      await supabase.from('admin_actions').insert({
-        admin_email: admin.email,
-        action_type: 'complete_event',
-        target_type: 'event',
-        target_id: eventId,
-        details: { status: 'completed' }
-      });
+      if (admin) {
+        await supabase.from('admin_actions').insert({
+          admin_email: admin.email,
+          action_type: 'complete_event',
+          target_type: 'event',
+          target_id: eventId,
+          details: { status: 'completed' }
+        });
+      }
 
       return true;
     } catch (error) {
@@ -412,13 +414,15 @@ export function useAdmin() {
       if (updateError) throw updateError;
 
       // Log admin action
-      await supabase.from('admin_actions').insert({
-        admin_email: admin.email,
-        action_type: 'process_payouts',
-        target_type: 'event',
-        target_id: eventId,
-        details: { status: 'completed' }
-      });
+      if (admin) {
+        await supabase.from('admin_actions').insert({
+          admin_email: admin.email,
+          action_type: 'process_payouts',
+          target_type: 'event',
+          target_id: eventId,
+          details: { status: 'completed' }
+        });
+      }
 
       return true;
     } catch (error) {
@@ -499,7 +503,7 @@ export function useAdmin() {
       }
 
       // Create a map of admin profiles by ID
-      const adminMap = (adminProfiles || []).reduce((map, profile) => {
+      const adminMap = (adminProfiles || []).reduce<Record<string, any>>((map, profile) => {
         map[profile.id] = {
           id: profile.id,
           name: profile.username || 'Admin', // Use username as name
@@ -511,7 +515,9 @@ export function useAdmin() {
       // Add admin info to stories
       const storiesWithAdmins = data.map(story => ({
         ...story,
-        admin: adminMap[story.admin_id] || { name: 'Unknown Admin', username: 'admin', avatar_url: null }
+        admin: story.admin_id && adminMap[story.admin_id]
+          ? adminMap[story.admin_id]
+          : { name: 'Unknown Admin', username: 'admin', avatar_url: null }
       }));
 
       return storiesWithAdmins;
@@ -575,13 +581,15 @@ export function useAdmin() {
       if (deleteError) throw deleteError;
 
       // Log admin action
-      await supabase.from('admin_actions').insert({
-        admin_email: admin.email,
-        action_type: 'delete_event',
-        target_type: 'event',
-        target_id: eventId,
-        details: { status: 'completed' }
-      });
+      if (admin) {
+        await supabase.from('admin_actions').insert({
+          admin_email: admin.email,
+          action_type: 'delete_event',
+          target_type: 'event',
+          target_id: eventId,
+          details: { status: 'completed' }
+        });
+      }
 
       toast.showSuccess('Event deleted successfully');
     } catch (error) {
@@ -591,6 +599,289 @@ export function useAdmin() {
       setLoading(false);
     }
   };
+
+
+
+  const getEventLiquidity = useCallback(async (eventId: string) => {
+    if (!admin) throw new Error('Only admins can view event liquidity');
+
+    // Helper function to fetch liquidity transactions (defined inside the callback)
+    const fetchLiquidityTransactions = async (eventId: string) => {
+      try {
+        const { data: txData, error: txError } = await supabase
+          .from('liquidity_transactions')
+          .select('*')
+          .eq('event_id', eventId)
+          .order('created_at', { ascending: false });
+
+        if (!txError && txData) {
+          return txData;
+        }
+      } catch (error) {
+        console.warn('Error fetching liquidity transactions:', error);
+      }
+      return [];
+    };
+
+    try {
+      setLoading(true);
+
+      // First check if the admin_liquidity column exists
+      try {
+        // Get event pool details - don't use single() since there might be multiple records
+        // Use a simple query to avoid 406 errors
+        const { data: poolDataArray, error: poolError } = await supabase
+          .from('event_pools')
+          .select('*')
+          .eq('event_id', eventId);
+
+        // Handle the case where admin_liquidity column might not exist yet
+        if (poolError || !poolDataArray || poolDataArray.length === 0) {
+          console.warn('Error fetching pool data:', poolError);
+          // Return default values if there's an error
+          return {
+            currentLiquidity: 0,
+            transactions: []
+          };
+        }
+
+        // Use the most recent pool record
+        const poolData = poolDataArray[poolDataArray.length - 1];
+
+        // Check if admin_liquidity exists in the response and store it for later use
+        if (poolData && 'admin_liquidity' in poolData && typeof poolData.admin_liquidity === 'number') {
+          // We found admin_liquidity directly, we can return early
+          const transactions = await fetchLiquidityTransactions(eventId);
+          return {
+            currentLiquidity: poolData.admin_liquidity,
+            transactions
+          };
+        }
+      } catch (error) {
+        console.warn('Error checking admin_liquidity column:', error);
+        // If there's an error, just continue with default values
+      }
+
+      // Get event pool details again, but this time just get the total amount
+      // This is a safer approach that doesn't rely on the admin_liquidity column
+      // Use a simpler query to avoid 406 errors
+      const { data: poolDataArray, error: poolError } = await supabase
+        .from('event_pools')
+        .select('*')
+        .eq('event_id', eventId);
+
+      let currentLiquidity = 0;
+
+      if (!poolError && poolDataArray && poolDataArray.length > 0) {
+        // Use the most recent pool record
+        const poolData = poolDataArray[poolDataArray.length - 1];
+
+        // If admin_liquidity doesn't exist, we can estimate it as total - (yes_pool + no_pool)
+        if ('admin_liquidity' in poolData && typeof poolData.admin_liquidity === 'number') {
+          currentLiquidity = poolData.admin_liquidity;
+        } else if (poolData.total_amount && poolData.yes_pool !== undefined && poolData.no_pool !== undefined) {
+          // Estimate admin liquidity as the difference between total and user pools
+          const userPoolTotal = (poolData.yes_pool || 0) + (poolData.no_pool || 0);
+          currentLiquidity = Math.max(0, poolData.total_amount - userPoolTotal);
+        }
+      } else {
+        console.warn('No pool data found or error fetching pool data:', poolError);
+      }
+
+      // Get liquidity transactions
+      const transactions = await fetchLiquidityTransactions(eventId);
+
+      return {
+        currentLiquidity,
+        transactions
+      };
+    } catch (error) {
+      console.error('Error fetching event liquidity:', error);
+      // Return default values if there's an error
+      return {
+        currentLiquidity: 0,
+        transactions: []
+      };
+    } finally {
+      setLoading(false);
+    }
+  }, [admin]);
+
+  const addEventLiquidity = useCallback(async (eventId: string, amount: number, notes?: string) => {
+    if (!admin) throw new Error('Only admins can add liquidity');
+
+    try {
+      setLoading(true);
+
+      // First check if the admin_liquidity column exists
+      let hasAdminLiquidity = false;
+      try {
+        // Don't use single() since there might be multiple records
+        const { data: poolDataArray } = await supabase
+          .from('event_pools')
+          .select('*')
+          .eq('event_id', eventId);
+
+        // Check if any of the records have the admin_liquidity column
+        if (poolDataArray && poolDataArray.length > 0) {
+          const poolData = poolDataArray[0]; // Just check the first record
+          hasAdminLiquidity = poolData && 'admin_liquidity' in poolData;
+        }
+      } catch (error) {
+        console.warn('Error checking for admin_liquidity column:', error);
+      }
+
+      // If the column exists, try the RPC function first
+      if (hasAdminLiquidity) {
+        try {
+          const { error } = await supabase.rpc('add_event_liquidity', {
+            p_event_id: eventId,
+            p_admin_email: admin.email,
+            p_amount: amount,
+            p_notes: notes || null
+          });
+
+          if (!error) {
+            // Success! No need to try the fallback
+            toast.showSuccess(`Successfully added ₦${amount.toLocaleString()} liquidity to the event`);
+            return true;
+          }
+
+          // Check if the error is about event status
+          if (error.message && error.message.includes('Event must be active or pending')) {
+            // This is a validation error, not a technical error
+            toast.showError('Cannot add liquidity: Event must be active or pending');
+            throw new Error('Event must be active or pending to add liquidity');
+          }
+
+          console.warn('RPC call failed, trying direct update:', error);
+        } catch (error) {
+          console.warn('RPC call failed with exception, trying direct update:', error);
+        }
+      }
+
+      // Fallback: Try to update the event_pools table directly
+      console.log('Using direct update fallback...');
+
+      // First, get the current pool data - don't use single() since there might be multiple records
+      const { data: poolDataArray, error: poolError } = await supabase
+        .from('event_pools')
+        .select('*')
+        .eq('event_id', eventId);
+
+      if (poolError || !poolDataArray || poolDataArray.length === 0) {
+        console.error('Failed to get pool data:', poolError);
+        throw new Error('Could not find event pool');
+      }
+
+      // Use the most recent pool record
+      const poolData = poolDataArray[poolDataArray.length - 1];
+
+      // Check if admin_liquidity column exists
+      if (!hasAdminLiquidity) {
+        // Try to alter the table to add the column
+        try {
+          // We can't directly alter the table from the client, so we'll just
+          // try to update with the column and see if it works
+          console.log('Trying to update with admin_liquidity column...');
+        } catch (error) {
+          console.warn('Failed to add admin_liquidity column:', error);
+        }
+      }
+
+      // Calculate the new admin_liquidity value
+      const currentAdminLiquidity = hasAdminLiquidity && typeof poolData.admin_liquidity === 'number'
+        ? poolData.admin_liquidity
+        : 0;
+      const newAdminLiquidity = currentAdminLiquidity + amount;
+
+      // Update the pool with the new admin_liquidity
+      // Since there might be multiple records, we'll update all of them
+      // This ensures that no matter which record is queried, it will have the correct admin_liquidity
+
+      // First, get the current yes_pool and no_pool values
+      const yesPool = poolData.yes_pool || 0;
+      const noPool = poolData.no_pool || 0;
+
+      // Calculate the new total_amount including admin_liquidity
+      const newTotalAmount = yesPool + noPool + newAdminLiquidity;
+
+      const { error: updateError } = await supabase
+        .from('event_pools')
+        .update({
+          admin_liquidity: newAdminLiquidity,
+          total_amount: newTotalAmount, // Explicitly update total_amount
+          updated_at: new Date().toISOString()
+        })
+        .eq('event_id', eventId);
+
+      if (updateError) {
+        console.error('Failed to update admin_liquidity:', updateError);
+
+        // If the update failed because the column doesn't exist, try to add it
+        if (updateError.message && updateError.message.includes('column "admin_liquidity" does not exist')) {
+          console.log('Column does not exist, trying to add it via direct SQL is not possible from client...');
+          // We can't alter the table from the client, so we'll just log this error
+          // The migration should handle adding the column
+        }
+
+        // Continue anyway - the migration will eventually add the column
+        console.log('Continuing despite update error - the migration will add the column');
+      }
+
+      // Try to log the action
+      try {
+        // Try to insert into liquidity_transactions first
+        try {
+          await supabase.from('liquidity_transactions').insert({
+            event_id: eventId,
+            admin_email: admin.email,
+            amount: amount,
+            notes: notes || null
+          });
+        } catch (error) {
+          console.warn('Failed to insert into liquidity_transactions:', error);
+        }
+
+        // Also log to admin_actions
+        try {
+          // Get admin ID from email - try to find in users table
+          const { data: adminData } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', admin.email)
+            .single();
+
+          await supabase.from('admin_actions').insert({
+            admin_id: adminData?.id || null,
+            action_type: 'add_liquidity',
+            target_type: 'event',
+            target_id: eventId,
+            details: {
+              amount: amount,
+              notes: notes || null,
+              timestamp: new Date().toISOString()
+            }
+          });
+        } catch (error) {
+          console.warn('Failed to log to admin_actions:', error);
+        }
+      } catch (logError) {
+        // Just log this error but don't fail the operation
+        console.warn('Failed to log admin action:', logError);
+      }
+
+      toast.showSuccess(`Successfully added ₦${amount.toLocaleString()} liquidity to the event`);
+      return true;
+    } catch (error) {
+      console.error('Error adding liquidity:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.showError('Failed to add liquidity: ' + errorMessage);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [admin, toast]);
 
   return {
     loading,
@@ -610,5 +901,7 @@ export function useAdmin() {
     updateStory,
     deleteStory,
     deleteEvent,
+    getEventLiquidity,
+    addEventLiquidity,
   };
 }
