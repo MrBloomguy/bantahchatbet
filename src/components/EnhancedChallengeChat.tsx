@@ -96,9 +96,9 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
         console.log('Challenge data received:', data);
         setChallenge(data);
 
-        // Calculate time remaining if challenge is active
-        if (data.status === 'active' && data.expires_at) {
-          console.log('Challenge is active with expiry:', data.expires_at);
+        // Calculate time remaining if challenge is active or pending
+        if ((data.status === 'active' || data.status === 'pending') && data.expires_at) {
+          console.log('Challenge is active/pending with expiry:', data.expires_at);
           updateTimeRemaining(new Date(data.expires_at));
         }
       } catch (error) {
@@ -116,12 +116,15 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
 
   // Update time remaining
   useEffect(() => {
-    if (!challenge || challenge.status !== 'active' || !challenge.expires_at) return;
+    if (!challenge || (challenge.status !== 'active' && challenge.status !== 'pending') || !challenge.expires_at) return;
 
     const expiryDate = new Date(challenge.expires_at);
     const interval = setInterval(() => {
       updateTimeRemaining(expiryDate);
     }, 60000); // Update every minute
+
+    // Initial update
+    updateTimeRemaining(expiryDate);
 
     return () => clearInterval(interval);
   }, [challenge]);
@@ -410,14 +413,46 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
     }
   };
 
+  const handleChallengeResponse = async (response: 'accepted' | 'declined') => {
+    if (!currentUser || !challenge) return;
+
+    try {
+      // Update challenge status
+      const { error } = await supabase
+        .from('challenges')
+        .update({ status: response })
+        .eq('id', challengeId);
+
+      if (error) throw error;
+
+      // Add system message about the response
+      await supabase
+        .from('challenge_messages')
+        .insert({
+          challenge_id: challengeId,
+          sender_id: null, // System message
+          content: `Challenge ${response} by ${currentUser.username || 'user'}`,
+          type: 'system_message'
+        });
+
+      // Update local state
+      setChallenge(prev => prev ? {...prev, status: response} : null);
+
+      toast.showSuccess(`Challenge ${response} successfully`);
+    } catch (error) {
+      console.error(`Error ${response} challenge:`, error);
+      toast.showError(`Failed to ${response} challenge`);
+    }
+  };
+
   const renderMessage = (message: Message) => {
     const isCurrentUser = message.sender_id === currentUser?.id;
     const isSystemMessage = message.type === 'system_message';
 
     if (isSystemMessage) {
       return (
-        <div key={message.id} className="flex justify-center my-2">
-          <div className="bg-gray-800 text-gray-300 px-3 py-1.5 rounded-md text-xs max-w-[80%]">
+        <div key={message.id} className="flex justify-center my-1">
+          <div className="bg-gray-200/80 text-gray-600 px-2 py-0.5 rounded text-[10px] max-w-[90%] text-center">
             {message.content}
           </div>
         </div>
@@ -426,27 +461,27 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
 
     if (message.type === 'evidence') {
       return (
-        <div key={message.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-2`}>
+        <div key={message.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-1.5`}>
           <div className="flex items-start">
             {!isCurrentUser && message.sender && (
-              <div className="mr-2">
+              <div className="mr-1.5">
                 <img
                   src={message.sender.avatar_url || '/default-avatar.png'}
                   alt={message.sender.username}
-                  className="w-7 h-7 rounded-full border border-gray-700"
+                  className="w-6 h-6 rounded-full border border-gray-700"
                 />
               </div>
             )}
             <div>
-              <div className={`rounded-md py-2 px-3 max-w-[75%] ${isCurrentUser ? 'bg-gray-700 text-white' : 'bg-gray-700 text-white'}`}>
-                <div className="text-xs mb-2">
+              <div className={`rounded-md py-1.5 px-2.5 max-w-[75%] ${isCurrentUser ? 'bg-amber-500/20 text-white' : 'bg-amber-500/20 text-white'}`}>
+                <div className="text-xs mb-1.5">
                   <span className="text-amber-500 font-medium">Evidence Submitted:</span>
                 </div>
                 <a
                   href={message.content}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center p-1.5 bg-gray-800 rounded-md hover:bg-gray-700 transition-colors mb-2"
+                  className="flex items-center p-1 bg-gray-800/80 rounded hover:bg-gray-700 transition-colors mb-1.5"
                 >
                   <Upload className="w-3 h-3 mr-1 text-amber-500" />
                   <span className="text-xs truncate text-amber-500">
@@ -506,6 +541,7 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
                     ))}
                   </div>
                 )}
+              </div>
             </div>
             <div className="text-[10px] text-gray-500 mt-0.5 ml-1">
               {new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
@@ -516,25 +552,43 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
     }
 
     return (
-      <div key={message.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-2`}>
-        <div className="flex items-start">
+      <div key={message.id} className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} mb-1.5`}>
+        <div className="flex items-start max-w-[80%]">
           {!isCurrentUser && message.sender && (
-            <div className="mr-2">
+            <div className="mr-1.5 flex-shrink-0">
               <img
                 src={message.sender.avatar_url || '/default-avatar.png'}
                 alt={message.sender.username}
-                className="w-7 h-7 rounded-full border border-gray-700"
+                className="w-6 h-6 rounded-full border border-gray-700"
               />
             </div>
           )}
-          <div>
-            <div className={`rounded-md py-2 px-3 max-w-[75%] ${isCurrentUser ? 'bg-gray-700 text-white' : 'bg-gray-700 text-white'}`}>
-              <div className="text-xs">{message.content}</div>
+          <div className="min-w-0">
+            {!isCurrentUser && message.sender && (
+              <div className="text-[9px] text-gray-400 mb-0.5 ml-0.5">
+                {message.sender.username}
+              </div>
+            )}
+            <div className={`rounded-lg py-1.5 px-2.5 ${
+              isCurrentUser
+                ? 'bg-purple-600 text-white rounded-tr-none'
+                : 'bg-white text-gray-800 rounded-tl-none shadow-sm'
+            }`}>
+              <div className="text-xs leading-tight break-words">{message.content}</div>
             </div>
-            <div className="text-[10px] text-gray-500 mt-0.5 ml-1">
+            <div className="text-[9px] text-gray-500 mt-0.5 ml-0.5 text-right">
               {new Date(message.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
             </div>
           </div>
+          {isCurrentUser && (
+            <div className="ml-1.5 flex-shrink-0">
+              <img
+                src={currentUser?.avatar_url || '/default-avatar.png'}
+                alt={currentUser?.username || 'You'}
+                className="w-6 h-6 rounded-full border border-gray-700"
+              />
+            </div>
+          )}
         </div>
       </div>
     );
@@ -556,28 +610,30 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
     );
   }
 
-  // Ensure all required fields exist
+  // Ensure all required fields exist with real data
   const safeChallenge = {
     ...challenge,
-    title: challenge.title || 'Untitled Challenge',
+    title: challenge.title || `${challenge.game_type || 'Game'} Challenge`,
     status: challenge.status || 'unknown',
     wager_amount: challenge.wager_amount || 0,
-    game_type: challenge.game_type || 'Unknown Game',
+    game_type: challenge.game_type || '',
     platform: challenge.platform || '',
     challenger: challenge.challenger || { username: 'Unknown User', avatar_url: '' },
-    challenged: challenge.challenged || { username: 'Unknown User', avatar_url: '' }
+    challenged: challenge.challenged || { username: 'Unknown User', avatar_url: '' },
+    created_at: challenge.created_at || new Date().toISOString(),
+    expires_at: challenge.expires_at || null
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-900 rounded-lg overflow-hidden">
-      {/* Challenge Info Header - Styled like Bybit P2P chat */}
-      <div className="bg-black p-3 border-b border-gray-800 sticky top-0 z-10">
+    <div className="flex flex-col h-full bg-white rounded-lg overflow-hidden">
+      {/* Challenge Info Header */}
+      <div className="bg-white p-3 border-b border-gray-200 sticky top-0 z-10 shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
             <button
               type="button"
               onClick={() => window.history.back()}
-              className="p-1 mr-2 text-white"
+              className="p-1 mr-2 text-gray-600 hover:text-gray-800"
               title="Go back"
             >
               <svg
@@ -596,20 +652,23 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
               </svg>
             </button>
             <div className="flex flex-col">
-              <h3 className="text-base font-semibold text-white">
+              <h3 className="text-base font-semibold text-gray-900">
+                <span className="text-gray-500 text-sm mr-1">Title:</span>
                 {safeChallenge.title || `${safeChallenge.game_type} Challenge`}
               </h3>
-              <div className="flex items-center text-xs text-gray-400 mt-1">
+              <div className="flex items-center text-xs text-gray-500 mt-1">
                 <div className="flex items-center">
+                  <div className="bg-amber-500/20 w-2 h-2 rounded-full mr-1"></div>
                   <img
                     src={safeChallenge.challenger.avatar_url || '/default-avatar.png'}
                     alt={safeChallenge.challenger.username}
                     className="w-4 h-4 rounded-full mr-1"
                   />
-                  <span>{safeChallenge.challenger.username}</span>
+                  <span className="font-bold text-gray-900">{safeChallenge.challenger.username}</span>
                 </div>
                 <span className="mx-1">vs</span>
                 <div className="flex items-center">
+                  <div className="bg-blue-500/20 w-2 h-2 rounded-full mr-1"></div>
                   <img
                     src={safeChallenge.challenged.avatar_url || '/default-avatar.png'}
                     alt={safeChallenge.challenged.username}
@@ -620,85 +679,55 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
               </div>
             </div>
           </div>
-          <button
-            type="button"
-            className="text-amber-500 text-xs font-medium"
-            onClick={() => window.alert('Report feature coming soon')}
-          >
-            Report Scam
-          </button>
-        </div>
-
-        {/* Challenge details */}
-        <div className="mt-2 text-xs text-white">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <div className="bg-amber-500/20 px-2 py-1 rounded-md mr-2">
-                <span className="text-amber-500 font-medium">₦{safeChallenge.wager_amount.toLocaleString()}</span>
-              </div>
-              <div className="text-xs text-gray-400">
-                {new Date(safeChallenge.created_at).toLocaleDateString()} {new Date(safeChallenge.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
-              </div>
-            </div>
-            <div className={`px-2 py-0.5 rounded-full text-xs ${safeChallenge.status === 'active' ? 'bg-green-500/20 text-green-400' : safeChallenge.status === 'completed' ? 'bg-blue-500/20 text-blue-400' : 'bg-red-500/20 text-red-400'}`}>
-              {safeChallenge.status.toUpperCase()}
-            </div>
+          <div className="flex items-center px-3 py-1.5 bg-purple-100 text-purple-600 rounded-md text-xs font-medium">
+            <span className="text-gray-500 mr-1">Wager:</span>
+            <span className="mr-1">₦</span>
+            {safeChallenge.wager_amount.toLocaleString()}
           </div>
-
-          <div className="mt-1">
-            <span className="text-gray-400">Game: </span>
-            <span className="text-white">{safeChallenge.game_type}</span>
-            {safeChallenge.platform && (
-              <span className="text-gray-400"> ({safeChallenge.platform})</span>
-            )}
-          </div>
-
-          {/* Challenge status info */}
-          {safeChallenge.status === 'active' ? (
-            <div className="mt-1 text-green-400 flex items-center">
-              <span>Challenge in progress</span>
-            </div>
-          ) : safeChallenge.status === 'completed' ? (
-            <div className="mt-1 text-blue-400 flex items-center">
-              <span>Challenge completed</span>
-            </div>
-          ) : (
-            <div className="mt-1 text-red-400 flex items-center">
-              <span>Challenge cancelled</span>
-            </div>
-          )}
-
-          {/* Winner info for completed challenges */}
-          {safeChallenge.status === 'completed' && safeChallenge.winner_id && (
-            <div className="mt-1 text-green-400">
-              Winner: {safeChallenge.winner_id === safeChallenge.challenger_id ? safeChallenge.challenger.username : safeChallenge.challenged.username}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Floating Escrow & Timer Bar */}
-      <div className="sticky top-[105px] z-10 bg-gray-800/90 backdrop-blur-sm px-3 py-2 border-y border-gray-700 flex justify-between items-center">
-        <div className="flex items-center">
-          <div className="text-xs text-gray-400 mr-1">Locked in escrow:</div>
-          <div className="text-xs font-medium text-amber-500">₦{safeChallenge.wager_amount.toLocaleString()}</div>
         </div>
 
-        {safeChallenge.status === 'active' && timeRemaining && (
-          <div className="flex items-center bg-gray-700/50 px-2 py-1 rounded-md">
-            <Clock className="w-3 h-3 mr-1 text-amber-500" />
-            <div className="text-xs text-amber-500">{timeRemaining}</div>
+        {/* Winner info for completed challenges */}
+        {safeChallenge.status === 'completed' && safeChallenge.winner_id && (
+          <div className="mt-2 text-xs text-green-400 text-center">
+            Winner: {safeChallenge.winner_id === safeChallenge.challenger_id ? safeChallenge.challenger.username : safeChallenge.challenged.username}
           </div>
         )}
       </div>
 
-      {/* Action Buttons - Styled like Bybit P2P chat */}
+      {/* Challenge Info Bar */}
+      <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+        <div className="flex items-center justify-between space-x-2 overflow-x-auto">
+          <div className={`px-2 py-1.5 rounded-md text-xs font-medium whitespace-nowrap ${
+            safeChallenge.status === 'active' ? 'bg-green-500/20 text-green-400' :
+            safeChallenge.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
+            safeChallenge.status === 'pending' ? 'bg-yellow-500/20 text-yellow-500' :
+            'bg-red-500/20 text-red-400'
+          }`}>
+            {safeChallenge.status.toUpperCase()}
+          </div>
+
+          <div className="px-2 py-1.5 bg-gray-100 rounded-md text-xs text-gray-700 whitespace-nowrap">
+            <span className="text-gray-500">Game: </span>
+            <span>{safeChallenge.game_type}</span>
+            {safeChallenge.platform && (
+              <span className="text-gray-500"> ({safeChallenge.platform})</span>
+            )}
+          </div>
+
+          <div className="flex items-center px-2 py-1.5 bg-gray-100 rounded-md text-xs text-gray-700 whitespace-nowrap">
+            <Clock className="w-3 h-3 mr-1 text-gray-500" />
+            {new Date(safeChallenge.created_at).toLocaleDateString()}
+          </div>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
       {safeChallenge.status === 'active' && (
-        <div className="bg-black px-3 py-2 border-b border-gray-800 flex space-x-2">
+        <div className="bg-white px-3 py-2 border-b border-gray-200 flex space-x-2">
           <button
             type="button"
             onClick={() => setShowDisputeForm(prev => !prev)}
-            className="flex items-center px-3 py-1.5 bg-amber-500/10 text-amber-500 rounded-md text-xs font-medium"
+            className="flex items-center px-3 py-1.5 bg-red-50 text-red-600 rounded-md text-xs font-medium hover:bg-red-100 transition-colors"
           >
             <AlertTriangle className="w-3 h-3 mr-1" />
             {showDisputeForm ? 'Cancel' : 'Dispute'}
@@ -707,7 +736,7 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
           <button
             type="button"
             onClick={handleRequestSupport}
-            className="flex items-center px-3 py-1.5 bg-blue-500/10 text-blue-400 rounded-md text-xs font-medium"
+            className="flex items-center px-3 py-1.5 bg-blue-50 text-blue-600 rounded-md text-xs font-medium hover:bg-blue-100 transition-colors"
           >
             <Shield className="w-3 h-3 mr-1" />
             Request Support
@@ -717,28 +746,28 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
 
       {/* Dispute Form */}
       {showDisputeForm && (
-        <div className="bg-black p-3 border-b border-gray-800">
-          <h4 className="text-xs font-medium text-amber-500 mb-2">Initiate Dispute</h4>
+        <div className="bg-white p-3 border-b border-gray-200">
+          <h4 className="text-xs font-medium text-red-600 mb-2">Initiate Dispute</h4>
           <textarea
             value={disputeReason}
             onChange={(e) => setDisputeReason(e.target.value)}
             placeholder="Describe the issue in detail..."
-            className="w-full bg-gray-800 border border-gray-700 rounded-md p-2 text-white text-xs mb-2"
+            className="w-full bg-gray-50 border border-gray-300 rounded-md p-2 text-gray-700 text-xs mb-2 focus:border-red-300 focus:ring focus:ring-red-200 focus:ring-opacity-50"
             rows={3}
           />
           <button
             type="button"
             onClick={handleInitiateDispute}
             disabled={!disputeReason.trim()}
-            className="px-3 py-1.5 bg-amber-500/20 text-amber-500 rounded-md hover:bg-amber-500/30 disabled:opacity-50 text-xs font-medium"
+            className="px-3 py-1.5 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 text-xs font-medium transition-colors"
           >
             Submit Dispute
           </button>
         </div>
       )}
 
-      {/* Messages - Styled like Bybit P2P chat */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-black">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50">
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
             No messages yet. Start the conversation!
@@ -750,19 +779,19 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
       </div>
 
       {/* Floating Support Icon */}
-      <div className="fixed bottom-20 right-4 z-20">
+      <div className="fixed bottom-20 left-4 z-20">
         <button
           type="button"
           onClick={handleRequestSupport}
-          className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors"
+          className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center shadow-lg hover:bg-blue-700 transition-colors"
           title="Request Support"
         >
-          <Shield className="w-6 h-6 text-white" />
+          <Shield className="w-5 h-5 text-white" />
         </button>
       </div>
 
-      {/* Message Input - Styled like Bybit P2P chat */}
-      <div className="border-t border-gray-800 p-2 bg-black sticky bottom-0 z-10">
+      {/* Message Input */}
+      <div className="border-t border-gray-200 p-2 bg-white sticky bottom-0 z-10">
         <div className="flex items-center space-x-2">
           <input
             type="file"
@@ -778,7 +807,7 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={uploading}
-            className="p-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            className="p-2 text-gray-500 hover:text-gray-700 transition-colors disabled:opacity-50"
             title="Upload evidence"
           >
             {uploading ? (
@@ -798,7 +827,7 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               placeholder="Enter your message"
-              className="w-full bg-gray-800 border border-gray-700 rounded-full px-4 py-2 text-white text-sm"
+              className="w-full bg-gray-50 border border-gray-300 rounded-full px-4 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
             />
           </div>
@@ -807,7 +836,7 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
             type="button"
             onClick={handleSendMessage}
             disabled={!message.trim() || sending}
-            className="p-2 text-white bg-blue-600 rounded-full disabled:opacity-50 flex items-center justify-center w-10 h-10"
+            className="p-2 text-white bg-purple-600 rounded-full disabled:opacity-50 flex items-center justify-center w-10 h-10 hover:bg-purple-700 transition-colors"
             title="Send message"
           >
             {sending ? (
