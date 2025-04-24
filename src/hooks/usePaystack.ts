@@ -27,18 +27,93 @@ export const usePaystack = () => {
   const [isScriptReady, setIsScriptReady] = useState(false);
 
   useEffect(() => {
-    const checkPaystackScript = setInterval(() => {
+    console.log('Checking Paystack script status...');
+
+    // Function to load Paystack script
+    const loadPaystackScript = () => {
+      // If already loaded
+      if (window.PaystackPop) {
+        console.log('PaystackPop already available in window object');
+        setIsScriptReady(true);
+        return;
+      }
+
+      // If script tag already exists but not loaded yet
+      const existingScript = document.querySelector('script[src*="paystack.co/v1/inline.js"]');
+      if (existingScript) {
+        console.log('Paystack script tag found in document, waiting for it to load...');
+        const checkPaystack = setInterval(() => {
+          if (window.PaystackPop) {
+            console.log('PaystackPop now available from existing script tag');
+            setIsScriptReady(true);
+            clearInterval(checkPaystack);
+          }
+        }, 100);
+
+        // Clear interval after 10 seconds to prevent infinite checking
+        setTimeout(() => {
+          clearInterval(checkPaystack);
+        }, 10000);
+
+        return;
+      }
+
+      // Create and add script tag
+      console.log('Creating new Paystack script tag...');
+      const script = document.createElement('script');
+      script.src = 'https://js.paystack.co/v1/inline.js';
+      script.async = true;
+
+      script.onload = () => {
+        console.log('Paystack script tag loaded, checking for PaystackPop object...');
+        // Check if PaystackPop is available
+        const checkPaystack = setInterval(() => {
+          if (window.PaystackPop) {
+            console.log('PaystackPop now available from newly created script tag');
+            setIsScriptReady(true);
+            clearInterval(checkPaystack);
+            console.log('Paystack script loaded successfully');
+          }
+        }, 100);
+
+        // Clear interval after 10 seconds
+        setTimeout(() => {
+          clearInterval(checkPaystack);
+          if (!window.PaystackPop) {
+            console.error('Paystack script loaded but PaystackPop not available');
+          }
+        }, 10000);
+      };
+
+      script.onerror = () => {
+        console.error('Failed to load Paystack script');
+      };
+
+      document.head.appendChild(script);
+    };
+
+    // Load the script
+    loadPaystackScript();
+
+    // Check every second if script is loaded (as a fallback)
+    const intervalCheck = setInterval(() => {
       if (window.PaystackPop) {
         setIsScriptReady(true);
-        clearInterval(checkPaystackScript);
+        clearInterval(intervalCheck);
       }
-    }, 100);
+    }, 1000);
 
-    return () => clearInterval(checkPaystackScript);
+    return () => clearInterval(intervalCheck);
   }, []);
 
   const initializePayment = useCallback(
     async (amount: number): Promise<boolean> => {
+      console.log('Initializing payment with Paystack...', {
+        isScriptReady,
+        paystackAvailable: !!window.PaystackPop,
+        amount
+      });
+
       if (!currentUser?.id) {
         throw new Error('Please sign in to make a deposit');
       }
@@ -51,8 +126,15 @@ export const usePaystack = () => {
         throw new Error('Minimum deposit amount is ₦100');
       }
 
-      if (!isScriptReady || !window.PaystackPop) {
-        throw new Error('Payment system is still initializing. Please try again.');
+      // Double-check if PaystackPop is available, regardless of isScriptReady state
+      if (!window.PaystackPop) {
+        console.error('PaystackPop not available despite checks');
+        throw new Error('Payment system is not available. Please refresh the page and try again.');
+      }
+
+      // If we get here, we know PaystackPop is available, so ensure isScriptReady is true
+      if (!isScriptReady) {
+        setIsScriptReady(true);
       }
 
       try {
@@ -155,7 +237,13 @@ export const usePaystack = () => {
           };
 
           // Initialize Paystack
+          console.log('Setting up Paystack handler with config:', {
+            email: config.email,
+            amount: config.amount,
+            ref: config.ref
+          });
           const handler = window.PaystackPop.setup(config);
+          console.log('Opening Paystack iframe...');
           handler.openIframe();
         });
 

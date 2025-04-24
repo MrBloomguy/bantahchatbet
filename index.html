@@ -10,8 +10,29 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <link rel="apple-touch-icon" href="/icons/icon-192x192.png" />
     <link rel="manifest" href="/manifest.json" />
-    <meta http-equiv="Content-Security-Policy" content="connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.tawk.to wss://*.tawk.to https://api.paystack.co;">
+    <!-- Temporarily remove CSP to debug Paystack integration -->
+    <!-- <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.tawk.to wss://*.tawk.to https://api.paystack.co; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.paystack.co; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:;"> -->
     <title>Bantah</title>
+    <!-- Direct Paystack script inclusion -->
+    <script src="https://js.paystack.co/v1/inline.js"></script>
+    <!-- Fallback script to ensure PaystackPop is available -->
+    <script>
+      // Check if Paystack is loaded
+      window.paystackLoaded = false;
+
+      function checkPaystack() {
+        if (typeof window.PaystackPop !== 'undefined') {
+          window.paystackLoaded = true;
+          console.log('Paystack loaded successfully');
+        } else {
+          console.log('Paystack not loaded yet, retrying...');
+          setTimeout(checkPaystack, 500);
+        }
+      }
+
+      // Start checking
+      checkPaystack();
+    </script>
   </head>
   <body>
     <div id="root"></div>

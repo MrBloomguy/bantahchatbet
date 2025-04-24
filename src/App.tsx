@@ -54,6 +54,7 @@ import Referral from './pages/Referral';
 import Levels from './pages/Levels';
 import Challenges from './pages/Challenges';
 import ChallengeChat from './pages/ChallengeChat';
+import EventChallengeHistory from './pages/EventChallengeHistory';
 
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -289,6 +290,11 @@ const App: React.FC = () => {
                           <Route path="/settings/privacy" element={
                             <ProtectedRoute>
                               <Privacy />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/activity-history" element={
+                            <ProtectedRoute>
+                              <EventChallengeHistory />
                             </ProtectedRoute>
                           } />
                         </Routes>

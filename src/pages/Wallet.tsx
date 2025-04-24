@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Wallet as WalletIcon, ArrowDownRight, ArrowUpRight, History, CreditCard, Filter } from 'lucide-react';
+import { Wallet as WalletIcon, ArrowDownRight, ArrowUpRight, History, CreditCard, Filter, Trophy } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import WalletCard from '../components/WalletCard';
-import WalletTransactionHistory from '../components/WalletTransactionHistory';
+import EnhancedWalletHistory from '../components/EnhancedWalletHistory';
 import MobileFooterNav from '../components/MobileFooterNav';
 import { useToast } from '../contexts/ToastContext';
 import { useWallet } from '../contexts/WalletContext';
-import { PaystackWidget } from '../components/PaystackWidget';
+import { SimplePaystackWidget } from '../components/SimplePaystackWidget';
 import { PaystackWithdrawalWidget } from '../components/PaystackWithdrawalWidget';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatNaira } from '../utils/currency';
@@ -112,7 +112,7 @@ const Wallet: React.FC = () => {
               <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
                 <div className="bg-white rounded-xl max-w-md w-full p-6">
                   <h3 className="text-xl font-bold mb-4">Complete Your Deposit</h3>
-                  <PaystackWidget
+                  <SimplePaystackWidget
                     amount={depositAmount}
                     onSuccess={() => {
                       setShowDepositModal(false);
@@ -199,7 +199,7 @@ const Wallet: React.FC = () => {
         );
 
       case 'history':
-        return <WalletTransactionHistory />;
+        return <EnhancedWalletHistory />;
 
       default:
         return (
@@ -230,14 +230,24 @@ const Wallet: React.FC = () => {
             <div className="bg-white rounded-xl p-6 shadow-sm">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-semibold">Recent Transactions</h2>
-                <button
-                  onClick={() => setActiveTab('history')}
-                  className="text-sm text-purple-600 font-medium hover:text-purple-800"
-                >
-                  View All
-                </button>
+                <div className="flex gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setActiveTab('history')}
+                    className="text-sm text-purple-600 font-medium hover:text-purple-800"
+                  >
+                    View All
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => navigate('/activity-history')}
+                    className="text-sm text-purple-600 font-medium hover:text-purple-800 flex items-center gap-1"
+                  >
+                    <Trophy className="w-3 h-3" /> Activity History
+                  </button>
+                </div>
               </div>
-              <WalletTransactionHistory limit={5} />
+              <EnhancedWalletHistory limit={5} showFilters={false} />
             </div>
           </div>
         );
@@ -258,6 +268,7 @@ const Wallet: React.FC = () => {
             {/* Navigation Tabs */}
             <div className="bg-white rounded-xl p-1 flex shadow-sm">
               <button
+                type="button"
                 onClick={() => setActiveTab('overview')}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium ${
                   activeTab === 'overview'
@@ -268,6 +279,7 @@ const Wallet: React.FC = () => {
                 Overview
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab('deposit')}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium ${
                   activeTab === 'deposit'
@@ -278,6 +290,7 @@ const Wallet: React.FC = () => {
                 Deposit
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab('withdraw')}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium ${
                   activeTab === 'withdraw'
@@ -288,6 +301,7 @@ const Wallet: React.FC = () => {
                 Withdraw
               </button>
               <button
+                type="button"
                 onClick={() => setActiveTab('history')}
                 className={`flex-1 py-2 rounded-lg text-sm font-medium ${
                   activeTab === 'history'

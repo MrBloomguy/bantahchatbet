@@ -5,7 +5,7 @@ import { useWallet } from '../contexts/WalletContext';
 import { useToast } from '../contexts/ToastContext';
 import { usePaystack } from '../hooks/usePaystack';
 import LoadingSpinner from './LoadingSpinner';
-import { PaystackWidget } from './PaystackWidget';
+import { SimplePaystackWidget } from './SimplePaystackWidget';
 import { TransferForm } from './TransferForm';
 import { formatNaira, formatUSD, convertNGNtoUSD } from '../utils/currency';
 import { PaystackWithdrawalWidget } from './PaystackWithdrawalWidget';
@@ -220,7 +220,7 @@ const WalletCard: React.FC = () => {
 
                             <div>
                                 {transactionType === 'deposit' ? (
-                                    <PaystackWidget
+                                    <SimplePaystackWidget
                                         amount={Number(amount)}
                                         onSuccess={() => {
                                             setShowPaymentModal(false);
