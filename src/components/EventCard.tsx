@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lock } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import JoinRequestModal from './JoinRequestModal';
+import { useEventPoolRefresh } from '../hooks/useEventPoolRefresh';
+import { formatCurrency } from '../utils/formatNumber';
 
 const DEFAULT_BANNER = 'https://images.unsplash.com/photo-1518546305927-5a555bb7020d?w=800&auto=format&fit=crop';
 
@@ -43,6 +45,25 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [showJoinModal, setShowJoinModal] = useState(false);
+
+  // Use the custom hook to get the latest pool data
+  const { poolData, loading: poolLoading } = useEventPoolRefresh(event.id);
+
+  // Create a local copy of the event with updated pool data
+  const [updatedEvent, setUpdatedEvent] = useState(event);
+
+  // Update the event when pool data changes
+  useEffect(() => {
+    if (poolData) {
+      setUpdatedEvent({
+        ...event,
+        pool: {
+          ...event.pool,
+          total_amount: poolData.total_amount
+        }
+      });
+    }
+  }, [event, poolData]);
 
   const getEventStatus = () => {
     const now = new Date();
@@ -179,7 +200,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
             <div className="flex items-center gap-2 mt-1">
               <div className="bg-white rounded-lg px-2 py-1">
                 <span className="text-black font-bold text-sm">
-                  ₦{event.pool?.total_amount?.toLocaleString() || '0'}
+                  {formatCurrency(updatedEvent.pool?.total_amount || 0, '₦', true)}
                 </span>
               </div>
               {/* Participation Avatar + Count */}
@@ -202,16 +223,17 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
 
           {/* Join Button */}
           <button
+            type="button"
             onClick={handleJoinClick}
-            disabled={['CANCELLED', 'ENDED'].includes(event.status || getEventStatus().label)}
+            disabled={['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label)}
             className={`${
-              ['CANCELLED', 'ENDED'].includes(event.status || getEventStatus().label)
+              ['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label)
                 ? 'bg-gray-500 cursor-not-allowed text-white'
                 : 'btn-primary bg-[#ccff00] text-black'
             } h-10 flex items-center justify-center gap-1 px-4 rounded-3x1'`}
           >
-            {event.is_private && <Lock className="h-4 w-4" />}
-            {['CANCELLED', 'ENDED'].includes(event.status || getEventStatus().label) ? 'Closed' : 'Join'}
+            {updatedEvent.is_private && <Lock className="h-4 w-4" />}
+            {['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label) ? 'Closed' : 'Join'}
           </button>
         </div>
       </div>

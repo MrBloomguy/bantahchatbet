@@ -38,12 +38,30 @@ const EventLiquidityManager: React.FC<EventLiquidityManagerProps> = ({ eventId }
   const handleLiquidityAdded = async () => {
     await loadLiquidityData();
 
-    // Trigger a refresh of the parent component to update the event pool display
-    if (typeof window !== 'undefined') {
-      // Use a small timeout to ensure the database has updated
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
+    // Instead of reloading the page, we'll rely on the real-time subscription
+    // in the useEvent hook to update the UI
+
+    // Manually trigger an update to the event_pools table to ensure the subscription fires
+    try {
+      // This is just a dummy update to trigger the subscription
+      const { data: poolData } = await supabase
+        .from('event_pools')
+        .select('*')
+        .eq('event_id', eventId)
+        .limit(1);
+
+      if (poolData && poolData.length > 0) {
+        const pool = poolData[0];
+
+        // Update the updated_at timestamp to trigger the subscription
+        await supabase
+          .from('event_pools')
+          .update({ updated_at: new Date().toISOString() })
+          .eq('id', pool.id);
+      }
+    } catch (error) {
+      console.warn('Error triggering event pool update:', error);
+      // This is just a helper, so we don't need to handle errors
     }
   };
 

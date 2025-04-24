@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useEvent } from '../hooks/useEvent';
 import { useToast } from '../contexts/ToastContext';
 import EventCard from '../components/EventCard';
@@ -34,8 +34,18 @@ interface Event {
 const Events = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const { events } = useEvent();
+  const { events, fetchEvents } = useEvent();
   const toast = useToast();
+
+  // Set up a refresh interval to ensure the latest data is displayed
+  useEffect(() => {
+    // Refresh events every 30 seconds
+    const intervalId = setInterval(() => {
+      fetchEvents();
+    }, 30000);
+
+    return () => clearInterval(intervalId);
+  }, [fetchEvents]);
 
   const handleCategoryClick = (categoryId: string) => {
     if (categoryId === 'create') {
@@ -125,6 +135,7 @@ const Events = () => {
             <div className="flex gap-3 md:max-w-[800px]"> {/* Added wrapper div with max-width */}
               {categories.map((category) => (
                 <button
+                  type="button"
                   key={category.id}
                   onClick={() => handleCategoryClick(category.id)}
                   className="flex-shrink-0 flex flex-col items-center relative pt-1"

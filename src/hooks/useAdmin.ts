@@ -503,10 +503,18 @@ export function useAdmin() {
       }
 
       // Create a map of admin profiles by ID
-      const adminMap = (adminProfiles || []).reduce<Record<string, any>>((map, profile) => {
+      interface AdminProfile {
+        id: string;
+        name: string;
+        username?: string;
+        avatar_url?: string | null;
+      }
+
+      const adminMap = (adminProfiles || []).reduce<Record<string, AdminProfile>>((map, profile) => {
         map[profile.id] = {
           id: profile.id,
           name: profile.username || 'Admin', // Use username as name
+          username: profile.username,
           avatar_url: profile.avatar_url
         };
         return map;
@@ -806,6 +814,14 @@ export function useAdmin() {
       // Calculate the new total_amount including admin_liquidity
       const newTotalAmount = yesPool + noPool + newAdminLiquidity;
 
+      console.log('Updating event pool:', {
+        eventId,
+        yesPool,
+        noPool,
+        newAdminLiquidity,
+        newTotalAmount
+      });
+
       const { error: updateError } = await supabase
         .from('event_pools')
         .update({
@@ -814,6 +830,19 @@ export function useAdmin() {
           updated_at: new Date().toISOString()
         })
         .eq('event_id', eventId);
+
+      // Also update the events table to trigger UI updates
+      try {
+        await supabase
+          .from('events')
+          .update({
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', eventId);
+      } catch (error) {
+        console.warn('Error updating event timestamp:', error);
+        // This is just a helper update, so we don't need to handle errors
+      }
 
       if (updateError) {
         console.error('Failed to update admin_liquidity:', updateError);

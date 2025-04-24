@@ -250,6 +250,24 @@ export function useEvent() {
 
   useEffect(() => {
     fetchEvents();
+
+    // Set up a real-time subscription to event_pools updates
+    const subscription = supabase
+      .channel('event_pools_changes')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'event_pools'
+      }, () => {
+        // Refresh events when event_pools change
+        console.log('Event pools changed, refreshing events...');
+        fetchEvents();
+      })
+      .subscribe();
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, [fetchEvents]);
 
   return {

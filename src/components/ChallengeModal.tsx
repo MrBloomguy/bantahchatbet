@@ -40,13 +40,13 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
     gameType: '' as GameType,
     platform: '' as Platform
   });
-  
+
   const { wallet } = useWallet();
   const toast = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     try {
       setLoading(true);
 
@@ -54,16 +54,16 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
         toast.showError('Insufficient balance');
         return;
       }
-      
+
       // If there's a scheduled date/time, set it
       let status = 'pending';
       let scheduledAt = null;
-      
+
       if (challengeData.scheduledDate && challengeData.scheduledTime) {
         scheduledAt = new Date(`${challengeData.scheduledDate}T${challengeData.scheduledTime}`).toISOString();
         status = 'pending'; // Scheduled challenges start as pending
       }
-      
+
       // Calculate expiration time
       const expirationTime = new Date();
       expirationTime.setHours(expirationTime.getHours() + challengeData.expirationHours);
@@ -112,7 +112,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
         });
 
       onSuccess?.();
-      toast.showSuccess('Challenge created successfully!'); // Changed from toast.show to toast.showSuccess
+      toast.showSuccess('Challenge created successfully!');
     } catch (error) {
       console.error('Error creating challenge:', error);
       toast.showError('Failed to create challenge');
@@ -122,8 +122,9 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl w-full max-w-md mx-4 shadow-xl bg-cover bg-center" style={{ backgroundImage: 'url(/public/dialogue-bakcground.svg)' }}>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-md shadow-xl overflow-hidden bg-cover bg-center" style={{ backgroundImage: 'url(/public/dialogue-bakcground.svg)' }}>
+        {/* Header */}
         <div className="p-2 border-b flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Trophy className="w-4 h-4 text-[#CCFF00]" />
@@ -136,7 +137,8 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
               <h2 className="text-base font-semibold">Challenge {challengedName}</h2>
             </div>
             <div className="relative">
-              <button 
+              <button
+                type="button"
                 className="p-1 hover:bg-gray-100 rounded-full transition-colors"
                 onClick={() => setShowTooltip(!showTooltip)}
                 aria-label="Challenge information"
@@ -157,14 +159,19 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
               )}
             </div>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded-full transition-colors">
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+            aria-label="Close challenge modal"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         <form onSubmit={handleSubmit} className="p-3 space-y-2">
+          {/* Title and Amount */}
           <div className="grid grid-cols-2 gap-2">
-            {/* Title */}
             <div className="col-span-2">
               <input
                 type="text"
@@ -173,10 +180,10 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
                 className="w-full px-3 py-1.5 border rounded-lg text-sm"
                 placeholder="Challenge title"
                 required
+                aria-label="Challenge title"
               />
             </div>
 
-            {/* Amount */}
             <div className="col-span-2">
               <div className="relative">
                 <input
@@ -187,6 +194,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
                   min="100"
                   placeholder="Amount (₦)"
                   required
+                  aria-label="Wager amount"
                 />
                 {wallet && (
                   <p className="absolute right-2 top-1/2 -translate-y-1/2 text-xs">
@@ -201,115 +209,129 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
                 )}
               </div>
             </div>
+          </div>
 
-            {/* Date and Time */}
-            <div className="flex items-center gap-1 border rounded-lg px-2">
-              <Calendar className="w-3.5 h-3.5 text-gray-400" />
-              <input
-                type="date"
-                value={challengeData.scheduledDate}
-                onChange={e => setChallengeData(prev => ({ ...prev, scheduledDate: e.target.value }))}
-                className="w-full py-1.5 text-sm focus:outline-none"
-                min={new Date().toISOString().split('T')[0]}
-                required
-              />
-            </div>
-
-            <div className="flex items-center gap-1 border rounded-lg px-2">
-              <Clock className="w-3.5 h-3.5 text-gray-400" />
-              <input
-                type="time"
-                value={challengeData.scheduledTime}
-                onChange={e => setChallengeData(prev => ({ ...prev, scheduledTime: e.target.value }))}
-                className="w-full py-1.5 text-sm focus:outline-none"
-                required
-              />
-            </div>
-
-            {/* Game Type and Platform */}
+          {/* Game Details */}
+          <div className="grid grid-cols-2 gap-2">
             <select
+              id="gameType"
               value={challengeData.gameType}
               onChange={e => setChallengeData(prev => ({ ...prev, gameType: e.target.value as GameType }))}
               className="px-3 py-1.5 border rounded-lg text-sm"
               required
+              aria-label="Game Type"
             >
-              <option value="">Select Game</option>
+              <option value="">Game Type</option>
               <option value="FIFA">FIFA</option>
               <option value="NBA2K">NBA 2K</option>
               <option value="OTHER">Other</option>
             </select>
 
             <select
+              id="platform"
               value={challengeData.platform}
               onChange={e => setChallengeData(prev => ({ ...prev, platform: e.target.value as Platform }))}
               className="px-3 py-1.5 border rounded-lg text-sm"
               required
+              aria-label="Platform"
             >
               <option value="">Platform</option>
               <option value="PS5">PS5</option>
               <option value="XBOX">Xbox</option>
               <option value="PC">PC</option>
             </select>
+          </div>
 
-            {/* Expiration */}
-            <div className="col-span-2">
-              <select
-                value={challengeData.expirationHours}
-                onChange={e => setChallengeData(prev => ({ ...prev, expirationHours: parseInt(e.target.value) }))}
-                className="w-full px-3 py-1.5 border rounded-lg text-sm"
-                required
-              >
-                <option value="1">Expires in 1 hour</option>
-                <option value="3">Expires in 3 hours</option>
-                <option value="6">Expires in 6 hours</option>
-                <option value="12">Expires in 12 hours</option>
-                <option value="24">Expires in 24 hours</option>
-                <option value="48">Expires in 48 hours</option>
-              </select>
-            </div>
-
-            {/* Rules */}
-            <div className="col-span-2">
-              <textarea
-                value={challengeData.rules}
-                onChange={e => setChallengeData(prev => ({ ...prev, rules: e.target.value }))}
-                className="w-full px-3 py-1.5 border rounded-lg text-sm"
-                rows={2}
-                placeholder="Challenge rules (optional)"
+          {/* Schedule */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="flex items-center gap-1 border rounded-lg px-2">
+              <Calendar className="w-3.5 h-3.5 text-gray-400" />
+              <input
+                id="scheduledDate"
+                type="date"
+                value={challengeData.scheduledDate}
+                onChange={e => setChallengeData(prev => ({ ...prev, scheduledDate: e.target.value }))}
+                className="w-full py-1.5 text-sm focus:outline-none"
+                min={new Date().toISOString().split('T')[0]}
+                title="Schedule date"
+                aria-label="Schedule date"
               />
             </div>
 
-            {/* Evidence Required */}
-            <div className="col-span-2">
-              <select
-                value={challengeData.evidence}
-                onChange={e => setChallengeData(prev => ({ ...prev, evidence: e.target.value as 'SCREENSHOT' | 'VIDEO' | 'BOTH' }))}
-                className="w-full px-3 py-1.5 border rounded-lg text-sm"
-                required
-              >
-                <option value="SCREENSHOT">Screenshot Required</option>
-                <option value="VIDEO">Video Required</option>
-                <option value="BOTH">Both Screenshot & Video</option>
-              </select>
+            <div className="flex items-center gap-1 border rounded-lg px-2">
+              <Clock className="w-3.5 h-3.5 text-gray-400" />
+              <input
+                id="scheduledTime"
+                type="time"
+                value={challengeData.scheduledTime}
+                onChange={e => setChallengeData(prev => ({ ...prev, scheduledTime: e.target.value }))}
+                className="w-full py-1.5 text-sm focus:outline-none"
+                title="Schedule time"
+                aria-label="Schedule time"
+              />
             </div>
+          </div>
 
-            {/* Action Buttons */}
-            <div className="grid grid-cols-2 gap-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="btn-secondary"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={loading || !challengeData.amount}
-                className="btn-primary"
-              >
-                {loading ? <LoadingSpinner /> : 'Send Challenge'}
-              </button>
-            </div>
+          {/* Expiration and Evidence */}
+          <div className="grid grid-cols-2 gap-2">
+            <select
+              id="expirationHours"
+              value={challengeData.expirationHours}
+              onChange={e => setChallengeData(prev => ({ ...prev, expirationHours: parseInt(e.target.value) }))}
+              className="px-3 py-1.5 border rounded-lg text-sm"
+              required
+              aria-label="Expiration time"
+            >
+              <option value="1">Expires in 1 hour</option>
+              <option value="3">Expires in 3 hours</option>
+              <option value="6">Expires in 6 hours</option>
+              <option value="12">Expires in 12 hours</option>
+              <option value="24">Expires in 24 hours</option>
+              <option value="48">Expires in 48 hours</option>
+            </select>
+
+            <select
+              id="evidence"
+              value={challengeData.evidence}
+              onChange={e => setChallengeData(prev => ({ ...prev, evidence: e.target.value as 'SCREENSHOT' | 'VIDEO' | 'BOTH' }))}
+              className="px-3 py-1.5 border rounded-lg text-sm"
+              required
+              aria-label="Evidence required"
+            >
+              <option value="SCREENSHOT">Screenshot Required</option>
+              <option value="VIDEO">Video Required</option>
+              <option value="BOTH">Both Screenshot & Video</option>
+            </select>
+          </div>
+
+          {/* Rules */}
+          <div className="col-span-2">
+            <textarea
+              value={challengeData.rules}
+              onChange={e => setChallengeData(prev => ({ ...prev, rules: e.target.value }))}
+              className="w-full px-3 py-1.5 border rounded-lg text-sm"
+              rows={2}
+              placeholder="Challenge rules (optional)"
+              aria-label="Challenge rules"
+            />
+          </div>
+
+          {/* Action Buttons */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-secondary text-sm"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading || !challengeData.amount || !challengeData.gameType || !challengeData.platform}
+              className="btn-primary text-sm flex items-center justify-center"
+            >
+              {loading ? <LoadingSpinner size="sm" /> : 'Send Challenge'}
+            </button>
           </div>
         </form>
       </div>
