@@ -15,19 +15,19 @@ const UserRankBadge: React.FC<UserRankBadgeProps> = ({ rank, size = 'sm' }) => {
   };
 
   const sizeClasses = {
-    sm: 'h-5 text-xs',
-    md: 'h-6 text-sm',
-    lg: 'h-8 text-base'
+    sm: 'h-4 text-xs px-1.5',
+    md: 'h-5 text-xs',
+    lg: 'h-6 text-sm'
   };
 
   const iconSizes = {
-    sm: 'w-3 h-3',
-    md: 'w-4 h-4',
-    lg: 'w-5 h-5'
+    sm: 'w-2.5 h-2.5',
+    md: 'w-3 h-3',
+    lg: 'w-4 h-4'
   };
 
   return (
-    <div className={`inline-flex items-center gap-1 px-2 ${sizeClasses[size]} ${getColor()} text-white rounded-full font-medium`}>
+    <div className={`inline-flex items-center gap-0.5 ${size === 'sm' ? 'px-1.5' : 'px-2'} ${sizeClasses[size]} ${getColor()} text-white rounded-full font-medium`}>
       <Trophy className={iconSizes[size]} />
       <span>#{rank}</span>
     </div>

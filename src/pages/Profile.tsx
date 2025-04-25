@@ -2,16 +2,14 @@ import React from 'react';
 import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { useWallet } from '../contexts/WalletContext';
+
 import MobileFooterNav from '../components/MobileFooterNav';
 import UserRankBadge from '../components/UserRankBadge';
 import PageHeader from '../components/PageHeader';
 import UserLevelBadge from '../components/UserLevelBadge';
-import UserAvatar from '../components/UserAvatar';
 
 const Profile: React.FC = () => {
   const { currentUser, logout } = useAuth();
-  const { wallet } = useWallet();
   const navigate = useNavigate();
 
   const menuItems = [
@@ -41,17 +39,7 @@ const Profile: React.FC = () => {
     }
   ];
 
-  const handleShare = async () => {
-    try {
-      await navigator.share({
-        title: `${currentUser?.username}'s Profile`,
-        text: `Check out my profile on Bantah!`,
-        url: window.location.href
-      });
-    } catch (err) {
-      console.log('Error sharing:', err);
-    }
-  };
+
 
   return (
     <div className="min-h-screen bg-[#F6F7FB] flex flex-col pb-[70px]">
@@ -90,32 +78,33 @@ const Profile: React.FC = () => {
             <div className="flex flex-col items-center">
               {/* Avatar with badges */}
               <div className="relative mb-4">
-                <UserAvatar
-                  src={currentUser?.avatar_url || '/avatar.svg'}
-                  alt={currentUser?.name || 'User'}
-                  size="xl"
-                  className="w-28 h-28"
-                  points={currentUser?.points || 0}
-                  showLevelBadge={false}
-                />
+                <div className="flex justify-center">
+                  <div className="relative">
+                    <img
+                      src={currentUser?.avatar_url || '/avatar.svg'}
+                      alt={currentUser?.name || 'User'}
+                      className="w-32 h-32 rounded-full object-cover"
+                    />
 
-                {/* Edit profile button */}
-                <button
-                  type="button"
-                  onClick={() => navigate('/settings/profile')}
-                  className="absolute bottom-0 right-0 p-1.5 rounded-full bg-[#CCFF00] text-black shadow hover:bg-[#e6ff70] transition translate-x-1/8 translate-y-1/8"
-                  aria-label="Edit Profile"
-                  title="Edit Profile"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19.5 3 21l1.5-4L16.5 3.5z" />
-                  </svg>
-                </button>
+                    {/* Edit profile button - positioned directly on the edge of the avatar */}
+                    <button
+                      type="button"
+                      onClick={() => navigate('/settings/profile')}
+                      className="absolute bottom-1 right-1 p-2 rounded-full bg-[#CCFF00] text-black shadow hover:bg-[#e6ff70] transition"
+                      aria-label="Edit Profile"
+                      title="Edit Profile"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19.5 3 21l1.5-4L16.5 3.5z" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
 
-                {/* Rank badge */}
+                {/* Rank badge - smaller size */}
                 {currentUser?.rank && (
-                  <div className="absolute -bottom-2 left-0">
-                    <UserRankBadge rank={currentUser.rank} size="lg" />
+                  <div className="absolute -bottom-1 left-4">
+                    <UserRankBadge rank={currentUser.rank} size="md" />
                   </div>
                 )}
               </div>

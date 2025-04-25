@@ -118,26 +118,29 @@ const ProfileSettings: React.FC = () => {
       <form onSubmit={handleSubmit} className="p-4 space-y-6 max-w-2xl mx-auto">
         {/* Avatar */}
         <div className="flex flex-col items-center">
-          <div className="relative">
-            <img
-              src={formData.avatar_url}
-              alt="Profile"
-              className="w-24 h-24 rounded-full object-cover bg-[#242538]"
-            />
-            <label className="absolute bottom-0 right-0 p-2 bg-[#CCFF00] rounded-full cursor-pointer hover:bg-[#b3ff00] transition-colors">
-              {imageLoading ? (
-                <LoadingSpinner size="sm" color="#000000" />
-              ) : (
-                <Camera className="w-4 h-4 text-black" />
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-                disabled={imageLoading || loading}
+          <div className="flex justify-center">
+            <div className="relative">
+              <img
+                src={formData.avatar_url}
+                alt="Profile"
+                className="w-32 h-32 rounded-full object-cover bg-[#242538]"
               />
-            </label>
+              {/* Edit icon positioned directly on the edge of the avatar */}
+              <label className="absolute bottom-1 right-1 p-2 bg-[#CCFF00] rounded-full cursor-pointer hover:bg-[#b3ff00] transition-colors">
+                {imageLoading ? (
+                  <LoadingSpinner size="sm" color="#000000" />
+                ) : (
+                  <Camera className="w-4 h-4 text-black" />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                  disabled={imageLoading || loading}
+                />
+              </label>
+            </div>
           </div>
         </div>
 
@@ -205,8 +208,8 @@ const ProfileSettings: React.FC = () => {
           <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#242538]">
             <Mail className="w-5 h-5 text-gray-400" />
             <span className="text-white/60">
-              {typeof currentUser.email === 'string' 
-                ? currentUser.email 
+              {typeof currentUser.email === 'string'
+                ? currentUser.email
                 : currentUser.email?.address || 'No email set'}
             </span>
           </div>
