@@ -110,14 +110,14 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
       {/* Online status indicator */}
       {status && (
         <div
-          className={`absolute bottom-0 right-0 ${statusSizeClasses[size]} ${statusColorClasses[status]} rounded-full border-2 border-white dark:border-gray-900 ${showLevelBadge ? 'bottom-0 right-6' : ''}`}
+          className={`absolute bottom-0 right-0 ${statusSizeClasses[size]} ${statusColorClasses[status]} rounded-full border-2 border-white dark:border-gray-900`}
           aria-label={`Status: ${status}`}
         />
       )}
 
       {/* Level badge */}
       {showLevelBadge && (
-        <div className={`absolute bottom-0 right-0 ${badgeSizeClasses[size]} rounded-full overflow-hidden border-2 border-white dark:border-gray-900`}>
+        <div className={`absolute -bottom-1 -left-1 ${badgeSizeClasses[size]} rounded-full overflow-hidden border-2 border-white dark:border-gray-900`}>
           <div className={`w-full h-full flex items-center justify-center ${level.color} ${level.shadowColor}`}>
             {level.iconPath && (
               <img src={level.iconPath} alt={`${level.name} Badge`} className="w-full h-full p-0.5" />

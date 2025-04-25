@@ -1,5 +1,5 @@
 import React from 'react';
-import { ChevronRight, Wallet, Trophy, Users, TrendingUp, BarChart2, Star } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useWallet } from '../contexts/WalletContext';
@@ -13,10 +13,6 @@ const Profile: React.FC = () => {
   const { currentUser, logout } = useAuth();
   const { wallet } = useWallet();
   const navigate = useNavigate();
-
-  const stats = [
-    // All stats cards removed
-  ];
 
   const menuItems = [
     {
@@ -98,16 +94,16 @@ const Profile: React.FC = () => {
                   src={currentUser?.avatar_url || '/avatar.svg'}
                   alt={currentUser?.name || 'User'}
                   size="xl"
-                  className="w-28 h-28 border-4 border-white shadow-md"
+                  className="w-28 h-28"
                   points={currentUser?.points || 0}
-                  showLevelBadge={true}
+                  showLevelBadge={false}
                 />
 
                 {/* Edit profile button */}
                 <button
                   type="button"
                   onClick={() => navigate('/settings/profile')}
-                  className="absolute bottom-0 right-0 p-2 rounded-full bg-[#CCFF00] text-black shadow hover:bg-[#e6ff70] transition translate-x-1/4 translate-y-1/4"
+                  className="absolute bottom-0 right-0 p-1.5 rounded-full bg-[#CCFF00] text-black shadow hover:bg-[#e6ff70] transition translate-x-1/8 translate-y-1/8"
                   aria-label="Edit Profile"
                   title="Edit Profile"
                 >
@@ -144,7 +140,9 @@ const Profile: React.FC = () => {
                 {/* Points */}
                 <div className="flex flex-col items-center">
                   <div className="flex items-center gap-1 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full">
-                    <Star className="w-4 h-4" />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                      <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+                    </svg>
                     <span className="font-medium">{currentUser?.points || 0}</span>
                   </div>
                   <span className="text-xs text-gray-500 mt-1">Points</span>
@@ -153,7 +151,9 @@ const Profile: React.FC = () => {
                 {/* Followers */}
                 <div className="flex flex-col items-center">
                   <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full">
-                    <Users className="w-4 h-4" />
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                      <path d="M9 10a3 3 0 1 0 6 0a3 3 0 0 0-6 0zm-3 8V19c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-1c0-1.1-.9-2-2-2h-2c-1.1 0-2-.9-2-2s-.9-2-2-2c-1.1 0-2 .9-2 2H6c-1.1 0-2 .9-2 2v1zm10-8a3 3 0 1 0 6 0a3 3 0 0 0-6 0zM13 18v1c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-1c0-1.1-.9-2-2-2h-2c-1.1 0-2 .9-2 2s-.9 2-2 2H8c-1.1 0-2-.9-2-2v-1c0-1.1.9-2 2-2h2c1.1 0 2 .9 2 2s.9 2 2 2h2z" />
+                    </svg>
                     <span className="font-medium">{currentUser?.followers_count || 0}</span>
                   </div>
                   <span className="text-xs text-gray-500 mt-1">Followers</span>

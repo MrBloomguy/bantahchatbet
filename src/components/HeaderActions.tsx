@@ -31,18 +31,19 @@ const HeaderActions = () => {
   return (
     <div className="flex items-center gap-3">
       <div className="flex items-center gap-2">
-        <button
-          onClick={() => navigate('/messages')}
-          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
-        >
-          <img src="/mes.svg" alt="Messages" className="w-6 h-6" />
-        </button>
 
         <button
           onClick={() => navigate('/leaderboard')}
           className="p-2 rounded-full hover:bg-gray-100 transition-colors"
         >
           <img src="/leaderboard_icon.png" alt="Leaderboard" className="w-5 h-5" />
+        </button>
+
+        <button
+          onClick={() => navigate('/messages')}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+        >
+          <img src="/mes.svg" alt="Messages" className="w-6 h-6" />
         </button>
 
         <button

@@ -126,7 +126,7 @@ const Events = () => {
 
   return (
     <div className="min-h-screen bg-light-bg dark:bg-[#1a1b2e]">
-      <Header title="Events" icon={<Gamepad2 className="w-6 h-6" />} showSearch />
+      <Header showSearch />
 
       {/* Category Bar */}
       <div className="sticky top-16 bg-light-bg z-40 py-2.5">

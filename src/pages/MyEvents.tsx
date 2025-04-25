@@ -12,8 +12,8 @@ import { supabase } from '../lib/supabase';
 import PageHeader from '../components/PageHeader';
 
 const tabs = [
-  { id: 'created', label: 'Created Events', icon: Star },
-  { id: 'joined', label: 'Participated', icon: Clock },
+  { id: 'created', label: 'Created', icon: Star },
+  { id: 'joined', label: 'Joined', icon: Clock },
   { id: 'engaged', label: 'Engaged', icon: MessageCircle },
   { id: 'won', label: 'Won', icon: Trophy },
   { id: 'lost', label: 'Lost', icon: Award },

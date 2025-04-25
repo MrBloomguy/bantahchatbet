@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import AdminRoute from './components/AdminRoute';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -61,11 +61,14 @@ import ProfileCardPopupDemo from './pages/ProfileCardPopupDemo';
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import EventChatWrapper from './components/EventChatWrapper';
+import ToastDemo from './components/ToastDemo';
 
 const App: React.FC = () => {
   const location = useLocation();
   const isAuthPage = ['/signin', '/admin/login'].includes(location.pathname);
   const isAdminPage = location.pathname.startsWith('/admin');
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const isEventsPage = location.pathname === '/events';
 
   return (
     <ToastProvider>
@@ -79,8 +82,14 @@ const App: React.FC = () => {
                     <NotificationProvider>
                       <PointsProvider>
                     <div className={`min-h-screen ${isAdminPage ? 'bg-[#1a1b2e]' : 'bg-gray-50'}`}>
-                      {!isAuthPage && !isAdminPage && <DesktopNav />}
-                      <main className={`${!isAdminPage ? 'lg:ml-[200px]' : ''} flex-1`}>
+                      {!isAuthPage && !isAdminPage && <DesktopNav onMenuToggle={setIsSidebarOpen} />}
+                      <main className={`${
+                        !isAdminPage ?
+                          isEventsPage ?
+                            isSidebarOpen ? 'lg:ml-[200px]' : 'lg:ml-[70px]'
+                          : 'lg:ml-[70px]'
+                        : ''
+                      } flex-1 transition-all duration-200`}>
                         <Routes>
                           {/* Public routes */}
                           <Route path="/" element={<Events />} />
@@ -305,6 +314,7 @@ const App: React.FC = () => {
                               <ProfileCardPopupDemo />
                             </ProtectedRoute>
                           } />
+                          <Route path="/toast-demo" element={<ToastDemo />} />
                         </Routes>
                         <PWAInstallPrompt />
                         <LevelUpDialog />

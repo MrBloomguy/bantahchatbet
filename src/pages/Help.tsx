@@ -7,7 +7,7 @@ const Help: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-white">
-      <PageHeader title="Help & Support" />
+      <PageHeader title="Support" />
 
       <div className="flex-1 relative pb-[72px] lg:pb-0">
         <TawkMessenger />

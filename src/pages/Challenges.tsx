@@ -1,7 +1,5 @@
 import React from 'react';
-import MobileFooterNav from '../components/MobileFooterNav';
 import ChallengeChatTab from '../components/ChallengeChatTab';
-import Header from '../components/Header';
 
 const Challenges: React.FC = () => {
 

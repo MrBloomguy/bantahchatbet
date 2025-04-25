@@ -74,10 +74,10 @@ const Header: React.FC<HeaderProps> = ({
                 <ArrowLeft className="h-6 w-6" />
               </button>
             )}
-            {/* Show logo only if no back button and no title (i.e. Home/Events page) */}
-            {(!showBackButton && (!title || location.pathname === '/events')) && <Logo className="w-8 h-8" />}
+            {/* Show logo only if no back button and no title (i.e. Home/Events page) and on mobile */}
+            {(!showBackButton && (!title || location.pathname === '/events') && isMobile) && <Logo className="w-8 h-8" />}
             {/* Title always visible if provided and not on /events */}
-            {title && location.pathname !== '/events' && (
+            {title && (
               <span className="font-bold text-xl text-gray-900 ml-2">{title}</span>
             )}
           </div>

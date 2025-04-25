@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Header from '../components/Header';
 import MobileFooterNav from '../components/MobileFooterNav';
 import { supabase } from '../lib/supabase';
-import { Search, MessageSquare, MessageSquareText, ArrowLeft, Trophy } from 'lucide-react';
+import { Search, MessageSquare, MessageSquareText, ArrowLeft } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import ChatWindow from '../components/ChatWindow';
-import ChallengeChatTab from '../components/ChallengeChatTab';
 
 interface User {
   id: string;
@@ -46,7 +45,7 @@ const Messages: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredChatList, setFilteredChatList] = useState<ChatListItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'unread' | 'challenges'>('all');
+  const [activeFilter, setActiveFilter] = useState<'all' | 'unread'>('all');
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
@@ -71,10 +70,13 @@ const Messages: React.FC = () => {
     setShowMobileChat(false);
   };
 
-  const fetchChatList = async () => {
+  const fetchChatList = useCallback(async () => {
     setLoading(true);
     try {
-      if (!currentUser) return;
+      if (!currentUser) {
+        setLoading(false);
+        return;
+      }
 
       const { data: chatParticipants, error: participantsError } = await supabase
         .from('chat_participants')
@@ -84,54 +86,61 @@ const Messages: React.FC = () => {
       if (participantsError) {
         console.error('Error fetching chat participants:', participantsError);
         setChatListItems([]);
+        setLoading(false);
         return;
       }
 
-      const chatIds = chatParticipants.map(p => p.chat_id);
-      if (chatIds.length === 0) {
+      if (!chatParticipants || chatParticipants.length === 0) {
         setChatListItems([]);
         setLoading(false);
         return;
       }
 
+      const chatIds = chatParticipants.map(p => p.chat_id);
+
       const chatDetailsPromises = chatIds.map(async (chatId) => {
-        const { data: otherParticipant, error: otherParticipantError } = await supabase
-          .from('chat_participants')
-          .select('user_id')
-          .eq('chat_id', chatId)
-          .neq('user_id', currentUser.id)
-          .single();
+        try {
+          const { data: otherParticipant, error: otherParticipantError } = await supabase
+            .from('chat_participants')
+            .select('user_id')
+            .eq('chat_id', chatId)
+            .neq('user_id', currentUser.id)
+            .single();
 
-        if (otherParticipantError || !otherParticipant) return null;
-        const otherUserId = otherParticipant.user_id;
+          if (otherParticipantError || !otherParticipant) return null;
+          const otherUserId = otherParticipant.user_id;
 
-        const { data: otherUser, error: otherUserError } = await supabase
-          .from('users_view')
-          .select('id, name, avatar_url')
-          .eq('id', otherUserId)
-          .single();
+          const { data: otherUser, error: otherUserError } = await supabase
+            .from('users_view')
+            .select('id, name, avatar_url')
+            .eq('id', otherUserId)
+            .single();
 
-        if (otherUserError || !otherUser) return null;
+          if (otherUserError || !otherUser) return null;
 
-        const { data: lastMessageData } = await supabase
-          .from('messages')
-          .select('content, created_at, sender_id')
-          .eq('chat_id', chatId)
-          .order('created_at', { ascending: false })
-          .limit(1)
-          .maybeSingle();
+          const { data: lastMessageData } = await supabase
+            .from('messages')
+            .select('content, created_at, sender_id')
+            .eq('chat_id', chatId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
 
-        const unread_count = 0;
+          const unread_count = 0;
 
-        const lastMessage: LastMessage | null = lastMessageData
-          ? { ...lastMessageData } : null;
+          const lastMessage: LastMessage | null = lastMessageData
+            ? { ...lastMessageData } : null;
 
-        return {
-          chat_id: chatId,
-          other_user: { ...otherUser, is_online: false },
-          last_message: lastMessage,
-          unread_count: unread_count,
-        } as ChatListItem;
+          return {
+            chat_id: chatId,
+            other_user: { ...otherUser, is_online: false },
+            last_message: lastMessage,
+            unread_count: unread_count,
+          } as ChatListItem;
+        } catch (error) {
+          console.error(`Error fetching details for chat ${chatId}:`, error);
+          return null;
+        }
       });
 
       const validResults = (await Promise.all(chatDetailsPromises))
@@ -145,18 +154,22 @@ const Messages: React.FC = () => {
         });
 
       setChatListItems(validResults);
+      setFilteredChatList(validResults);
 
     } catch (error) {
       console.error('Error fetching chat list:', error);
       setChatListItems([]);
+      setFilteredChatList([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
   useEffect(() => {
-    fetchChatList();
-  }, [currentUser, refreshChatList]);
+    if (currentUser) {
+      fetchChatList();
+    }
+  }, [currentUser, refreshChatList, fetchChatList]);
 
   // Handle chat ID from URL
   useEffect(() => {
@@ -171,18 +184,10 @@ const Messages: React.FC = () => {
   }, [location.search]);
 
   useEffect(() => {
-    if (chatId) {
-      setActiveFilter('challenges');
-    }
-  }, [chatId]);
-
-  useEffect(() => {
     let listToFilter = chatListItems;
 
     if (activeFilter === 'unread') {
       listToFilter = listToFilter.filter(item => item.unread_count > 0);
-    } else if (activeFilter === 'challenges') {
-      listToFilter = listToFilter.filter(item => item.last_message?.content.includes('challenge'));
     }
 
     if (searchQuery) {
@@ -249,16 +254,6 @@ const Messages: React.FC = () => {
               >
                 Unread
               </button>
-              <button
-                type="button"
-                onClick={() => navigate('/challenges')}
-                className="px-3 py-1 rounded-full text-sm font-medium transition-colors duration-150 bg-gray-100 text-gray-700 hover:bg-gray-200"
-              >
-                Challenges
-                {chatListItems.some(item => item.unread_count > 0 && item.last_message?.content.includes('challenge')) && (
-                  <span className="ml-2 px-2 py-1 bg-red-500 text-white text-xs font-bold rounded-full">!</span>
-                )}
-              </button>
             </div>
           </div>
           <div className="flex-grow overflow-y-auto">
@@ -324,9 +319,7 @@ const Messages: React.FC = () => {
                     ? 'No matching chats found.'
                     : activeFilter === 'unread'
                       ? 'No unread messages.'
-                      : activeFilter === 'challenges'
-                        ? 'No challenges found.'
-                        : 'No chats yet. Start a conversation!'}
+                      : 'No chats yet. Start a conversation!'}
                 </p>
               </div>
             )}

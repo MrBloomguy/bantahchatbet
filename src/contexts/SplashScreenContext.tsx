@@ -15,7 +15,7 @@ export const SplashScreenProvider: React.FC<{ children: React.ReactNode }> = ({ 
     // Initial app loading logic
     const timer = setTimeout(() => {
       setIsLoading(false);
-    }, 2000);
+    }, 1500);
 
     return () => clearTimeout(timer);
   }, []);

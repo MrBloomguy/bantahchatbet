@@ -5,7 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from './LoadingSpinner';
 import EnhancedChallengeChat from './EnhancedChallengeChat';
-import { Trophy, Search, Clock } from 'lucide-react';
+import { Trophy, Search, Clock, ArrowLeft } from 'lucide-react';
 import { isScheduledDatePast } from '../utils/handlePastScheduledChallenges';
 
 interface Challenge {
@@ -26,7 +26,11 @@ interface Challenge {
   created_at: string;
 }
 
-const ChallengeChatTab: React.FC = () => {
+interface ChallengeChatTabProps {
+  embedded?: boolean;
+}
+
+const ChallengeChatTab: React.FC<ChallengeChatTabProps> = ({ embedded = false }) => {
   const { currentUser } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
@@ -198,28 +202,47 @@ const ChallengeChatTab: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className={`flex flex-col h-full ${embedded ? 'overflow-hidden' : ''}`}>
       <div className="flex flex-1 overflow-hidden">
       {/* Challenge List */}
       <div
-        className={`w-full lg:w-1/3 lg:max-w-sm flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto ${
+        className={`${embedded ? 'w-full' : 'w-full lg:w-1/3 lg:max-w-sm'} flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto ${
           showMobileChat ? 'hidden lg:block' : 'block'
         }`}
       >
-        <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-2">
-          <div className="relative mb-2">
-            <span className="absolute inset-y-0 left-0 flex items-center pl-4">
-              <Search className="h-5 w-5 text-gray-400" />
-            </span>
-            <input
-              type="text"
-              placeholder="Search challenges..."
-              value={searchQuery}
-              onChange={handleSearchChange}
-              className="w-full pl-12 pr-4 py-2 rounded-full bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
-            />
+        {!embedded && (
+          <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-2">
+            <div className="relative mb-2">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-4">
+                <Search className="h-5 w-5 text-gray-400" />
+              </span>
+              <input
+                type="text"
+                placeholder="Search challenges..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="w-full pl-12 pr-4 py-2 rounded-full bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+              />
+            </div>
           </div>
-        </div>
+        )}
+
+        {embedded && (
+          <div className="sticky top-0 z-10 bg-white border-b border-gray-200 p-2">
+            <div className="relative mb-2">
+              <span className="absolute inset-y-0 left-0 flex items-center pl-4">
+                <Search className="h-5 w-5 text-gray-400" />
+              </span>
+              <input
+                type="text"
+                placeholder="Search challenges..."
+                value={searchQuery}
+                onChange={handleSearchChange}
+                className="w-full pl-12 pr-4 py-2 rounded-full bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+              />
+            </div>
+          </div>
+        )}
 
         <div className="flex-grow overflow-y-auto">
           {loading ? (
@@ -326,6 +349,21 @@ const ChallengeChatTab: React.FC = () => {
       <div className={`flex-grow ${!showMobileChat ? 'hidden lg:block' : 'block'}`}>
         {selectedChallengeId ? (
           <div className="h-full flex flex-col">
+            {showMobileChat && (
+              <div className="lg:hidden flex items-center gap-2 p-4 bg-white border-b border-gray-200">
+                <button
+                  type="button"
+                  onClick={handleBackToList}
+                  className="p-2 hover:bg-gray-100 rounded-full"
+                  title="Back to challenge list"
+                >
+                  <ArrowLeft className="w-6 h-6 text-gray-600" />
+                </button>
+                <div className="flex-1 font-medium">
+                  {challenges.find(c => c.id === selectedChallengeId)?.title || 'Challenge Details'}
+                </div>
+              </div>
+            )}
             <div className="flex-1 bg-gray-900">
               <EnhancedChallengeChat challengeId={selectedChallengeId} hideHeader={false} />
             </div>
