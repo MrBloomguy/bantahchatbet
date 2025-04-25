@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trophy, Users, TrendingUp, Star } from 'lucide-react';
+import { X, Trophy, Users, TrendingUp, Star, Send } from 'lucide-react';
 import { useProfile, Profile } from '../hooks/useProfile';
 import LoadingSpinner from './LoadingSpinner';
 import { useAuth } from '../contexts/AuthContext';
 import UserLevelBadge from './UserLevelBadge';
 import UserAvatar from './UserAvatar';
+import { useWalletOperations } from '../hooks/useWalletOperations';
+import { useWallet } from '../contexts/WalletContext';
+import { useToast } from '../contexts/ToastContext';
 
 interface ProfileCardProps {
   profile?: Profile;
@@ -14,8 +17,15 @@ interface ProfileCardProps {
 
 const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, userId, onClose }) => {
   const [profile, setProfile] = useState<Profile | null>(initialProfile || null);
+  const [showTipModal, setShowTipModal] = useState(false);
+  const [tipAmount, setTipAmount] = useState('');
+  const [processingTip, setProcessingTip] = useState(false);
+
   const { getProfile, followUser, unfollowUser, loadingProfile, loadingFollow, loadingUnfollow } = useProfile();
   const { currentUser } = useAuth();
+  const { transfer, loading: transferLoading } = useWalletOperations();
+  const { wallet } = useWallet();
+  const toast = useToast();
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -60,85 +70,241 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
 
   if (loadingProfile || !profile) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-[#242538] rounded-2xl p-6 w-full max-w-md">
+      <div
+        className="bg-white rounded-2xl p-6 w-full max-w-md bg-cover bg-center"
+        style={{ backgroundImage: 'url(/dialogue-bakcground.svg)' }}
+        onClick={(e) => e.stopPropagation()} // Prevent event bubbling
+      >
+        <div className="flex justify-center items-center h-40">
           <LoadingSpinner size="lg" />
         </div>
       </div>
     );
   }
 
+  const handleTip = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!profile) return;
+
+    const amount = parseInt(tipAmount);
+
+    if (isNaN(amount) || amount <= 0) {
+      toast.showError('Please enter a valid amount');
+      return;
+    }
+
+    if (!wallet || wallet.real_balance < amount) {
+      toast.showError('Insufficient balance');
+      return;
+    }
+
+    try {
+      setProcessingTip(true);
+      await transfer(profile.id, amount, 'real');
+      toast.showSuccess(`Successfully sent ₦${amount} to ${profile.name}`);
+      setShowTipModal(false);
+      setTipAmount('');
+    } catch (error: any) {
+      toast.showError(error.message || 'Failed to send tip');
+    } finally {
+      setProcessingTip(false);
+    }
+  };
+
   return (
-    <div className="bg-[#242538] rounded-2xl p-6 w-full max-w-md relative">
+    <div
+      className="bg-white rounded-2xl p-6 w-full max-w-md relative bg-cover bg-center"
+      style={{ backgroundImage: 'url(/dialogue-bakcground.svg)' }}
+      onClick={(e) => e.stopPropagation()} // Prevent event bubbling
+    >
       <button
-        onClick={onClose}
-        className="absolute top-4 right-4 p-2 hover:bg-white/10 rounded-lg transition-colors"
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation(); // Prevent event bubbling
+          console.log('Close button in ProfileCard clicked');
+          onClose();
+        }}
+        className="absolute top-3 right-3 p-1.5 bg-white/80 hover:bg-white rounded-full transition-colors z-10"
+        aria-label="Close profile card"
+        title="Close"
       >
-        <X className="w-5 h-5" />
+        <X className="w-4 h-4 text-gray-600" />
       </button>
 
       <div className="text-center">
-        <UserAvatar
-          src={profile.avatar_url}
-          alt={profile.name}
-          size="xl"
-          className="w-24 h-24 mx-auto mb-4"
-          points={profile.points || 0}
-          showLevelBadge={true}
-        />
-        <h2 className="text-xl font-bold mb-1">{profile.name}</h2>
-        <p className="text-white/60">@{profile.username}</p>
+        <div className="flex justify-center mb-4">
+          <UserAvatar
+            src={profile.avatar_url}
+            alt={profile.name}
+            size="xl"
+            className="w-24 h-24 inline-block"
+            points={profile.points || 0}
+            showLevelBadge={false}
+          />
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 mb-1">{profile.name}</h2>
+        <p className="text-gray-500">@{profile.username}</p>
         <div className="flex items-center justify-center gap-2 mt-2 mb-4">
-          <div className="flex items-center gap-1 px-3 py-1 bg-purple-500/10 text-purple-500 rounded-full text-sm">
+          <div className="flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm">
             <Star className="w-4 h-4" />
             <span>{profile.points || 0} Points</span>
           </div>
           <UserLevelBadge points={profile.points || 0} size="sm" />
         </div>
-        {profile.bio && <p className="text-white/80 mb-6">{profile.bio}</p>}
+        {profile.bio && <p className="text-gray-700 mb-6">{profile.bio}</p>}
 
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Trophy className="w-5 h-5 text-yellow-500 mr-2" />
-              <span>{profile.stats?.events_won || 0}</span>
+          <div className="text-center bg-gray-50 rounded-lg p-2">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <Trophy className="w-4 h-4 text-yellow-500" />
+              <span className="font-semibold text-gray-900">{profile.stats?.events_won || 0}</span>
             </div>
-            <p className="text-sm text-white/60">Events Won</p>
+            <p className="text-xs text-gray-500">Events Won</p>
           </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Users className="w-5 h-5 text-blue-500 mr-2" />
-              <span>{profile.followers_count}</span>
+          <div className="text-center bg-gray-50 rounded-lg p-2">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <Users className="w-4 h-4 text-blue-500" />
+              <span className="font-semibold text-gray-900">{profile.followers_count}</span>
             </div>
-            <p className="text-sm text-white/60">Followers</p>
+            <p className="text-xs text-gray-500">Followers</p>
           </div>
-          <div className="text-center">
-            <div className="flex items-center justify-center mb-2">
-              <TrendingUp className="w-5 h-5 text-green-500 mr-2" />
-              <span>${profile.stats?.total_earnings || 0}</span>
+          <div className="text-center bg-gray-50 rounded-lg p-2">
+            <div className="flex items-center justify-center gap-1 mb-1">
+              <TrendingUp className="w-4 h-4 text-green-500" />
+              <span className="font-semibold text-gray-900">₦{profile.stats?.total_earnings || 0}</span>
             </div>
-            <p className="text-sm text-white/60">Earnings</p>
+            <p className="text-xs text-gray-500">Earnings</p>
           </div>
         </div>
 
         {currentUser && currentUser.id !== profile.id && (
-          <button
-            onClick={profile.is_following ? handleUnfollow : handleFollow}
-            disabled={loadingFollow || loadingUnfollow}
-            className={`w-full py-2 px-4 rounded-lg transition-colors ${
-              profile.is_following
-                ? 'btn-outline'
-                : 'btn-primary'
-            }`}
-          >
-            {loadingFollow || loadingUnfollow ? (
-              <LoadingSpinner size="sm" />
-            ) : (
-              profile.is_following ? 'Unfollow' : 'Follow'
-            )}
-          </button>
+          <div className="grid grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                console.log('Follow/Unfollow button clicked');
+                if (profile.is_following) {
+                  handleUnfollow();
+                } else {
+                  handleFollow();
+                }
+              }}
+              disabled={loadingFollow || loadingUnfollow}
+              className={`py-2 px-4 rounded-lg transition-colors ${
+                profile.is_following
+                  ? 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
+                  : 'bg-purple-600 text-white hover:bg-purple-700'
+              }`}
+              aria-label={profile.is_following ? 'Unfollow user' : 'Follow user'}
+              title={profile.is_following ? 'Unfollow' : 'Follow'}
+            >
+              {loadingFollow || loadingUnfollow ? (
+                <LoadingSpinner size="sm" color={profile.is_following ? "#4B5563" : "#FFFFFF"} />
+              ) : (
+                profile.is_following ? 'Unfollow' : 'Follow'
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent event bubbling
+                console.log('Tip button clicked');
+                // Open tip modal
+                setShowTipModal(true);
+              }}
+              className="py-2 px-4 rounded-lg transition-colors bg-[#CCFF00] text-black hover:bg-[#CCFF00]/90"
+              aria-label="Tip user"
+              title="Tip user"
+            >
+              Tip
+            </button>
+          </div>
         )}
       </div>
+
+      {/* Tip Modal */}
+      {showTipModal && profile && (
+        <div
+          className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setShowTipModal(false);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-xl max-w-xs w-full p-4 relative"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              onClick={() => setShowTipModal(false)}
+              className="absolute right-3 top-3 p-1.5 bg-white/80 hover:bg-white rounded-full transition-colors"
+              aria-label="Close modal"
+              title="Close"
+            >
+              <X className="w-4 h-4 text-gray-600" />
+            </button>
+
+            <div className="mb-4">
+              <h3 className="text-lg font-bold text-gray-900">Tip {profile.name}</h3>
+              <p className="text-sm text-gray-500">Send money to show your appreciation</p>
+            </div>
+
+            <form onSubmit={handleTip}>
+              <div className="mb-4">
+                <label htmlFor="tipAmount" className="block text-sm font-medium text-gray-700 mb-1">
+                  Amount (₦)
+                </label>
+                <div className="relative">
+                  <input
+                    id="tipAmount"
+                    type="number"
+                    value={tipAmount}
+                    onChange={(e) => setTipAmount(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    placeholder="Enter amount"
+                    min="1"
+                    required
+                  />
+                  {wallet && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Your balance: <span className="font-medium">₦{wallet.real_balance.toLocaleString()}</span>
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={() => setShowTipModal(false)}
+                  className="flex-1 py-2 px-4 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={processingTip || !tipAmount || parseInt(tipAmount) <= 0}
+                  className="flex-1 py-2 px-4 bg-[#CCFF00] text-black rounded-lg hover:bg-[#CCFF00]/90 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {processingTip ? (
+                    <LoadingSpinner size="sm" color="#000000" />
+                  ) : (
+                    <>
+                      <Send className="w-4 h-4" />
+                      Send Tip
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -36,7 +36,7 @@ import AdminEventBoost from './pages/AdminEventBoost';
 // User Pages
 import SignIn from './pages/SignIn';
 import Events from './pages/Events';
-import Wallet from './pages/Wallet';
+import WalletRedesigned from './pages/WalletRedesigned';
 import Games from './pages/Games';
 import MyEvents from './pages/MyEvents';
 import ChallengeDetails from './pages/ChallengeDetails';
@@ -55,6 +55,7 @@ import Levels from './pages/Levels';
 import Challenges from './pages/Challenges';
 import ChallengeChat from './pages/ChallengeChat';
 import EventChallengeHistory from './pages/EventChallengeHistory';
+import ProfileCardPopupDemo from './pages/ProfileCardPopupDemo';
 
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -203,7 +204,7 @@ const App: React.FC = () => {
                             path="/wallet"
                             element={
                               <ProtectedRoute>
-                                <Wallet />
+                                <WalletRedesigned />
                               </ProtectedRoute>
                             }
                           />
@@ -295,6 +296,11 @@ const App: React.FC = () => {
                           <Route path="/activity-history" element={
                             <ProtectedRoute>
                               <EventChallengeHistory />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/profile-card-demo" element={
+                            <ProtectedRoute>
+                              <ProfileCardPopupDemo />
                             </ProtectedRoute>
                           } />
                         </Routes>

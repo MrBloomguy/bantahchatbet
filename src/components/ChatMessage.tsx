@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useContext } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { SupabaseContext } from '../contexts/SupabaseContext';
 import defaultAvatar from '../../public/avatar.svg';
-import ProfileCard from '../components/ProfileCard';
+import SimpleProfileCard from '../components/SimpleProfileCard';
 import { Smile, ArrowLeft } from 'lucide-react';
 import { Camera, Paperclip, Image, PaperPlaneRight } from 'phosphor-react';
 import UserAvatar from './UserAvatar';
@@ -262,8 +262,11 @@ const ChatMessage: React.FC = () => {
     {!isSelf && (
      <div
       className="relative mr-2 flex-shrink-0"
-      onMouseEnter={() => setShowProfileCard(true)}
-      onMouseLeave={() => setShowProfileCard(false)}
+      onClick={(e) => {
+        e.stopPropagation();
+        console.log('Avatar container clicked, toggling profile card');
+        setShowProfileCard(!showProfileCard);
+      }}
      >
       <UserAvatar
        src={senderProfile?.avatar_url || defaultAvatar}
@@ -274,8 +277,31 @@ const ChatMessage: React.FC = () => {
        className="cursor-pointer"
       />
       {showProfileCard && senderProfile && (
-       <div className="absolute left-10 -top-2 z-10 w-max">
-        <ProfileCard user={senderProfile} />
+       <div
+         className="absolute left-10 -top-2 z-10 w-max"
+         onClick={(e) => {
+           e.stopPropagation(); // Prevent event bubbling
+           console.log('Profile card container clicked');
+         }}
+       >
+        <SimpleProfileCard
+          user={{
+            id: senderProfile.id,
+            name: senderProfile.name || senderProfile.username || 'User',
+            username: senderProfile.username || 'user',
+            avatar_url: senderProfile.avatar_url,
+            points: senderProfile.points || 0,
+            followers_count: senderProfile.followers_count || 0,
+            stats: {
+              events_won: senderProfile.stats?.events_won || 0,
+              total_earnings: senderProfile.stats?.total_earnings || 0
+            }
+          }}
+          onClose={() => {
+            console.log('Closing profile card from ChatMessage');
+            setShowProfileCard(false);
+          }}
+        />
        </div>
       )}
      </div>

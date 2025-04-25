@@ -3,6 +3,7 @@ import { Search } from 'lucide-react';
 import { useWalletOperations } from '../hooks/useWalletOperations';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
+import { useAuth } from '../contexts/AuthContext';
 import UserAvatar from './UserAvatar';
 import { useWallet } from '../contexts/WalletContext';
 
@@ -13,7 +14,11 @@ interface User {
   avatar_url: string;
 }
 
-export const TransferForm = () => {
+interface TransferFormProps {
+  onSuccess?: () => void;
+}
+
+export const TransferForm: React.FC<TransferFormProps> = ({ onSuccess }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [amount, setAmount] = useState('');
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -22,6 +27,7 @@ export const TransferForm = () => {
   const { transfer, loading } = useWalletOperations();
   const toast = useToast();
   const { wallet } = useWallet();
+  const { currentUser } = useAuth();
 
   const searchUsers = useCallback(async (query: string) => {
     if (!query.trim()) {
@@ -61,16 +67,16 @@ export const TransferForm = () => {
       .from('wallets')
       .select('*')
       .single();
-    
+
     console.log('Wallet data from DB:', data);
     console.log('Wallet error:', error);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const { data: { user } } = await supabase.auth.getUser();
-    
+
     // Get detailed wallet data including pending transactions
     const { data: walletData, error: walletError } = await supabase
       .from('wallets')
@@ -85,7 +91,7 @@ export const TransferForm = () => {
       `)
       .eq('user_id', user?.id)
       .single();
-    
+
     console.log('Current wallet state:', {
       wallet: walletData,
       error: walletError,
@@ -130,14 +136,14 @@ export const TransferForm = () => {
 
       // Perform transfer
       const result = await transfer(selectedUser.id, numAmount, 'real');
-      
+
       // Get updated wallet states after transfer attempt
       const { data: updatedWallet } = await supabase
         .from('wallets')
         .select('real_balance, bonus_balance, pending_transactions')
         .eq('user_id', user?.id)
         .single();
-      
+
       console.log('Transfer result:', {
         success: true,
         result,
@@ -145,10 +151,36 @@ export const TransferForm = () => {
         transferAmount: numAmount
       });
 
+      // Create a notification for the recipient (as a fallback in case the trigger doesn't work)
+      try {
+        await supabase.from('notifications').insert({
+          user_id: selectedUser.id,
+          notification_type: 'wallet_transfer_received',
+          title: 'Money Received',
+          content: `You received ₦${numAmount} from @${currentUser?.username || 'a user'}`,
+          metadata: {
+            sender_id: user?.id,
+            amount: numAmount,
+            balance_type: 'real',
+            timestamp: new Date().toISOString()
+          }
+        });
+
+        console.log('Notification created for recipient');
+      } catch (notificationError) {
+        console.error('Failed to create notification:', notificationError);
+        // Don't throw error here, as the transfer was successful
+      }
+
       setSearchQuery('');
       setAmount('');
       setSelectedUser(null);
       toast.showSuccess(`Successfully sent ₦${numAmount} to @${selectedUser.username}`);
+
+      // Call onSuccess callback if provided
+      if (onSuccess) {
+        onSuccess();
+      }
     } catch (error: any) {
       console.error('Transfer submission failed:', {
         error,
@@ -282,8 +314,8 @@ export const TransferForm = () => {
       <button
         type="submit"
         disabled={loading || !selectedUser || !amount || parseInt(amount) <= 0}
-        className="w-full bg-purple-600 text-white py-3 rounded-xl font-medium 
-                 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 
+        className="w-full bg-purple-600 text-white py-3 rounded-xl font-medium
+                 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2
                  disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {loading ? 'Processing...' : `Send ₦${amount || '0'} to @${selectedUser?.username || ''}`}
