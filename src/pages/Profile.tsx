@@ -37,7 +37,7 @@ const Profile: React.FC = () => {
     },
     {
       label: 'Privacy & Security',
-      path: '/settings/privacy'
+      path: '/privacy'
     },
     {
       label: 'Help & Support',
@@ -107,7 +107,7 @@ const Profile: React.FC = () => {
                 <button
                   type="button"
                   onClick={() => navigate('/settings/profile')}
-                  className="absolute bottom-0 right-0 p-2 rounded-full bg-[#CCFF00] text-black shadow hover:bg-[#e6ff70] transition"
+                  className="absolute bottom-0 right-0 p-2 rounded-full bg-[#CCFF00] text-black shadow hover:bg-[#e6ff70] transition translate-x-1/4 translate-y-1/4"
                   aria-label="Edit Profile"
                   title="Edit Profile"
                 >

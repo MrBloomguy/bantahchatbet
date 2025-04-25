@@ -3,9 +3,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, Dispa
 interface Settings {
   notifications: {
     push: boolean;
-    email: boolean;
     inApp: boolean;
-    sound: boolean;
   };
   appearance: {
     darkMode: boolean;
@@ -13,9 +11,7 @@ interface Settings {
   };
   privacy: {
     showOnlineStatus: boolean;
-    showActivity: boolean;
   };
-  language: 'en' | 'fr' | 'es';
 }
 
 interface SettingsContextType {
@@ -27,9 +23,7 @@ interface SettingsContextType {
 const defaultSettings: Settings = {
   notifications: {
     push: true,
-    email: true,
     inApp: true,
-    sound: true,
   },
   appearance: {
     darkMode: false,
@@ -37,9 +31,7 @@ const defaultSettings: Settings = {
   },
   privacy: {
     showOnlineStatus: true,
-    showActivity: true,
   },
-  language: 'en',
 };
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -68,7 +60,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Save settings to localStorage
       localStorage.setItem('app_settings', JSON.stringify(settings));
-      
+
       // Apply dark mode
       if (settings.appearance.darkMode) {
         document.documentElement.classList.add('dark');
@@ -104,7 +96,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const updateSettings: Dispatch<SetStateAction<Settings>> = (newSettings) => {
     setSettings(newSettings);
   }
-  
+
   const toggleSetting = (category: keyof Settings, setting: string) => {
     setSettings(prev => ({
       ...prev,
@@ -113,13 +105,6 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         [setting]: !prev[category][setting],
       },
     }) as Settings);
-
-    // Check if the category is 'language' and update accordingly
-    if (category === 'language') {
-      setSettings(prev => ({
-        ...prev,
-      }))
-    }
   };
 
   return (

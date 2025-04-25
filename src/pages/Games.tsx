@@ -14,7 +14,8 @@ import {
   Clock,
   CheckCircle,
   XCircle,
-  AlertCircle
+  AlertCircle,
+  User
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -33,6 +34,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import { sendChallengeNotification } from '../utils/challengeNotifications';
+import { isScheduledDatePast } from '../utils/handlePastScheduledChallenges';
 
 // Types
 interface User {
@@ -71,7 +73,7 @@ interface Challenge {
   created_at: string;
   scheduled_at: string | null;
   expires_at: string;
-  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'expired';
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'expired' | 'missed';
   winner_id?: string;
 }
 
@@ -82,6 +84,7 @@ const Games: React.FC = () => {
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [challenges, setChallenges] = useState<Challenge[]>([]);
+  const [userChallengesCount, setUserChallengesCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [searching, setSearching] = useState(false);
   const [showChallengeModal, setShowChallengeModal] = useState(false);
@@ -232,6 +235,15 @@ const Games: React.FC = () => {
   const fetchChallenges = async () => {
     try {
       setLoading(true);
+
+      // First check for past scheduled challenges
+      try {
+        await supabase.rpc('handle_past_scheduled_challenges');
+      } catch (error) {
+        console.warn('Error handling past scheduled challenges:', error);
+        // Continue with fetching challenges even if this fails
+      }
+
       let query = supabase
         .from('challenges')
         .select(`
@@ -261,13 +273,26 @@ const Games: React.FC = () => {
             .not('scheduled_at', 'is', null);
           break;
         case 'ended':
-          query = query.in('status', ['completed', 'expired', 'declined']);
+          query = query.in('status', ['completed', 'expired', 'declined', 'missed']);
           break;
       }
 
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
       setChallenges(data || []);
+
+      // Count user's active challenges
+      if (currentUser) {
+        const { data: userChallenges, error: countError } = await supabase
+          .from('challenges')
+          .select('id')
+          .eq('status', 'accepted')
+          .or(`challenger_id.eq.${currentUser.id},challenged_id.eq.${currentUser.id}`);
+
+        if (!countError && userChallenges) {
+          setUserChallengesCount(userChallenges.length);
+        }
+      }
     } catch (error) {
       console.error('Error fetching challenges:', error);
     } finally {
@@ -487,8 +512,9 @@ const Games: React.FC = () => {
             {/* Title and Amount */}
             <div className="flex items-center justify-between mb-3">
               <h3 className="text-white font-medium">{challenge.title || 'Untitled Challenge'}</h3>
-              <span className="text-[#000000] font-medium">
-                ₦{challenge.amount.toLocaleString()}
+              <span className="flex items-center">
+                <span className="bg-[#7440FF]/20 text-[#7440FF] text-xs px-2 py-0.5 rounded-full mr-2">Total Pool</span>
+                <span className="text-[#000000] font-medium">₦{(challenge.amount * 2).toLocaleString()}</span>
               </span>
             </div>
 
@@ -554,6 +580,8 @@ const Games: React.FC = () => {
         return 'bg-red-500/20 text-red-500';
       case 'expired':
         return 'bg-gray-500/20 text-gray-500';
+      case 'missed':
+        return 'bg-orange-500/20 text-orange-500';
       default:
         return 'bg-white/20 text-white';
     }
@@ -598,6 +626,11 @@ const Games: React.FC = () => {
               >
                 {tab.icon}
                 {tab.label}
+                {tab.id === 'active' && userChallengesCount > 0 && (
+                  <span className="ml-1 bg-[#CCFF00] text-black text-[10px] px-1.5 py-0.5 rounded-full">
+                    {userChallengesCount}
+                  </span>
+                )}
               </button>
             ))}
             <div className="flex items-center gap-2 ml-auto">
@@ -709,16 +742,31 @@ const Games: React.FC = () => {
                         className="bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 cursor-pointer group flex flex-col gap-2">
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="text-gray-900 font-semibold truncate">{challenge.title || 'Untitled Challenge'}</h3>
-                          <span className="text-[#7440ff] font-semibold">₦{challenge.amount.toLocaleString()}</span>
+                          <span className="flex items-center">
+                            <span className="bg-[#7440ff]/20 text-[#7440ff] text-[10px] px-1.5 py-0.5 rounded-full mr-1.5">Total Pool</span>
+                            <span className="text-[#7440ff] font-semibold">₦{(challenge.amount * 2).toLocaleString()}</span>
+                          </span>
                         </div>
                         <div className="flex items-center justify-between mb-1">
                           <div className="flex items-center gap-2">
                             <img src={challenge.challenger.avatar_url} alt={challenge.challenger.name} className="w-8 h-8 rounded-full object-cover" />
-                            <span className="text-gray-900 font-medium">{challenge.challenger.name}</span>
+                            <span className="text-gray-900 font-medium">
+                              {challenge.challenger.id === currentUser?.id ? (
+                                <span className="flex items-center">
+                                  <span className="bg-[#7440ff]/20 text-[#7440ff] text-[10px] px-1.5 py-0.5 rounded-full mr-1.5">You</span>
+                                </span>
+                              ) : challenge.challenger.name}
+                            </span>
                           </div>
                           <span className="text-gray-400">vs</span>
                           <div className="flex items-center gap-2">
-                            <span className="text-gray-900 font-medium">{challenge.challenged.name}</span>
+                            <span className="text-gray-900 font-medium">
+                              {challenge.challenged.id === currentUser?.id ? (
+                                <span className="flex items-center">
+                                  <span className="bg-[#7440ff]/20 text-[#7440ff] text-[10px] px-1.5 py-0.5 rounded-full mr-1.5">You</span>
+                                </span>
+                              ) : challenge.challenged.name}
+                            </span>
                             <img src={challenge.challenged.avatar_url} alt={challenge.challenged.name} className="w-8 h-8 rounded-full object-cover" />
                           </div>
                         </div>
@@ -728,13 +776,20 @@ const Games: React.FC = () => {
                             <span>•</span>
                             <span>{challenge.platform}</span>
                           </div>
-                          <div className="flex items-center gap-4">
-                            <span className="text-gray-400">
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-400 text-[10px]">
                               {formatDate(challenge.scheduled_at || challenge.created_at)}
                             </span>
-                            <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(challenge.status)}`}>
-                              {challenge.status}
-                            </span>
+                            {challenge.status !== 'pending' && (
+                              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-medium ${getStatusColor(challenge.status)}`}>
+                                {challenge.status}
+                              </span>
+                            )}
+                            {challenge.status === 'pending' && challenge.scheduled_at && isScheduledDatePast(challenge.scheduled_at) && (
+                              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-500/20 text-red-500">
+                                Past Due
+                              </span>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -743,7 +798,14 @@ const Games: React.FC = () => {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-16">
                     <img src="/noti-lonely.svg" alt="No challenges" className="w-32 h-32 mb-4 opacity-80" />
-                    <p className="text-lg font-semibold text-gray-700 mb-1">No {activeTab} challenges found</p>
+                    {activeTab === 'active' ? (
+                      <>
+                        <p className="text-lg font-semibold text-gray-700 mb-1">You have no active challenges</p>
+                        <p className="text-sm text-gray-500">Go to the Users tab to challenge someone!</p>
+                      </>
+                    ) : (
+                      <p className="text-lg font-semibold text-gray-700 mb-1">No {activeTab} challenges found</p>
+                    )}
                   </div>
                 )
               )}

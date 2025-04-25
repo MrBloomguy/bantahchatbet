@@ -38,7 +38,7 @@ const ChallengeMessage: React.FC<ChallengeMessageProps> = ({ message, chatId }) 
     const updateTimeLeft = () => {
       const now = new Date();
       const diff = expiresAt.getTime() - now.getTime();
-      
+
       if (diff <= 0) {
         setTimeLeft('Expired');
         return;
@@ -87,7 +87,7 @@ const ChallengeMessage: React.FC<ChallengeMessageProps> = ({ message, chatId }) 
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="text-white/60">Bet Amount</span>
+        <span className="text-white/60">Bet Amount (per player)</span>
         <span className="text-[#CCFF00] font-bold">
           ₦ {challenge.amount.toLocaleString()}
         </span>

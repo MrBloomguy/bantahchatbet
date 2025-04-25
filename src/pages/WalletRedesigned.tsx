@@ -2,10 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import '../styles/dialogue-background.css';
 import {
-  Wallet as WalletIcon,
   ArrowDownRight,
   ArrowUpRight,
-  History,
   CreditCard,
   Filter,
   Trophy,
@@ -110,24 +108,6 @@ const WalletRedesigned: React.FC = () => {
         <div className="w-full max-w-xl mx-auto px-2 sm:px-4 py-4">
           {/* Main Wallet Card */}
           <div className="bg-white rounded-3xl p-6 mb-6 border border-[#f0f1fa] shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-3">
-                <div className="p-3 bg-[#7440FF]/10 rounded-full">
-                  <WalletIcon className="w-6 h-6 text-[#7440FF]" />
-                </div>
-                <h2 className="text-xl font-bold text-gray-900">My Wallet</h2>
-              </div>
-              <button
-                type="button"
-                onClick={() => navigate('/activity-history')}
-                className="p-2 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors"
-                title="View Transaction History"
-                aria-label="View Transaction History"
-              >
-                <History className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-
             {/* Balance Display */}
             <div className="mb-6">
               <div className="text-sm text-gray-500 mb-1">Total Balance</div>

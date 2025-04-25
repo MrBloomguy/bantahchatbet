@@ -2,7 +2,6 @@ import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import EnhancedChallengeChat from '../components/EnhancedChallengeChat';
-import LoadingSpinner from '../components/LoadingSpinner';
 import { useChallengeChat } from '../hooks/useChallengeChat';
 
 const ChallengeChat: React.FC = () => {
@@ -27,7 +26,53 @@ const ChallengeChat: React.FC = () => {
     );
   }
 
-  if (loading) return <LoadingSpinner />;
+  if (loading) {
+    return (
+      <div className="flex flex-col h-screen bg-white">
+        {/* Skeleton Header */}
+        <div className="bg-white border-b border-gray-200 p-3 flex items-center justify-between animate-pulse">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+            <div className="space-y-2">
+              <div className="h-4 w-32 bg-gray-300 rounded"></div>
+              <div className="h-3 w-24 bg-gray-300 rounded"></div>
+            </div>
+          </div>
+          <div className="h-8 w-20 bg-gray-300 rounded-full"></div>
+        </div>
+
+        {/* Skeleton Messages */}
+        <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
+          {/* Skeleton message bubbles */}
+          <div className="flex justify-start">
+            <div className="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
+            <div className="w-2/3 h-16 bg-gray-300 rounded-lg"></div>
+          </div>
+
+          <div className="flex justify-end">
+            <div className="w-2/3 h-12 bg-gray-300 rounded-lg"></div>
+          </div>
+
+          <div className="flex justify-start">
+            <div className="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
+            <div className="w-1/2 h-20 bg-gray-300 rounded-lg"></div>
+          </div>
+
+          <div className="flex justify-end">
+            <div className="w-3/4 h-14 bg-gray-300 rounded-lg"></div>
+          </div>
+        </div>
+
+        {/* Skeleton Input Area */}
+        <div className="bg-white border-t border-gray-200 p-3 animate-pulse">
+          <div className="flex items-center">
+            <div className="w-full h-10 bg-gray-300 rounded-full"></div>
+            <div className="w-10 h-10 bg-gray-300 rounded-full ml-2"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col h-screen bg-white">

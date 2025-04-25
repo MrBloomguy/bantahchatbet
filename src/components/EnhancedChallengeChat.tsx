@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, Upload, AlertTriangle, Check, X, Shield, Clock } from 'lucide-react';
+import { Send, Upload, AlertTriangle, Check, X, Shield, Clock, Trophy } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { formatDistanceToNow } from 'date-fns';
+import { isScheduledDatePast } from '../utils/handlePastScheduledChallenges';
 
 interface Message {
   id: string;
@@ -22,8 +23,8 @@ interface Message {
 interface Challenge {
   id: string;
   title: string;
-  status: string;
-  wager_amount: number;
+  status: 'pending' | 'accepted' | 'declined' | 'completed' | 'expired' | 'missed';
+  amount: number; // The database only has 'amount', not 'wager_amount'
   game_type: string;
   platform: string;
   challenger_id: string;
@@ -32,6 +33,7 @@ interface Challenge {
   expires_at: string;
   created_at: string;
   completed_at?: string;
+  scheduled_at?: string;
   challenger: {
     username: string;
     avatar_url: string;
@@ -81,7 +83,18 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
         const { data, error } = await supabase
           .from('challenges')
           .select(`
-            *,
+            id,
+            title,
+            status,
+            amount,
+            game_type,
+            platform,
+            challenger_id,
+            challenged_id,
+            winner_id,
+            expires_at,
+            created_at,
+            completed_at,
             challenger:challenger_id(username, avatar_url),
             challenged:challenged_id(username, avatar_url)
           `)
@@ -596,8 +609,48 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <LoadingSpinner size="lg" />
+      <div className="flex flex-col h-full bg-white">
+        {/* Skeleton Header */}
+        <div className="bg-white border-b border-gray-200 p-3 flex items-center justify-between animate-pulse">
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+            <div className="space-y-2">
+              <div className="h-4 w-32 bg-gray-300 rounded"></div>
+              <div className="h-3 w-24 bg-gray-300 rounded"></div>
+            </div>
+          </div>
+          <div className="h-8 w-20 bg-gray-300 rounded-full"></div>
+        </div>
+
+        {/* Skeleton Messages */}
+        <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
+          {/* Skeleton message bubbles */}
+          <div className="flex justify-start">
+            <div className="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
+            <div className="w-2/3 h-16 bg-gray-300 rounded-lg"></div>
+          </div>
+
+          <div className="flex justify-end">
+            <div className="w-2/3 h-12 bg-gray-300 rounded-lg"></div>
+          </div>
+
+          <div className="flex justify-start">
+            <div className="w-8 h-8 rounded-full bg-gray-300 mr-2"></div>
+            <div className="w-1/2 h-20 bg-gray-300 rounded-lg"></div>
+          </div>
+
+          <div className="flex justify-end">
+            <div className="w-3/4 h-14 bg-gray-300 rounded-lg"></div>
+          </div>
+        </div>
+
+        {/* Skeleton Input Area */}
+        <div className="bg-white border-t border-gray-200 p-3 animate-pulse">
+          <div className="flex items-center">
+            <div className="w-full h-10 bg-gray-300 rounded-full"></div>
+            <div className="w-10 h-10 bg-gray-300 rounded-full ml-2"></div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -610,12 +663,15 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
     );
   }
 
+  // Log the challenge data to help debug
+  console.log('Challenge data in chat:', challenge);
+
   // Ensure all required fields exist with real data
   const safeChallenge = {
     ...challenge,
     title: challenge.title || `${challenge.game_type || 'Game'} Challenge`,
     status: challenge.status || 'unknown',
-    wager_amount: challenge.wager_amount || 0,
+    amount: challenge.amount || 0, // Only use amount since wager_amount doesn't exist
     game_type: challenge.game_type || '',
     platform: challenge.platform || '',
     challenger: challenge.challenger || { username: 'Unknown User', avatar_url: '' },
@@ -623,6 +679,9 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
     created_at: challenge.created_at || new Date().toISOString(),
     expires_at: challenge.expires_at || null
   };
+
+  // Log the safe challenge data
+  console.log('Safe challenge data:', safeChallenge);
 
   return (
     <div className="flex flex-col h-full bg-white rounded-lg overflow-hidden">
@@ -679,10 +738,10 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
               </div>
             </div>
           </div>
-          <div className="flex items-center px-3 py-1.5 bg-purple-100 text-purple-600 rounded-md text-xs font-medium">
-            <span className="text-gray-500 mr-1">Wager:</span>
+          <div className="flex items-center px-2 py-1 bg-purple-100 text-purple-600 rounded-md text-[10px] font-medium">
+            <span className="text-gray-500 mr-1">Total Pool:</span>
             <span className="mr-1">₦</span>
-            {safeChallenge.wager_amount.toLocaleString()}
+            {(safeChallenge.amount * 2).toLocaleString()}
           </div>
         </div>
 
@@ -697,14 +756,23 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
       {/* Challenge Info Bar */}
       <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
         <div className="flex items-center justify-between space-x-2 overflow-x-auto">
-          <div className={`px-2 py-1.5 rounded-md text-xs font-medium whitespace-nowrap ${
-            safeChallenge.status === 'active' ? 'bg-green-500/20 text-green-400' :
-            safeChallenge.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
-            safeChallenge.status === 'pending' ? 'bg-yellow-500/20 text-yellow-500' :
-            'bg-red-500/20 text-red-400'
-          }`}>
-            {safeChallenge.status.toUpperCase()}
-          </div>
+          {safeChallenge.status !== 'pending' && (
+            <div className={`px-2 py-1.5 rounded-md text-xs font-medium whitespace-nowrap ${
+              safeChallenge.status === 'active' || safeChallenge.status === 'accepted' ? 'bg-green-500/20 text-green-400' :
+              safeChallenge.status === 'completed' ? 'bg-blue-500/20 text-blue-400' :
+              safeChallenge.status === 'missed' || (safeChallenge.status === 'expired' && safeChallenge.scheduled_at && isScheduledDatePast(safeChallenge.scheduled_at)) ? 'bg-orange-500/20 text-orange-400' :
+              safeChallenge.status === 'expired' ? 'bg-gray-500/20 text-gray-400' :
+              'bg-red-500/20 text-red-400'
+            }`}>
+              {safeChallenge.status === 'expired' && safeChallenge.scheduled_at && isScheduledDatePast(safeChallenge.scheduled_at) ? 'PAST DUE' : safeChallenge.status.toUpperCase()}
+            </div>
+          )}
+          {safeChallenge.status === 'pending' && safeChallenge.scheduled_at && isScheduledDatePast(safeChallenge.scheduled_at) && (
+            <div className="px-2 py-1.5 rounded-md text-xs font-medium whitespace-nowrap bg-red-500/20 text-red-500 flex items-center">
+              <Clock className="w-3 h-3 mr-1" />
+              PAST DUE
+            </div>
+          )}
 
           <div className="px-2 py-1.5 bg-gray-100 rounded-md text-xs text-gray-700 whitespace-nowrap">
             <span className="text-gray-500">Game: </span>
@@ -768,6 +836,22 @@ const EnhancedChallengeChat: React.FC<EnhancedChallengeChatProps> = ({ challenge
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-3 space-y-2 bg-gray-50">
+        {/* System message for missed/expired challenges with past scheduled dates */}
+        {(safeChallenge.status === 'missed' || (safeChallenge.status === 'expired' && safeChallenge.scheduled_at && isScheduledDatePast(safeChallenge.scheduled_at))) && (
+          <div className="bg-orange-50 p-3 rounded-lg mb-4">
+            <div className="flex items-center gap-2">
+              <Clock className="w-5 h-5 text-orange-500" />
+              <span className="text-sm font-medium text-orange-700">
+                Challenge past due
+              </span>
+            </div>
+            <p className="text-xs text-orange-600 mt-1 ml-6">
+              This challenge was scheduled for {safeChallenge.scheduled_at ? new Date(safeChallenge.scheduled_at).toLocaleString() : 'a time'} that has passed.
+              Your funds have been refunded to your wallet.
+            </p>
+          </div>
+        )}
+
         {messages.length === 0 ? (
           <div className="text-center text-gray-500 py-8">
             No messages yet. Start the conversation!

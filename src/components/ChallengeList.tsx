@@ -125,7 +125,10 @@ export const ChallengeList = () => {
                   <h3 className="text-white font-medium">
                     {challenge.challenger?.name} vs {challenge.challenged?.name}
                   </h3>
-                  <span className="text-[#CCFF00]">₦{challenge.amount.toLocaleString()}</span>
+                  <span className="flex items-center">
+                    <span className="bg-[#CCFF00]/20 text-[#CCFF00] text-xs px-2 py-0.5 rounded-full mr-2">Total Pool</span>
+                    <span className="text-[#CCFF00]">₦{(challenge.amount * 2).toLocaleString()}</span>
+                  </span>
                 </div>
 
                 <div className="flex items-center justify-between text-sm text-white/60">

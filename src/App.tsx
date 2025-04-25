@@ -12,6 +12,7 @@ import { SettingsProvider } from './contexts/SettingsContext';
 import { SplashScreenProvider } from './contexts/SplashScreenContext';
 import { PointsProvider } from './contexts/PointsContext';
 import { UserPresenceProvider } from './contexts/UserPresenceContext';
+import { NotificationProvider } from './contexts/NotificationContext';
 import LevelUpDialog from './components/LevelUpDialog';
 import PointsNotification from './components/PointsNotification';
 
@@ -43,7 +44,7 @@ import ChallengeDetails from './pages/ChallengeDetails';
 import Create from './pages/Create';
 import Profile from './pages/Profile';
 import Help from './pages/Help';
-import Privacy from './pages/Privacy';
+import PrivacyRedesigned from './pages/PrivacyRedesigned';
 import Messages from './pages/Messages';
 import Notifications from './pages/Notifications';
 import Leaderboard from './pages/Leaderboard';
@@ -75,7 +76,8 @@ const App: React.FC = () => {
               <SettingsProvider>
                 <SplashScreenProvider>
                   <UserPresenceProvider>
-                    <PointsProvider>
+                    <NotificationProvider>
+                      <PointsProvider>
                     <div className={`min-h-screen ${isAdminPage ? 'bg-[#1a1b2e]' : 'bg-gray-50'}`}>
                       {!isAuthPage && !isAdminPage && <DesktopNav />}
                       <main className={`${!isAdminPage ? 'lg:ml-[200px]' : ''} flex-1`}>
@@ -84,7 +86,7 @@ const App: React.FC = () => {
                           <Route path="/" element={<Events />} />
                           <Route path="/signin" element={<SignIn />} />
                           <Route path="/help" element={<Help />} />
-                          <Route path="/privacy" element={<Privacy />} />
+                          <Route path="/privacy" element={<PrivacyRedesigned />} />
                           <Route path="/stories" element={<Stories />} />
 
                           {/* Admin routes */}
@@ -290,7 +292,7 @@ const App: React.FC = () => {
                           } />
                           <Route path="/settings/privacy" element={
                             <ProtectedRoute>
-                              <Privacy />
+                              <PrivacyRedesigned />
                             </ProtectedRoute>
                           } />
                           <Route path="/activity-history" element={
@@ -310,6 +312,7 @@ const App: React.FC = () => {
                       </main>
                     </div>
                     </PointsProvider>
+                    </NotificationProvider>
                   </UserPresenceProvider>
                 </SplashScreenProvider>
               </SettingsProvider>

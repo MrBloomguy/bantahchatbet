@@ -96,8 +96,9 @@ const ChallengeCard: React.FC<ChallengeCardProps> = ({
               </p>
             </div>
           </div>
-          <div className="text-[#7440ff] font-bold">
-            ₦ {challenge.amount.toLocaleString()}
+          <div className="flex items-center">
+            <span className="bg-[#7440ff]/20 text-[#7440ff] text-xs px-2 py-0.5 rounded-full mr-2">Total Pool</span>
+            <span className="text-[#7440ff] font-bold">₦ {(challenge.amount * 2).toLocaleString()}</span>
           </div>
         </div>
 

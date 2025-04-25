@@ -5,13 +5,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from './LoadingSpinner';
 import EnhancedChallengeChat from './EnhancedChallengeChat';
-import { Trophy, Search } from 'lucide-react';
+import { Trophy, Search, Clock } from 'lucide-react';
+import { isScheduledDatePast } from '../utils/handlePastScheduledChallenges';
 
 interface Challenge {
   id: string;
   title: string;
   status: string;
-  wager_amount: number;
+  amount: number; // The database only has 'amount', not 'wager_amount'
   challenger_id: string;
   challenged_id: string;
   challenger: {
@@ -58,7 +59,16 @@ const ChallengeChatTab: React.FC = () => {
 
       try {
         setLoading(true);
-        // First check if the table has the necessary columns
+
+        // First check for past scheduled challenges
+        try {
+          await supabase.rpc('handle_past_scheduled_challenges');
+        } catch (error) {
+          console.warn('Error handling past scheduled challenges:', error);
+          // Continue with fetching challenges even if this fails
+        }
+
+        // Check if the table has the necessary columns
         const { data: tableInfo, error: tableError } = await supabase
           .from('challenges')
           .select('id')
@@ -169,11 +179,19 @@ const ChallengeChatTab: React.FC = () => {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active':
+      case 'accepted':
         return 'bg-green-500/20 text-green-400';
       case 'completed':
         return 'bg-blue-500/20 text-blue-400';
       case 'cancelled':
+      case 'declined':
         return 'bg-red-500/20 text-red-400';
+      case 'missed':
+        return 'bg-orange-500/20 text-orange-400';
+      case 'pending':
+        return 'bg-yellow-500/20 text-yellow-400';
+      case 'expired':
+        return 'bg-gray-500/20 text-gray-400';
       default:
         return 'bg-gray-500/20 text-gray-400';
     }
@@ -205,8 +223,25 @@ const ChallengeChatTab: React.FC = () => {
 
         <div className="flex-grow overflow-y-auto">
           {loading ? (
-            <div className="flex justify-center items-center py-10">
-              <LoadingSpinner size="lg" />
+            <div className="space-y-2 p-2 animate-pulse">
+              {/* Skeleton challenge items */}
+              {[...Array(5)].map((_, index) => (
+                <div key={index} className="p-3 mx-2 rounded-lg bg-white">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-full bg-gray-300"></div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start">
+                        <div className="h-4 w-32 bg-gray-300 rounded"></div>
+                        <div className="h-4 w-16 bg-gray-300 rounded-full"></div>
+                      </div>
+                      <div className="flex justify-between items-center mt-2">
+                        <div className="h-3 w-24 bg-gray-300 rounded"></div>
+                        <div className="h-3 w-12 bg-gray-300 rounded"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : filteredChallenges.length > 0 ? (
             <div className="space-y-2 pt-1 pb-4">
@@ -240,20 +275,31 @@ const ChallengeChatTab: React.FC = () => {
                           <h3 className="text-sm font-medium text-gray-900 truncate">
                             {challenge.title || `Challenge vs @${getOpponentName(challenge)}`}
                           </h3>
-                          <span
-                            className={`px-2 py-0.5 text-xs rounded-full ${getStatusColor(
-                              challenge.status
-                            )}`}
-                          >
-                            {challenge.status.toUpperCase()}
-                          </span>
+                          <div className="flex items-center gap-1">
+                            {challenge.status !== 'pending' && (
+                              <span
+                                className={`px-1.5 py-0.5 text-[10px] rounded-full ${getStatusColor(
+                                  challenge.status
+                                )}`}
+                              >
+                                {challenge.status.toUpperCase()}
+                              </span>
+                            )}
+                            {challenge.status === 'pending' && challenge.scheduled_at && isScheduledDatePast(challenge.scheduled_at) && (
+                              <span className="flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-red-100 text-red-600">
+                                <Clock className="w-2 h-2 mr-0.5" />
+                                Past Due
+                              </span>
+                            )}
+                          </div>
                         </div>
                         <div className="flex justify-between items-center mt-1">
-                          <p className="text-xs text-gray-500 truncate">
+                          <p className="text-xs text-gray-500 truncate flex items-center">
                             <Trophy className="inline-block w-3 h-3 mr-1" />
-                            {challenge.wager_amount} coins
+                            <span className="bg-purple-100 text-purple-600 text-[10px] px-1 py-0.5 rounded-full mr-1">Total Pool</span>
+                            ₦{(challenge.amount * 2).toLocaleString()}
                           </p>
-                          <span className="text-xs text-gray-400">
+                          <span className="text-[10px] text-gray-400">
                             {new Date(challenge.created_at).toLocaleDateString()}
                           </span>
                         </div>

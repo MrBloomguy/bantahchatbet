@@ -3,7 +3,7 @@ import { supabase } from '../lib/supabase';
 import { useToast } from './ToastContext';
 
 // Service worker registration status
-let swRegistration = null;
+let swRegistration: ServiceWorkerRegistration | null = null;
 let isSubscribed = false;
 
 interface NotificationContextType {
@@ -34,10 +34,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const loadUnreadCount = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { count, error } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
-        .eq('user_id', supabase.auth.user()?.id)
+        .eq('user_id', user.id)
         .eq('read', false);
 
       if (error) throw error;
@@ -49,10 +52,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
   const markAllAsRead = async () => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { error } = await supabase
         .from('notifications')
         .update({ read: true })
-        .eq('user_id', supabase.auth.user()?.id)
+        .eq('user_id', user.id)
         .eq('read', false);
 
       if (error) throw error;
@@ -64,40 +70,44 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   useEffect(() => {
-    const user = supabase.auth.user();
-    if (!user) return;
+    const fetchUserAndSubscribe = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
 
-    loadUnreadCount();
+      loadUnreadCount();
 
-    // Subscribe to new notifications
-    const channel = supabase
-      .channel('notifications-context')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`
-      }, (payload) => {
-        console.log('New notification in context:', payload);
-        // Increment unread count
-        setUnreadCount(prev => prev + 1);
-        // Show a toast notification
-        toast.showInfo(payload.new.title || 'New notification received');
-      })
-      .on('postgres_changes', {
-        event: 'UPDATE',
-        schema: 'public',
-        table: 'notifications',
-        filter: `user_id=eq.${user.id}`
-      }, () => {
-        // Refresh count when notifications are updated (marked as read)
-        loadUnreadCount();
-      })
-      .subscribe();
+      // Subscribe to new notifications
+      const channel = supabase
+        .channel('notifications-context')
+        .on('postgres_changes', {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        }, (payload) => {
+          console.log('New notification in context:', payload);
+          // Increment unread count
+          setUnreadCount(prev => prev + 1);
+          // Show a toast notification
+          toast.showInfo(payload.new.title || 'New notification received');
+        })
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'notifications',
+          filter: `user_id=eq.${user.id}`
+        }, () => {
+          // Refresh count when notifications are updated (marked as read)
+          loadUnreadCount();
+        })
+        .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
+      return () => {
+        supabase.removeChannel(channel);
+      };
     };
+
+    fetchUserAndSubscribe();
   }, [toast]);
 
   // Check if push notifications are supported
@@ -183,7 +193,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   // Helper function to convert base64 to Uint8Array for VAPID key
-  const urlBase64ToUint8Array = (base64String) => {
+  const urlBase64ToUint8Array = (base64String: string): Uint8Array => {
     const padding = '='.repeat((4 - base64String.length % 4) % 4);
     const base64 = (base64String + padding)
       .replace(/-/g, '+')
@@ -200,11 +210,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   // Save subscription to your backend
-  const saveSubscription = async (subscription) => {
-    const user = supabase.auth.user();
-    if (!user) return;
-
+  const saveSubscription = async (subscription: PushSubscription) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       // Store the subscription in your database
       const { error } = await supabase
         .from('push_subscriptions')
@@ -222,11 +232,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   // Delete subscription from your backend
-  const deleteSubscription = async (subscription) => {
-    const user = supabase.auth.user();
-    if (!user) return;
-
+  const deleteSubscription = async (subscription: PushSubscription) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
       const { error } = await supabase
         .from('push_subscriptions')
         .delete()
