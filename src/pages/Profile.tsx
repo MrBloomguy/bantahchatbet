@@ -47,9 +47,9 @@ const Profile: React.FC = () => {
       <div className="flex-1 flex flex-col items-center w-full">
         <div className="w-full max-w-xl mx-auto px-2 sm:px-4 py-4">
           {/* Profile Card */}
-          <div className="relative bg-white rounded-3xl px-6 pt-8 pb-6 mb-6 border border-[#f0f1fa] shadow-sm">
+          <div className="relative bg-white rounded-3xl px-4 pt-5 pb-4 mb-4 border border-[#f0f1fa] shadow-sm">
             {/* Top section with actions */}
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-end mb-2">
               <button
                 type="button"
                 onClick={async () => {
@@ -63,11 +63,11 @@ const Profile: React.FC = () => {
                     }
                   }
                 }}
-                className="flex items-center gap-1 bg-[#F6F7FB] px-3 py-1.5 rounded-full text-[#7440ff] text-xs font-semibold hover:bg-[#CCFF00]/20 transition border border-[#7440ff]"
+                className="flex items-center gap-1 bg-[#F6F7FB] px-2 py-1 rounded-full text-[#7440ff] text-xs font-semibold hover:bg-[#CCFF00]/20 transition border border-[#7440ff]"
                 title="Copy Referral Code"
                 aria-label="Copy Referral Code"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M8 17l4 4 4-4m0-5V3a1 1 0 00-1-1h-6a1 1 0 00-1 1v9m0 0l4 4 4-4" />
                 </svg>
                 <span>{currentUser?.referral_code ? currentUser.referral_code.slice(0, 8) : 'Refer'}</span>
@@ -77,24 +77,24 @@ const Profile: React.FC = () => {
             {/* Profile info section */}
             <div className="flex flex-col items-center">
               {/* Avatar with badges */}
-              <div className="relative mb-4">
+              <div className="relative mb-3">
                 <div className="flex justify-center">
                   <div className="relative">
                     <img
                       src={currentUser?.avatar_url || '/avatar.svg'}
                       alt={currentUser?.name || 'User'}
-                      className="w-32 h-32 rounded-full object-cover"
+                      className="w-24 h-24 rounded-full object-cover"
                     />
 
                     {/* Edit profile button - positioned directly on the edge of the avatar */}
                     <button
                       type="button"
                       onClick={() => navigate('/settings/profile')}
-                      className="absolute bottom-1 right-1 p-2 rounded-full bg-[#CCFF00] text-black shadow hover:bg-[#e6ff70] transition"
+                      className="absolute bottom-0 right-0 p-1.5 rounded-full bg-[#CCFF00] text-black shadow hover:bg-[#e6ff70] transition"
                       aria-label="Edit Profile"
                       title="Edit Profile"
                     >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 3.5a2.121 2.121 0 113 3L7 19.5 3 21l1.5-4L16.5 3.5z" />
                       </svg>
                     </button>
@@ -103,65 +103,65 @@ const Profile: React.FC = () => {
 
                 {/* Rank badge - smaller size */}
                 {currentUser?.rank && (
-                  <div className="absolute -bottom-1 left-4">
-                    <UserRankBadge rank={currentUser.rank} size="md" />
+                  <div className="absolute -bottom-1 left-2">
+                    <UserRankBadge rank={currentUser.rank} size="sm" />
                   </div>
                 )}
               </div>
 
               {/* User info */}
-              <h2 className="text-2xl font-bold text-gray-900 mb-1 tracking-tight">{currentUser?.name}</h2>
-              <p className="text-gray-500 text-base mb-3">@{currentUser?.username}</p>
+              <h2 className="text-xl font-bold text-gray-900 mb-0.5 tracking-tight">{currentUser?.name}</h2>
+              <p className="text-gray-500 text-sm mb-2">@{currentUser?.username}</p>
 
-              {/* Bio section */}
+              {/* Bio section - more compact */}
               {currentUser?.bio && (
-                <p className="text-gray-700 text-center mb-4 max-w-xs leading-relaxed">{currentUser.bio}</p>
+                <p className="text-gray-700 text-center mb-3 max-w-xs text-sm leading-tight">{currentUser.bio}</p>
               )}
 
-              {/* Stats section */}
-              <div className="flex items-center justify-center gap-4 w-full mb-2">
+              {/* Stats section - more compact */}
+              <div className="flex items-center justify-center gap-3 w-full mb-2">
                 {/* Level badge */}
                 <div className="flex flex-col items-center">
-                  <UserLevelBadge points={currentUser?.points || 0} size="md" />
-                  <span className="text-xs text-gray-500 mt-1">Level</span>
+                  <UserLevelBadge points={currentUser?.points || 0} size="sm" />
+                  <span className="text-xs text-gray-500 mt-0.5">Level</span>
                 </div>
 
                 {/* Points */}
                 <div className="flex flex-col items-center">
-                  <div className="flex items-center gap-1 px-3 py-1.5 bg-purple-100 text-purple-700 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-700 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" stroke="none">
                       <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
                     </svg>
-                    <span className="font-medium">{currentUser?.points || 0}</span>
+                    <span className="font-medium text-sm">{currentUser?.points || 0}</span>
                   </div>
-                  <span className="text-xs text-gray-500 mt-1">Points</span>
+                  <span className="text-xs text-gray-500 mt-0.5">Points</span>
                 </div>
 
                 {/* Followers */}
                 <div className="flex flex-col items-center">
-                  <div className="flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-700 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" stroke="none">
                       <path d="M9 10a3 3 0 1 0 6 0a3 3 0 0 0-6 0zm-3 8V19c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2v-1c0-1.1-.9-2-2-2h-2c-1.1 0-2-.9-2-2s-.9-2-2-2c-1.1 0-2 .9-2 2H6c-1.1 0-2 .9-2 2v1zm10-8a3 3 0 1 0 6 0a3 3 0 0 0-6 0zM13 18v1c0 1.1.9 2 2 2h4c1.1 0 2-.9 2-2v-1c0-1.1-.9-2-2-2h-2c-1.1 0-2 .9-2 2s-.9 2-2 2H8c-1.1 0-2-.9-2-2v-1c0-1.1.9-2 2-2h2c1.1 0 2 .9 2 2s.9 2 2 2h2z" />
                     </svg>
-                    <span className="font-medium">{currentUser?.followers_count || 0}</span>
+                    <span className="font-medium text-sm">{currentUser?.followers_count || 0}</span>
                   </div>
-                  <span className="text-xs text-gray-500 mt-1">Followers</span>
+                  <span className="text-xs text-gray-500 mt-0.5">Followers</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Menu Items */}
-          <div className="bg-white rounded-2xl shadow divide-y divide-gray-100 mb-10 overflow-hidden border border-[#f0f1fa]">
+          <div className="bg-white rounded-2xl shadow divide-y divide-gray-100 mb-6 overflow-hidden border border-[#f0f1fa]">
             {menuItems.map((item, index) => (
               <button
                 type="button"
                 key={index}
                 onClick={() => navigate(item.path)}
-                className="w-full flex items-center justify-between px-5 py-4 text-gray-900 hover:bg-[#F6F7FB] transition text-base font-medium"
+                className="w-full flex items-center justify-between px-4 py-3 text-gray-900 hover:bg-[#F6F7FB] transition text-sm font-medium"
               >
                 <span>{item.label}</span>
-                <ChevronRight className="w-5 h-5 text-gray-400" />
+                <ChevronRight className="w-4 h-4 text-gray-400" />
               </button>
             ))}
           </div>
@@ -170,7 +170,7 @@ const Profile: React.FC = () => {
           <button
             type="button"
             onClick={logout}
-            className="w-full py-4 bg-white text-red-500 rounded-2xl font-semibold shadow hover:bg-red-50 transition mb-4 border border-[#f0f1fa]"
+            className="w-full py-3 bg-white text-red-500 rounded-2xl font-semibold shadow hover:bg-red-50 transition mb-4 border border-[#f0f1fa] text-sm"
           >
             Logout
           </button>

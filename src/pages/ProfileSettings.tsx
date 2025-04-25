@@ -110,27 +110,30 @@ const ProfileSettings: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F6F7FB]">
+    <div className="min-h-screen bg-white">
       {loading && <LoadingOverlay message="Saving changes..." />}
 
-      <PageHeader title="Edit" />
+      <PageHeader title="Edit Profile" />
 
-      <form onSubmit={handleSubmit} className="p-4 space-y-6 max-w-2xl mx-auto">
+      <form onSubmit={handleSubmit} className="p-4 space-y-4 max-w-2xl mx-auto">
         {/* Avatar */}
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center mb-2">
+          <label className="block text-sm font-medium text-gray-600 mb-2 text-center">
+            Profile Photo
+          </label>
           <div className="flex justify-center">
             <div className="relative">
               <img
                 src={formData.avatar_url}
                 alt="Profile"
-                className="w-32 h-32 rounded-full object-cover bg-[#242538]"
+                className="w-20 h-20 rounded-full object-cover border border-gray-200"
               />
               {/* Edit icon positioned directly on the edge of the avatar */}
-              <label className="absolute bottom-1 right-1 p-2 bg-[#CCFF00] rounded-full cursor-pointer hover:bg-[#b3ff00] transition-colors">
+              <label className="absolute bottom-0 right-0 p-1.5 bg-[#CCFF00] rounded-full cursor-pointer hover:bg-[#b3ff00] transition-colors shadow-sm border border-white">
                 {imageLoading ? (
                   <LoadingSpinner size="sm" color="#000000" />
                 ) : (
-                  <Camera className="w-4 h-4 text-black" />
+                  <Camera className="w-3.5 h-3.5 text-black" />
                 )}
                 <input
                   type="file"
@@ -146,14 +149,14 @@ const ProfileSettings: React.FC = () => {
 
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-1">
+          <label className="block text-sm font-medium text-gray-600 mb-1">
             Name
           </label>
           <input
             type="text"
             value={formData.name}
             onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-            className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] disabled:opacity-50"
+            className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900 placeholder-gray-400"
             placeholder="Your name"
             disabled={loading}
             maxLength={50}
@@ -162,52 +165,52 @@ const ProfileSettings: React.FC = () => {
 
         {/* Username */}
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-1">
+          <label className="block text-sm font-medium text-gray-600 mb-1">
             Username
           </label>
           <input
             type="text"
             value={formData.username}
             onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-            className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] disabled:opacity-50"
+            className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900 placeholder-gray-400"
             placeholder="@username"
             disabled={loading}
             maxLength={30}
             pattern="[a-zA-Z0-9_]+"
             title="Username can only contain letters, numbers, and underscores"
           />
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="mt-1 text-sm text-gray-500">
             Only letters, numbers, and underscores allowed
           </p>
         </div>
 
         {/* Bio */}
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-1">
+          <label className="block text-sm font-medium text-gray-600 mb-1">
             Bio
           </label>
           <textarea
             value={formData.bio}
             onChange={(e) => setFormData(prev => ({ ...prev, bio: e.target.value }))}
-            className="w-full bg-[#242538] text-white px-4 py-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#CCFF00] disabled:opacity-50"
+            className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900 placeholder-gray-400 min-h-[80px]"
             placeholder="Tell us about yourself"
-            rows={4}
+            rows={3}
             disabled={loading}
             maxLength={160}
           />
-          <p className="mt-1 text-sm text-gray-400">
+          <p className="mt-1 text-sm text-gray-500">
             {formData.bio.length}/160 characters
           </p>
         </div>
 
         {/* Email (read-only) */}
         <div>
-          <label className="block text-sm font-medium text-gray-400 mb-1">
+          <label className="block text-sm font-medium text-gray-600 mb-1">
             Email
           </label>
-          <div className="flex items-center gap-2 px-4 py-3 rounded-xl bg-[#242538]">
-            <Mail className="w-5 h-5 text-gray-400" />
-            <span className="text-white/60">
+          <div className="flex items-center gap-2 p-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500">
+            <Mail className="w-4 h-4 text-gray-400" />
+            <span>
               {typeof currentUser.email === 'string'
                 ? currentUser.email
                 : currentUser.email?.address || 'No email set'}
@@ -219,9 +222,9 @@ const ProfileSettings: React.FC = () => {
         <button
           type="button"
           disabled={loading}
-          className="flex items-center gap-2 text-[#7440ff] hover:underline disabled:opacity-50"
+          className="flex items-center gap-2 text-[#7440ff] hover:text-[#5930cc] text-sm font-medium disabled:opacity-50"
         >
-          <Lock className="w-5 h-5" />
+          <Lock className="w-4 h-4" />
           <span>Change Password</span>
         </button>
 
@@ -229,11 +232,11 @@ const ProfileSettings: React.FC = () => {
         <button
           type="submit"
           disabled={loading}
-          className="w-full py-3 bg-[#7440ff] text-white rounded-xl font-medium hover:bg-[#7440ff] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+          className="w-full py-2.5 bg-[#7440ff] text-white rounded-lg font-medium hover:bg-[#5930cc] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {loading ? (
             <>
-              <LoadingSpinner size="sm" color="#000000" />
+              <LoadingSpinner size="sm" color="#ffffff" />
               <span>Saving...</span>
             </>
           ) : (
