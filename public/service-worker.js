@@ -45,6 +45,18 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve cached content when offline
 self.addEventListener('fetch', (event) => {
+  // Skip Privy API requests to avoid CSP issues
+  if (event.request.url.includes('privy.io') ||
+      event.request.url.includes('walletconnect') ||
+      event.request.url.includes('auth.privy') ||
+      event.request.url.includes('api.privy') ||
+      event.request.url.includes('embedded-wallet.privy')) {
+    // Do not intercept these requests at all
+    console.log('Skipping service worker interception for Privy request:', event.request.url);
+    return;
+  }
+
+  // For all other requests, try to serve from cache first
   event.respondWith(
     caches.match(event.request).then((response) => {
       return response || fetch(event.request);

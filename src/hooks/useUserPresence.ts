@@ -22,6 +22,16 @@ export const useUserPresence = () => {
     try {
       const now = new Date().toISOString();
 
+      // First check if the user has a session
+      const { data: sessionData } = await supabase.auth.getSession();
+
+      if (!sessionData.session) {
+        // If no session, just log and return without trying to update
+        console.log('No active Supabase session, skipping presence update');
+        return;
+      }
+
+      // Try to update the user presence
       const { error } = await supabase
         .from('user_presence')
         .upsert({
@@ -32,7 +42,10 @@ export const useUserPresence = () => {
           onConflict: 'user_id'
         });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating user status:', error);
+        // Don't throw, just log the error
+      }
     } catch (error) {
       console.error('Error updating user status:', error);
     }
@@ -114,28 +127,52 @@ export const useUserPresence = () => {
   useEffect(() => {
     if (!currentUser) return;
 
-    // Initial fetch
-    fetchUserStatuses();
+    // Check if the user has a Supabase session before setting up presence
+    const checkSessionAndSetup = async () => {
+      try {
+        // Check for an active session
+        const { data: sessionData } = await supabase.auth.getSession();
 
-    // Set current user as online
-    setOnline();
+        if (!sessionData.session) {
+          console.log('No active Supabase session, skipping presence setup');
+          return;
+        }
 
-    // Set up subscription for presence changes
-    const presenceSubscription = supabase
-      .channel('user-presence-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'user_presence'
-      }, (payload) => {
-        const presence = payload.new as UserPresence;
+        // Initial fetch
+        fetchUserStatuses();
 
-        setUserStatuses(prev => ({
-          ...prev,
-          [presence.user_id]: presence.status
-        }));
-      })
-      .subscribe();
+        // Set current user as online
+        setOnline();
+
+        // Set up subscription for presence changes
+        const presenceSubscription = supabase
+          .channel('user-presence-changes')
+          .on('postgres_changes', {
+            event: '*',
+            schema: 'public',
+            table: 'user_presence'
+          }, (payload) => {
+            const presence = payload.new as UserPresence;
+
+            setUserStatuses(prev => ({
+              ...prev,
+              [presence.user_id]: presence.status
+            }));
+          })
+          .subscribe();
+
+        return presenceSubscription;
+      } catch (error) {
+        console.error('Error setting up presence:', error);
+        return null;
+      }
+    };
+
+    // Call the setup function and store the subscription
+    let presenceSubscription: any = null;
+    checkSessionAndSetup().then(sub => {
+      presenceSubscription = sub;
+    });
 
     // Set up activity tracking
     let activityTimeout: NodeJS.Timeout | null = null;
@@ -194,11 +231,14 @@ export const useUserPresence = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('beforeunload', handleBeforeUnload);
 
-      // Set user as offline when unmounting
-      setOffline();
+      // Only try to set offline and remove channel if we have a subscription
+      if (presenceSubscription) {
+        // Set user as offline when unmounting
+        setOffline();
 
-      // Unsubscribe from presence changes
-      supabase.removeChannel(presenceSubscription);
+        // Unsubscribe from presence changes
+        supabase.removeChannel(presenceSubscription);
+      }
     };
   }, [currentUser, fetchUserStatuses, setOnline, setAway, setOffline]);
 

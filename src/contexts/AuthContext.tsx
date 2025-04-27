@@ -1,7 +1,9 @@
 import { createContext, useContext, useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { auth } from '../firebase/config';
 import { useToast } from './ToastContext';
 import type { User } from '@supabase/supabase-js';
+import { v4 as uuidv4 } from 'uuid';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -9,7 +11,7 @@ interface AuthContextType {
   signInWithEmail: (email: string, password: string) => Promise<any>;
   signUp: (email: string, password: string) => Promise<any>;
   logout: () => Promise<void>;
-  refreshUser: () => Promise<void>;
+  refreshUser: (customUser?: any) => Promise<void>;
   signInWithGoogle: () => Promise<any>;
   signInWithTwitter: () => Promise<any>;
 }
@@ -29,8 +31,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const toast = useToast();
 
-  const refreshUser = useCallback(async () => {
+  const refreshUser = useCallback(async (customUser = null) => {
     try {
+      // If a custom user is provided, use it directly
+      if (customUser) {
+        console.log('Setting custom user:', customUser);
+        setCurrentUser(customUser);
+        setLoading(false);
+        return;
+      }
+
       const { data: { user: supabaseUser } } = await supabase.auth.getUser();
 
       if (!supabaseUser) {
@@ -107,9 +117,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [toast]);
 
+  // Auth context
+
   const logout = useCallback(async () => {
     try {
+      // Check if we have a Firebase user
+      const firebaseUser = auth.currentUser;
+
+      if (firebaseUser) {
+        // Sign out from Firebase
+        await auth.signOut();
+        console.log('Signed out from Firebase');
+      }
+
+      // Sign out from Supabase
       await supabase.auth.signOut();
+
+      // Clear user state
       setCurrentUser(null);
       toast.showSuccess('Signed out successfully');
     } catch (error) {
@@ -152,19 +176,120 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  useEffect(() => {
-    refreshUser();
+  // Handle Firebase authentication
+  const handleFirebaseAuth = useCallback(async () => {
+    try {
+      // Check if there's a Firebase user
+      const firebaseUser = auth.currentUser;
 
+      if (firebaseUser) {
+        console.log('Firebase user found:', firebaseUser);
+
+        // Check if the user has a phone number
+        if (firebaseUser.phoneNumber) {
+          // Check if the user already exists in Supabase
+          const { data: existingUser, error: fetchError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('phone', firebaseUser.phoneNumber)
+            .single();
+
+          if (fetchError && fetchError.code !== 'PGRST116') {
+            console.error('Error fetching user profile:', fetchError);
+          }
+
+          if (existingUser) {
+            // User exists, use their profile
+            setCurrentUser(existingUser);
+            setLoading(false);
+            return true;
+          } else {
+            // User doesn't exist, create a new profile
+            const newUser = {
+              id: firebaseUser.uid,
+              phone: firebaseUser.phoneNumber,
+              name: `User ${firebaseUser.phoneNumber.slice(-4)}`,
+              avatar_url: `https://api.dicebear.com/7.x/avataaars/svg?seed=${firebaseUser.phoneNumber}`,
+              created_at: new Date().toISOString()
+            };
+
+            // Insert the new user into Supabase
+            const { data: insertedUser, error: insertError } = await supabase
+              .from('profiles')
+              .insert(newUser)
+              .select()
+              .single();
+
+            if (insertError) {
+              console.error('Error creating user profile:', insertError);
+              return false;
+            }
+
+            setCurrentUser(insertedUser);
+            setLoading(false);
+            return true;
+          }
+        }
+      }
+
+      return false;
+    } catch (error) {
+      console.error('Error handling Firebase auth:', error);
+      return false;
+    }
+  }, []);
+
+  // No Privy user handling needed
+
+  // Run this effect on mount and when the URL changes
+  useEffect(() => {
+    const initAuth = async () => {
+      console.log('Initializing authentication...');
+
+      // First check for Firebase auth
+      const isFirebaseAuth = await handleFirebaseAuth();
+      console.log('Firebase auth check result:', isFirebaseAuth);
+
+      // If not using Firebase auth, proceed with Supabase auth
+      if (!isFirebaseAuth) {
+        refreshUser();
+      }
+    };
+
+    initAuth();
+
+    // Set up Firebase auth state listener
+    const unsubscribeFirebase = auth.onAuthStateChanged(async (firebaseUser) => {
+      if (firebaseUser) {
+        // Firebase user is logged in
+        handleFirebaseAuth();
+      } else {
+        // Firebase user is logged out, check Supabase
+        const session = await supabase.auth.getSession();
+        if (!session.data.session) {
+          // No Supabase session either, user is completely logged out
+          setCurrentUser(null);
+        }
+      }
+    });
+
+    // Set up Supabase auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session) {
         refreshUser();
       } else {
-        setCurrentUser(null);
+        // If no Supabase session, check Firebase before setting user to null
+        if (!auth.currentUser) {
+          setCurrentUser(null);
+        }
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [refreshUser]);
+    return () => {
+      subscription.unsubscribe();
+      unsubscribeFirebase();
+    };
+  }, [refreshUser, handleFirebaseAuth, window.location.pathname]);
 
   return (
     <AuthContext.Provider value={{

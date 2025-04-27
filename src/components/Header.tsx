@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Bell,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../contexts/AuthContext';
+import { usePrivyAuth } from '../contexts/PrivyAuthContext';
 import { useNotification } from '../hooks/useNotification';
 import { useMessageNotifications } from '../hooks/useMessageNotifications';
 import { useMediaQuery } from '../hooks/useMediaQuery';
@@ -33,7 +34,17 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { currentUser, login } = useAuth();
+  const { currentUser } = useAuth();
+  const privyAuth = usePrivyAuth?.();
+
+  // Debug log for header state
+  useEffect(() => {
+    console.log('Header component - Auth state:', {
+      currentUser,
+      privyUser: privyAuth?.privyUser,
+      privyAuthenticated: privyAuth?.authenticated
+    });
+  }, [currentUser, privyAuth]);
   const { unreadCount } = useNotification();
   const { unreadMessages, pendingFriendRequests } = useMessageNotifications();
 
@@ -100,11 +111,12 @@ const Header: React.FC<HeaderProps> = ({
 
           {/* Right Section */}
           <div className="flex items-center gap-4">
-            {currentUser ? (
+            {/* Check both currentUser and privyAuth.privyUser */}
+            {(currentUser || privyAuth?.privyUser) ? (
               <>
-
               {/* Leaderboard */}
               <button
+                  type="button"
                   onClick={() => handleNavigate('/leaderboard')}
                   className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
                   aria-label="Leaderboard"
@@ -118,6 +130,7 @@ const Header: React.FC<HeaderProps> = ({
 
                 {/* Messages */}
                 <button
+                  type="button"
                   onClick={() => handleNavigate('/messages')}
                   className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
                   aria-label="Messages"
@@ -136,6 +149,7 @@ const Header: React.FC<HeaderProps> = ({
 
                 {/* Notifications */}
                 <button
+                  type="button"
                   onClick={() => handleNavigate('/notifications')}
                   className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
                   aria-label="Notifications"
@@ -150,10 +164,22 @@ const Header: React.FC<HeaderProps> = ({
 
                 {/* Wallet */}
                 <button
-  onClick={() => handleNavigate('/wallet')}  className="flex items-center gap-1 px-3 py-1.5 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"  aria-label="Wallet" >  <span className="text-sm font-bold">    {formatNumber(balance, '₦')}    <span className="text-[10px] opacity-60 ml-0.5">      ({formatNumber(parseFloat(usdEquivalent), '$')})    </span>  </span></button>
+                  type="button"
+                  onClick={() => handleNavigate('/wallet')}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"
+                  aria-label="Wallet"
+                >
+                  <span className="text-sm font-bold">
+                    {formatNumber(balance, '₦')}
+                    <span className="text-[10px] opacity-60 ml-0.5">
+                      ({formatNumber(parseFloat(usdEquivalent), '$')})
+                    </span>
+                  </span>
+                </button>
               </>
             ) : (
               <button
+                type="button"
                 onClick={() => handleNavigate('/signin')}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
               >

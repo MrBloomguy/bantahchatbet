@@ -10,11 +10,15 @@ import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { WalletProvider } from './contexts/WalletContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { SplashScreenProvider } from './contexts/SplashScreenContext';
+
+
+
 import { PointsProvider } from './contexts/PointsContext';
 import { UserPresenceProvider } from './contexts/UserPresenceContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import LevelUpDialog from './components/LevelUpDialog';
 import PointsNotification from './components/PointsNotification';
+import SimpleAuthDebugger from './components/SimpleAuthDebugger';
 
 // Admin Pages
 import AdminLogin from './pages/AdminLogin';
@@ -73,18 +77,18 @@ const App: React.FC = () => {
   return (
     <ToastProvider>
       <SupabaseProvider>
-        <AuthProvider>
-          <AdminAuthProvider>
-            <WalletProvider>
-              <SettingsProvider>
-                <SplashScreenProvider>
+          <AuthProvider>
+            <AdminAuthProvider>
+              <WalletProvider>
+                <SettingsProvider>
+                  <SplashScreenProvider>
                   <UserPresenceProvider>
                     <NotificationProvider>
                       <PointsProvider>
                     <div className={`min-h-screen ${isAdminPage ? 'bg-[#1a1b2e]' : 'bg-gray-50'}`}>
                       {!isAuthPage && !isAdminPage && <DesktopNav onMenuToggle={setIsSidebarOpen} />}
                       <main className={`${
-                        !isAdminPage ?
+                        !isAdminPage && !isAuthPage ?
                           isEventsPage ?
                             isSidebarOpen ? 'lg:ml-[200px]' : 'lg:ml-[70px]'
                           : 'lg:ml-[70px]'
@@ -317,6 +321,7 @@ const App: React.FC = () => {
                           <Route path="/toast-demo" element={<ToastDemo />} />
                         </Routes>
                         <PWAInstallPrompt />
+                        <SimpleAuthDebugger />
                         <LevelUpDialog />
                         <PointsNotification />
                       </main>
@@ -324,11 +329,11 @@ const App: React.FC = () => {
                     </PointsProvider>
                     </NotificationProvider>
                   </UserPresenceProvider>
-                </SplashScreenProvider>
-              </SettingsProvider>
-            </WalletProvider>
-          </AdminAuthProvider>
-        </AuthProvider>
+                  </SplashScreenProvider>
+                </SettingsProvider>
+              </WalletProvider>
+            </AdminAuthProvider>
+          </AuthProvider>
       </SupabaseProvider>
     </ToastProvider>
   );
