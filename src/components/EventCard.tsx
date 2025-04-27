@@ -144,7 +144,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
 
   const handleJoinClick = () => {
     if (!currentUser) {
-      navigate('/login');
+      navigate('/signin');
       return;
     }
 
@@ -159,7 +159,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
     if (currentUser) {
       navigate(`/event/${event.id}/chat`);
     } else {
-      navigate('/login');
+      navigate('/signin');
     }
   };
 
@@ -275,7 +275,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
               ['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label)
                 ? 'bg-gray-500 cursor-not-allowed text-white'
                 : requestSent
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-[#CCFF00] text-black'
                   : isProcessing
                     ? 'bg-gray-400 text-white'
                     : 'btn-primary bg-[#ccff00] text-black'

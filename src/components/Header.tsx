@@ -181,10 +181,10 @@ const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={() => handleNavigate('/signin')}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-[#CCFF00] text-black rounded-md hover:bg-[#CCFF00] transition-colors"
               >
                 <LogIn className="h-4 w-4" />
-                <span>Login</span>
+                <span>Sign in</span>
               </button>
             )}
           </div>
