@@ -195,6 +195,25 @@ const DataDeletionRequest: React.FC = () => {
               <li>Once processed, this action cannot be undone</li>
             </ul>
           </div>
+
+          {/* External Applications */}
+          <div className="bg-white rounded-xl overflow-hidden shadow-sm border border-gray-100 p-5">
+            <div className="flex items-center gap-3 mb-3">
+              <Shield className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold text-gray-900">External Applications</h2>
+            </div>
+            <p className="text-gray-600 mb-2">
+              For external applications that access your data, you can use the following callback URL to request data deletion:
+            </p>
+            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200 mb-3">
+              <code className="text-sm text-gray-800 break-all">
+                {window.location.origin}/data-deletion-callback?user_id={currentUser?.id}
+              </code>
+            </div>
+            <p className="text-gray-600 text-sm">
+              External applications can redirect you to this URL to initiate a data deletion request. This helps ensure your privacy rights are respected across all services that use your data.
+            </p>
+          </div>
         </div>
       </div>
 

@@ -14,6 +14,7 @@ interface AuthContextType {
   refreshUser: (customUser?: any) => Promise<void>;
   signInWithGoogle: () => Promise<any>;
   signInWithTwitter: () => Promise<any>;
+  signInWithFacebook: (accessToken: string, userInfo: any) => Promise<any>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -176,6 +177,44 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const signInWithFacebook = useCallback(async (accessToken: string, userInfo: any) => {
+    try {
+      // Try to sign in with Facebook token
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'facebook',
+        token: accessToken,
+        nonce: 'NONCE', // Should be a random string in production
+      });
+
+      if (error) {
+        // If token sign-in fails, try to create/link account manually
+        const { data: userData, error: userError } = await supabase.auth.signUp({
+          email: userInfo.email,
+          password: `fb_${userInfo.id}_${Date.now()}`, // Generate a secure password
+          options: {
+            data: {
+              name: userInfo.name,
+              avatar_url: userInfo.picture?.data?.url,
+              provider: 'facebook',
+              provider_id: userInfo.id
+            }
+          }
+        });
+
+        if (userError) {
+          throw userError;
+        }
+
+        return { data: userData, error: null };
+      }
+
+      return { data, error: null };
+    } catch (error) {
+      console.error('Facebook sign-in error:', error);
+      return { data: null, error };
+    }
+  }, []);
+
   // Handle Firebase authentication
   const handleFirebaseAuth = useCallback(async () => {
     try {
@@ -300,7 +339,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout,
       refreshUser,
       signInWithGoogle,
-      signInWithTwitter
+      signInWithTwitter,
+      signInWithFacebook
     }}>
       {children}
     </AuthContext.Provider>

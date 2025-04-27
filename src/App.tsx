@@ -62,6 +62,9 @@ import ChallengeChat from './pages/ChallengeChat';
 import EventChallengeHistory from './pages/EventChallengeHistory';
 import ProfileCardPopupDemo from './pages/ProfileCardPopupDemo';
 import DataDeletionRequest from './pages/DataDeletionRequest';
+import TikTokAuthCallback from './components/TikTokAuthCallback';
+import DataDeletionCallback from './pages/DataDeletionCallback';
+import DataDeletionDocs from './pages/DataDeletionDocs';
 import Terms from './pages/Terms';
 
 // Components
@@ -104,6 +107,8 @@ const App: React.FC = () => {
                           <Route path="/privacy" element={<PrivacyRedesigned />} />
                           <Route path="/terms" element={<Terms />} />
                           <Route path="/stories" element={<Stories />} />
+                          <Route path="/data-deletion-callback" element={<DataDeletionCallback />} />
+                          <Route path="/auth/tiktok-callback" element={<TikTokAuthCallback />} />
 
                           {/* Admin routes */}
                           <Route path="/admin/login" element={<AdminLogin />} />
