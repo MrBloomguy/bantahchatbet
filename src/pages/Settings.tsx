@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Bell, Moon, Eye, Radio, Activity, UserCheck, LogOut, Lock } from 'lucide-react';
+import { ArrowRight, Bell, Moon, Eye, Radio, Activity, UserCheck, LogOut, Lock, Trash2, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useSettings } from '../contexts/SettingsContext';
 import PageHeader from '../components/PageHeader';
@@ -127,6 +127,28 @@ const Settings: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <Lock className="w-4 h-4 text-gray-500 dark:text-gray-400" />
                   <span className="text-gray-800 dark:text-gray-200 text-sm">Privacy Policy</span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              </div>
+
+              <div
+                className="flex items-center justify-between py-1 cursor-pointer"
+                onClick={() => navigate('/settings/data-deletion')}
+              >
+                <div className="flex items-center gap-3">
+                  <Trash2 className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-gray-800 dark:text-gray-200 text-sm">Request Data Deletion</span>
+                </div>
+                <ArrowRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+              </div>
+
+              <div
+                className="flex items-center justify-between py-1 cursor-pointer"
+                onClick={() => navigate('/terms')}
+              >
+                <div className="flex items-center gap-3">
+                  <FileText className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+                  <span className="text-gray-800 dark:text-gray-200 text-sm">Terms of Service</span>
                 </div>
                 <ArrowRight className="w-4 h-4 text-gray-500 dark:text-gray-400" />
               </div>

@@ -61,6 +61,8 @@ import Challenges from './pages/Challenges';
 import ChallengeChat from './pages/ChallengeChat';
 import EventChallengeHistory from './pages/EventChallengeHistory';
 import ProfileCardPopupDemo from './pages/ProfileCardPopupDemo';
+import DataDeletionRequest from './pages/DataDeletionRequest';
+import Terms from './pages/Terms';
 
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -100,6 +102,7 @@ const App: React.FC = () => {
                           <Route path="/signin" element={<SignIn />} />
                           <Route path="/help" element={<Help />} />
                           <Route path="/privacy" element={<PrivacyRedesigned />} />
+                          <Route path="/terms" element={<Terms />} />
                           <Route path="/stories" element={<Stories />} />
 
                           {/* Admin routes */}
@@ -306,6 +309,11 @@ const App: React.FC = () => {
                           <Route path="/settings/privacy" element={
                             <ProtectedRoute>
                               <PrivacyRedesigned />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/settings/data-deletion" element={
+                            <ProtectedRoute>
+                              <DataDeletionRequest />
                             </ProtectedRoute>
                           } />
                           <Route path="/activity-history" element={

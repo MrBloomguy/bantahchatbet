@@ -34,6 +34,14 @@ const Profile: React.FC = () => {
       path: '/privacy'
     },
     {
+      label: 'Terms of Service',
+      path: '/terms'
+    },
+    {
+      label: 'Data Deletion Request',
+      path: '/settings/data-deletion'
+    },
+    {
       label: 'Help & Support',
       path: '/help'
     }
