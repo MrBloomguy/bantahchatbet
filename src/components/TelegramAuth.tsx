@@ -58,17 +58,13 @@ const TelegramAuth: React.FC<TelegramAuthProps> = ({
       dataOnauth: async (user) => {
         try {
           console.log('Telegram auth successful:', user);
-          
           if (!user || !user.id) {
             throw new Error('Invalid user data from Telegram');
           }
-          
           // Create a unique ID based on the Telegram ID
           const userId = uuidv4();
-          
           // Create a username based on Telegram data
           const username = `tg_${user.username || user.first_name.toLowerCase()}_${user.id.toString().substring(0, 6)}`;
-          
           // Create a user object
           const newUser = {
             id: userId,
@@ -82,45 +78,29 @@ const TelegramAuth: React.FC<TelegramAuthProps> = ({
             reputation_score: 0,
             points: 0
           };
-          
           // Check if user already exists by Telegram ID
           const { data: existingUser, error: fetchError } = await supabase
             .from('users')
             .select('*')
             .eq('telegram_id', user.id.toString())
             .maybeSingle();
-            
           if (fetchError && fetchError.code !== 'PGRST116') {
             console.error('Error checking for existing user:', fetchError);
             throw fetchError;
           }
-          
           if (existingUser) {
             // User exists, update last login
             const { error: updateError } = await supabase
               .from('users')
-              .update({
-                updated_at: new Date().toISOString()
-              })
+              .update({ updated_at: new Date().toISOString() })
               .eq('id', existingUser.id);
-              
             if (updateError) {
               console.error('Error updating user:', updateError);
               throw updateError;
             }
-            
-            // Use existing user data
-            refreshUser({
-              ...existingUser,
-              points: existingUser.reputation_score || 0,
-              is_telegram_auth: true
-            });
-            
+            refreshUser({ ...existingUser, points: existingUser.reputation_score || 0, is_telegram_auth: true });
             toast.showSuccess('Signed in with Telegram successfully!');
-            
-            if (onSuccess) {
-              onSuccess(existingUser);
-            }
+            if (onSuccess) onSuccess(existingUser);
           } else {
             // Create new user
             const { data: insertedUser, error: insertError } = await supabase
@@ -139,36 +119,21 @@ const TelegramAuth: React.FC<TelegramAuthProps> = ({
               })
               .select()
               .single();
-              
             if (insertError) {
               console.error('Error creating user:', insertError);
               throw insertError;
             }
-            
-            // Set the user in auth context
-            refreshUser({
-              ...insertedUser,
-              points: 0,
-              is_telegram_auth: true
-            });
-            
+            refreshUser({ ...insertedUser, points: 0, is_telegram_auth: true });
             toast.showSuccess('Account created with Telegram successfully!');
-            
-            if (onSuccess) {
-              onSuccess(insertedUser);
-            }
+            if (onSuccess) onSuccess(insertedUser);
           }
         } catch (error) {
           console.error('Telegram auth error:', error);
           toast.showError('Failed to authenticate with Telegram');
-          
-          if (onError) {
-            onError(error);
-          }
+          if (onError) onError(error);
         }
       }
     };
-
     // Clean up
     return () => {
       if (telegramRef.current) {

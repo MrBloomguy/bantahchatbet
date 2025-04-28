@@ -10,8 +10,7 @@ import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { WalletProvider } from './contexts/WalletContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { SplashScreenProvider } from './contexts/SplashScreenContext';
-
-
+import { PrivyAuthProvider } from './contexts/PrivyAuthContext';
 
 import { PointsProvider } from './contexts/PointsContext';
 import { UserPresenceProvider } from './contexts/UserPresenceContext';
@@ -82,6 +81,7 @@ const App: React.FC = () => {
   return (
     <ToastProvider>
       <SupabaseProvider>
+        <PrivyAuthProvider>
           <AuthProvider>
             <AdminAuthProvider>
               <WalletProvider>
@@ -347,6 +347,7 @@ const App: React.FC = () => {
               </WalletProvider>
             </AdminAuthProvider>
           </AuthProvider>
+        </PrivyAuthProvider>
       </SupabaseProvider>
     </ToastProvider>
   );

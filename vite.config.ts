@@ -8,10 +8,10 @@ export default defineConfig({
     headers: {
       'Content-Security-Policy': `
         default-src 'self';
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.tawk.to https://*.privy.io https://*.walletconnect.org https://*.walletconnect.com;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.tawk.to https://*.privy.io https://*.walletconnect.org https://*.walletconnect.com https://telegram.org https://*.telegram.org;
         style-src 'self' 'unsafe-inline' https://paystack.com https://*.tawk.to;
         style-src-elem 'self' 'unsafe-inline' https://*.tawk.to;
-        img-src 'self' data: https: blob: https://*.tawk.to;
+        img-src 'self' data: https: blob: https://*.tawk.to https://*.telegram.org;
         connect-src 'self'
           https://*.tawk.to
           wss://*.tawk.to
@@ -20,8 +20,9 @@ export default defineConfig({
           https://*.privy.io
           https://auth.privy.io
           https://*.walletconnect.org
-          https://*.walletconnect.com;
-        frame-src 'self' https://tawk.to https://*.tawk.to https://checkout.paystack.com https://*.privy.io;
+          https://*.walletconnect.com
+          https://*.telegram.org;
+        frame-src 'self' https://tawk.to https://*.tawk.to https://checkout.paystack.com https://*.privy.io https://*.telegram.org;
         font-src 'self' data: https://*.tawk.to;
         manifest-src 'self' https://idx-bantahlion-1744467813686.cluster-blu4edcrfnajktuztkjzgyxzek.cloudworkstations.dev;
         media-src 'self' https://*.tawk.to;
