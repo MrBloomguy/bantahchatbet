@@ -58,7 +58,7 @@ const MyEvents = () => {
         {event.banner_url && (
           <div
             className="relative w-32 h-24 cursor-pointer"
-            onClick={() => navigate(`/chat/${event.id}`)}
+            onClick={() => navigate(`/event/${event.id}/chat`)}
           >
             <img
               src={event.banner_url}
@@ -74,7 +74,7 @@ const MyEvents = () => {
               <div className="flex items-center gap-2 mb-1">
                 <h3
                   className="text-base font-semibold text-white truncate cursor-pointer hover:text-[#7440ff]"
-                  onClick={() => navigate(`/chat/${event.id}`)}
+                  onClick={() => navigate(`/event/${event.id}/chat`)}
                 >
                   {event.title}
                 </h3>
@@ -91,7 +91,7 @@ const MyEvents = () => {
                 {activeTab !== 'created' && event.creator && (
                   <div
                     className="flex items-center gap-1 cursor-pointer hover:text-[#7440ff]"
-                    onClick={() => navigate(`/chat/${event.id}`)}
+                    onClick={() => navigate(`/event/${event.id}/chat`)}
                   >
                     <Users className="w-3 h-3" />
                     <span>By {event.creator.username}</span>
@@ -125,7 +125,7 @@ const MyEvents = () => {
 
             <div className="flex flex-col gap-1">
               <button
-                onClick={() => navigate(`/chat/${event.id}`)}
+                onClick={() => navigate(`/event/${event.id}/chat`)}
                 className="px-2 py-1 bg-[#7440ff] text-black rounded text-xs font-medium whitespace-nowrap"
               >
                 Chat
@@ -208,7 +208,7 @@ const MyEvents = () => {
                       <div className="flex items-center gap-2 mb-1">
                         <h3
                           className="text-base font-semibold text-gray-900 truncate cursor-pointer hover:text-[#7440ff]"
-                          onClick={() => navigate(`/chat/${event.id}`)}
+                          onClick={() => navigate(`/event/${event.id}/chat`)}
                         >
                           {event.title}
                         </h3>
@@ -224,7 +224,7 @@ const MyEvents = () => {
                         {activeTab !== 'created' && event.creator && (
                           <div
                             className="flex items-center gap-1 cursor-pointer hover:text-[#7440ff]"
-                            onClick={() => navigate(`/chat/${event.id}`)}
+                            onClick={() => navigate(`/event/${event.id}/chat`)}
                           >
                             <Users className="w-3 h-3" />
                             <span>By {event.creator.username}</span>
@@ -255,11 +255,12 @@ const MyEvents = () => {
                       </div>
                     </div>
                     {/* Actions */}
-                    <div className="flex flex-col gap-1 ml-4">
+                    <div className="flex flex-col gap-1.5 ml-4">
                       <button
-                        onClick={() => navigate(`/chat/${event.id}`)}
-                        className="px-3 py-1 bg-[#7440ff] text-white rounded-full text-xs font-medium whitespace-nowrap shadow hover:bg-[#7440ff] transition"
+                        onClick={() => navigate(`/event/${event.id}/chat`)}
+                        className="px-4 py-1.5 bg-[#7440ff] text-white rounded-full text-xs font-medium whitespace-nowrap shadow-sm hover:bg-[#6030ff] transition-colors duration-200 flex items-center gap-2"
                       >
+                        <MessageCircle className="w-3.5 h-3.5" />
                         Chat
                       </button>
                       {event.is_editable && event.status === 'active' && (
@@ -268,8 +269,9 @@ const MyEvents = () => {
                             setSelectedEvent(event);
                             setIsEditModalOpen(true);
                           }}
-                          className="px-3 py-1 border border-[#7440ff] text-gray-900 rounded-full text-xs font-medium whitespace-nowrap shadow hover:bg-[#f7ffe0] transition"
+                          className="px-4 py-1.5 border border-[#7440ff] text-gray-900 rounded-full text-xs font-medium whitespace-nowrap hover:bg-[#7440ff]/5 transition-colors duration-200 flex items-center gap-2"
                         >
+                          <Star className="w-3.5 h-3.5" />
                           Edit
                         </button>
                       )}

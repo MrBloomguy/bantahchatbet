@@ -71,7 +71,7 @@ const DataDeletionRequest: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-[72px]">
-      <PageHeader title="Data Deletion Request" />
+      <PageHeader title="Data" />
 
       <div className="max-w-2xl mx-auto px-4 py-6">
         {/* Hero section */}

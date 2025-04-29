@@ -3,7 +3,7 @@ import { Star, Trophy, Crown, Medal, Award } from 'lucide-react';
 
 interface UserLevelBadgeProps {
   points: number;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'xs' | 'sm' | 'md' | 'lg';
   showLabel?: boolean;
 }
 
@@ -13,7 +13,7 @@ const UserLevelBadge: React.FC<UserLevelBadgeProps> = ({
   showLabel = true
 }) => {
   // Defensive: always use a valid size
-  const safeSize = ['sm', 'md', 'lg'].includes(size) ? size : 'md';
+  const safeSize = ['xs', 'sm', 'md', 'lg'].includes(size) ? size : 'md';
   const getLevelInfo = (points: number) => {
     if (typeof points !== 'number' || isNaN(points)) return {
       name: 'Beginner',
@@ -54,6 +54,10 @@ const UserLevelBadge: React.FC<UserLevelBadgeProps> = ({
   };
 
   const sizeClasses = {
+    xs: {
+      badge: 'h-4 text-[10px]',
+      icon: 'w-2 h-2'
+    },
     sm: {
       badge: 'h-6 text-xs',
       icon: 'w-3 h-3'

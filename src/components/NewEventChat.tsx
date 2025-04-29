@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Send, Smile, Loader, Trophy, X } from 'lucide-react';
+import { ArrowLeft, Send, Smile, Loader, X } from 'lucide-react';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useEventParticipation } from '../hooks/useEventParticipation';
@@ -8,10 +9,44 @@ import UserAvatar from './UserAvatar';
 import UserLevelBadge from './UserLevelBadge';
 import { useEventChat } from '../hooks/useEventChat';
 import ProfileCard from './ProfileCard';
-import { useProfile } from '../hooks/useProfile';
 import { supabase } from '../lib/supabase';
 import ChatBubble from './ChatBubble';
-import { Picker } from 'emoji-mart';
+
+interface Gif {
+  id: string;
+  title: string;
+  images: {
+    fixed_height_small: {
+      url: string;
+    };
+  };
+}
+
+interface EventCreator {
+  id: string;
+  username: string;
+  avatar_url: string | null;
+}
+
+interface EventPool {
+  id: string;
+  total_amount: number;
+  entry_amount: number;
+  yes_pool: number;
+  no_pool: number;
+}
+
+interface Event {
+  id: string;
+  title: string;
+  creator: EventCreator;
+  pool: EventPool[];
+  participants: { user_id: string }[];
+  banner_url: string | null;
+  end_time: string;
+  participant_count?: number;
+  pool_total_amount?: number;
+}
 
 export interface NewEventChatProps {
   eventId: string;
@@ -30,6 +65,8 @@ interface ChatMessage {
     isVerified?: boolean;
   };
   reactions?: { [key: string]: string[] };
+  media_type?: 'image' | 'gif';
+  media_url?: string;
 }
 
 interface UserProfile {
@@ -38,19 +75,6 @@ interface UserProfile {
   name?: string;
   avatar_url?: string;
 }
-
-interface CurrentUser extends UserProfile {
-  name?: string;
-  username?: string;
-  avatar_url?: string;
-}
-
-const PointsBadge: React.FC<{ points: number }> = ({ points }) => (
-  <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-    <Trophy className="w-3 h-3" />
-    <span>{points}</span>
-  </div>
-);
 
 const NewEventChat: React.FC<NewEventChatProps> = ({
   eventId,
@@ -62,7 +86,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const { joinEvent, getUserPrediction, getPredictionCounts } = useEventParticipation();
   const { updatePoolAmount } = useEventPool();
 
-  const [event, setEvent] = useState<any>(null);
+  const [event, setEvent] = useState<Event | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
   const [message, setMessage] = useState('');
   const [prediction, setPrediction] = useState<boolean | null>(null);
@@ -76,18 +100,10 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const [selectedProfile, setSelectedProfile] = useState<ChatMessage['sender'] | null>(null);
   const [countdown, setCountdown] = useState('');
   const [userPoints, setUserPoints] = useState<{ [key: string]: number }>({});
-  const [bannerOpen, setBannerOpen] = useState(false);
+  const [bannerOpen, setBannerOpen] = useState(true);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
-  const [gifs, setGifs] = useState([]);
-
-  const fetchGifs = async (query) => {
-    const response = await fetch(
-      `https://api.giphy.com/v1/gifs/search?api_key=YOUR_GIPHY_API_KEY&q=${query}&limit=10`
-    );
-    const data = await response.json();
-    setGifs(data.data);
-  };
+  const [gifs, setGifs] = useState<Gif[]>([]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -98,10 +114,6 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
       }
       setMessage('');
     }
-  };
-
-  const openProfileCard = (sender: ChatMessage['sender']) => {
-    setSelectedProfile(sender);
   };
 
   const fetchUserPoints = async (userId: string) => {
@@ -131,10 +143,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
       return;
     }
 
+    if (!event) return;
+
     setIsProcessing(true);
     try {
-      // Get entry amount from pool safely
-      const entryAmount = event.pool && event.pool[0] ? event.pool[0].entry_amount : 0;
+      const entryAmount = event.pool?.[0]?.entry_amount ?? 0;
 
       const { success } = await joinEvent({
         eventId,
@@ -151,10 +164,26 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         toast.showSuccess('Prediction placed successfully!');
       }
     } catch (error) {
-      toast.showError('Failed to place prediction');
-      console.error('Prediction error:', error);
+      console.error('Error handling prediction:', error);
+      toast.showError('Failed to submit prediction');
     } finally {
       setIsProcessing(false);
+    }
+  };
+
+  const fetchGifs = async (searchTerm: string) => {
+    try {
+      const GIPHY_API_KEY = 'YOUR_GIPHY_API_KEY'; // Replace with your GIPHY API key
+      const response = await fetch(
+        `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(
+          searchTerm
+        )}&limit=9&rating=g`
+      );
+      const data = await response.json();
+      setGifs(data.data);
+    } catch (error) {
+      console.error('Error fetching GIFs:', error);
+      toast.showError('Failed to load GIFs');
     }
   };
 
@@ -167,7 +196,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           .select(`
             id,
             title,
-            creator:creator_id(*),
+            creator:creator_id(
+              id,
+              username,
+              avatar_url
+            ),
             pool:event_pools(
               id,
               total_amount,
@@ -187,10 +220,22 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         if (error) throw error;
 
         if (data) {
-          // Add participant count and pool total amount to the event object
-          data.participant_count = data.participants ? data.participants.length : 0;
-          data.pool_total_amount = data.pool && data.pool[0] ? data.pool[0].total_amount : 0;
-          setEvent(data);
+          const formattedEvent: Event = {
+            id: data.id,
+            title: data.title,
+            creator: {
+              id: data.creator[0].id,
+              username: data.creator[0].username,
+              avatar_url: data.creator[0].avatar_url
+            },
+            pool: data.pool || [],
+            participants: data.participants || [],
+            banner_url: data.banner_url,
+            end_time: data.end_time,
+            participant_count: data.participants?.length || 0,
+            pool_total_amount: data.pool?.[0]?.total_amount || 0
+          };
+          setEvent(formattedEvent);
         }
       } catch (error) {
         console.error('Error fetching event:', error);
@@ -261,8 +306,6 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     loadPredictionData();
   }, [currentUser?.id, eventId]);
 
-  const userProfile = currentUser as CurrentUser;
-
   if (loadingEvent || !event) {
     return (
       <div className="flex flex-col h-screen bg-white items-center justify-center">
@@ -280,23 +323,20 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         </button>
         <div className="flex items-center flex-1 min-w-0 gap-3">
           <UserAvatar
-            url={event.creator?.avatar_url || '/bantahlogo.png'}
+            src={event.creator?.avatar_url || '/bantahlogo.png'}
+alt={event.creator?.username || ''}
             size="sm"
-            username={event.creator?.username || ''}
-          />
+                      />
           <div className="flex-1 min-w-0">
-            <h6 className="font-semibold text-gray-800 truncate flex items-center gap-2">
-              {event.title}
-              <span className="text-xs text-gray-400 font-normal flex items-center gap-1">
+            <h6 className="font-semibold text-gray-800 flex items-center gap-2">
+<span className="truncate max-w-[200px]">              {event.title}</span>
+              <span className="text-xs text-gray-400 font-normal flex items-center gap-1 flex-shrink-0">
                 by @{event.creator?.username}
-                <UserLevelBadge points={userPoints[event.creator?.id] ?? 0} size="sm" showLabel={false} />
+                <UserLevelBadge points={userPoints[event.creator?.id] ?? 0} size="xs" showLabel={false} />
                 <span className="ml-1 align-middle inline-flex items-center" title="Verified">
-                  <svg viewBox="0 0 24 24" aria-label="Verified" className="w-4 h-4 text-blue-500" fill="currentColor">
-                    <g>
-                      <path d="M22.5 12.87c0-.6-.33-1.15-.85-1.42l-1.7-.98.3-1.89c.09-.6-.14-1.22-.6-1.6-.46-.38-1.1-.47-1.64-.23l-1.7.98-1.7-.98c-.54-.24-1.18-.15-1.64.23-.46.38-.69 1-.6 1.6l.3 1.89-1.7.98c-.52.27-.85.82-.85 1.42s.33 1.15.85 1.42l1.7.98-.3 1.89c-.09.6.14 1.22.6 1.6.46.38 1.1.47 1.64.23l1.7-.98 1.7.98c.54.24 1.18.15 1.64-.23.46-.38.69-1 .6-1.6l-.3-1.89 1.7-.98c.52-.27.85-.82.85-1.42z"></path>
-                      <path d="M10.59 14.58l-2.09-2.09a.75.75 0 111.06-1.06l1.56 1.56 3.56-3.56a.75.75 0 111.06 1.06l-4.09 4.09a.75.75 0 01-1.06 0z" fill="#fff"></path>
-                    </g>
-                  </svg>
+                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 inline-block" fill="#7440ff">
+                  <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.085 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.165.865.25 1.336.25 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.437.695.21 1.04z" />
+                </svg>
                 </span>
               </span>
             </h6>
@@ -352,7 +392,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
               <button
                 onClick={() => handlePrediction(true)}
                 disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
-                className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${
+                className={`px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
                   prediction === true
                     ? 'bg-green-700 text-white cursor-not-allowed'
                     : prediction !== null
@@ -365,7 +405,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
               <button
                 onClick={() => handlePrediction(false)}
                 disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
-                className={`px-3 py-1 text-sm font-semibold rounded-md transition-colors ${
+                className={`px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
                   prediction === false
                     ? 'bg-red-700 text-white cursor-not-allowed'
                     : prediction !== null
@@ -413,7 +453,10 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
                   senderUsername={msg.sender?.username}
                   isVerified={true}
                   hasAvatar={!!msg.sender?.avatar_url}
+                  avatarUrl={msg.sender?.avatar_url}
                   points={userPoints[msg.sender_id]}
+                  mediaType={msg.media_type}
+                  mediaUrl={msg.media_url}
                 />
               </div>
             );
@@ -461,14 +504,17 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           </button>
           {showEmojiPicker && (
             <div className="absolute bottom-full mb-2">
-              <Picker
-                onSelect={(emoji) => setMessage((prev) => prev + emoji.native)}
-                theme="light"
+              <EmojiPicker
+                onEmojiClick={(emojiData: EmojiClickData) => {
+                  setMessage(prev => prev + emojiData.emoji);
+                  setShowEmojiPicker(false);
+                }}
+                width={300}
+                height={400}
               />
             </div>
           )}
         </div>
-
         {/* GIF Picker */}
         <div className="relative">
           <button
@@ -515,18 +561,38 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             </div>
           )}
         </div>
-
         {/* Image Upload */}
         <label className="text-gray-500 hover:text-purple-700 cursor-pointer">
           <input
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(e) => {
+            onChange={async (e) => {
               const file = e.target.files?.[0];
-              if (file) {
-                console.log('Image selected:', file);
-                // Handle image upload logic
+              if (!file) return;
+
+              // Validate file size (2MB limit)
+              if (file.size > 2 * 1024 * 1024) {
+                toast.showError('Image size must be less than 2MB');
+                return;
+              }
+
+              // Validate file type
+              if (!file.type.startsWith('image/')) {
+                toast.showError('Only image files are allowed');
+                return;
+              }
+
+              try {
+                const success = await sendMessage('', file);
+                if (!success) {
+                  toast.showError('Failed to send image');
+                }
+                // Clear the input
+                e.target.value = '';
+              } catch (error) {
+                console.error('Error uploading image:', error);
+                toast.showError('Failed to upload image');
               }
             }}
           />
@@ -545,7 +611,6 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             />
           </svg>
         </label>
-
         {/* Message Input */}
         <form onSubmit={handleSubmit} className="flex-grow flex items-center">
           <input

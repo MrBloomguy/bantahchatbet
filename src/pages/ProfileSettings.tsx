@@ -113,7 +113,7 @@ const ProfileSettings: React.FC = () => {
     <div className="min-h-screen bg-white">
       {loading && <LoadingOverlay message="Saving changes..." />}
 
-      <PageHeader title="Edit Profile" />
+      <PageHeader title="Edit" />
 
       <form onSubmit={handleSubmit} className="p-4 space-y-4 max-w-2xl mx-auto">
         {/* Avatar */}

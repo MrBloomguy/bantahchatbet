@@ -8,7 +8,29 @@ interface EventChatMessage {
   content: string;
   sender_id: string;
   created_at: string;
-  sender?: { name: string; avatar_url: string };
+  sender?: {
+    name: string;
+    username?: string;
+    avatar_url: string;
+    isVerified?: boolean;
+  };
+  media_type?: 'image' | 'gif';
+  media_url?: string;
+}
+
+interface DatabaseMessage {
+  id: string;
+  content: string;
+  sender_id: string;
+  created_at: string;
+  media_url: string | null;
+  media_type: 'image' | 'gif' | null;
+  users: {
+    id: string;
+    name: string;
+    username: string | null;
+    avatar_url: string | null;
+  };
 }
 
 export function useEventChat(eventId: string) {
@@ -17,11 +39,34 @@ export function useEventChat(eventId: string) {
   const { currentUser } = useAuth();
   const toast = useToast();
 
+  const uploadImage = async (file: File): Promise<string> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `event_chat/${eventId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('chat-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
   const fetchInitialMessages = useCallback(async () => {
     if (!eventId) return;
     
-    setIsLoading(true);
     try {
+      setIsLoading(true);
       const { data, error } = await supabase
         .from('event_chat_messages')
         .select(`
@@ -29,78 +74,102 @@ export function useEventChat(eventId: string) {
           content,
           sender_id,
           created_at,
-          users (name, avatar_url)
+          media_url,
+          media_type,
+          users!inner (
+            id,
+            name,
+            username,
+            avatar_url
+          )
         `)
         .eq('event_id', eventId)
         .order('created_at', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching messages:', error);
-        toast.showError('Failed to load messages');
-        throw error;
-      }
+      if (error) throw error;
 
-      const formattedMessages: EventChatMessage[] = (data || []).map(
-        (message) => ({
-          id: message.id,
-          content: message.content,
-          sender_id: message.sender_id,
-          created_at: message.created_at,
-          sender: { 
-            name: message.users?.name || 'Unknown', 
-            avatar_url: message.users?.avatar_url || '/default-avatar.png' 
-          },
-        })
-      );
+      const formattedMessages: EventChatMessage[] = (data || []).map((msg: DatabaseMessage) => ({
+        id: msg.id,
+        content: msg.content,
+        sender_id: msg.sender_id,
+        created_at: msg.created_at,
+        sender: {
+          name: msg.users.name || 'Unknown',
+          username: msg.users.username || undefined,
+          avatar_url: msg.users.avatar_url || '/default-avatar.png'
+        },
+        media_type: msg.media_type || undefined,
+        media_url: msg.media_url || undefined
+      }));
 
       setMessages(formattedMessages);
     } catch (error) {
-      console.error('Error fetching initial messages:', error);
-      toast.showError('Failed to load initial messages.');
+      console.error('Error fetching messages:', error);
+      toast.showError('Failed to load messages');
     } finally {
       setIsLoading(false);
     }
   }, [eventId, toast]);
 
   const sendMessage = useCallback(
-    async (message: string): Promise<boolean> => {
+    async (content: string, file?: File): Promise<boolean> => {
       if (!currentUser) {
         toast.showError('You must be logged in to send messages.');
         return false;
       }
 
       try {
+        let mediaUrl = '';
+        let mediaType: 'image' | 'gif' | undefined;
+
+        if (file) {
+          mediaUrl = await uploadImage(file);
+          mediaType = 'image';
+        } else if (content.match(/^https:\/\/media\d\.giphy\.com/)) {
+          mediaUrl = content;
+          mediaType = 'gif';
+          content = ''; // Clear content as it's just the GIF URL
+        }
+
         const { data, error } = await supabase
           .from('event_chat_messages')
-          .insert([
-            {
-              event_id: eventId,
-              sender_id: currentUser.id,
-              content: message,
-            },
-          ])
+          .insert([{
+            event_id: eventId,
+            sender_id: currentUser.id,
+            content,
+            media_url: mediaUrl || null,
+            media_type: mediaType
+          }])
           .select(`
             id,
             content,
             sender_id,
             created_at,
-            users (name, avatar_url)
+            media_url,
+            media_type,
+            users!inner (
+              id,
+              name,
+              username,
+              avatar_url
+            )
           `)
           .single();
 
-        if (error) {
-          throw error;
-        }
+        if (error) throw error;
 
         const formattedMessage: EventChatMessage = {
           id: data.id,
           content: data.content,
           sender_id: data.sender_id,
           created_at: data.created_at,
-          sender: { 
-            name: data.users?.name || 'Unknown', 
-            avatar_url: data.users?.avatar_url || '/default-avatar.png' 
-          }
+          sender: {
+            name: data.users.name || 'Unknown',
+            username: data.users.username || undefined,
+            avatar_url: data.users.avatar_url || '/default-avatar.png'
+          },
+          media_type: data.media_type || undefined,
+          media_url: data.media_url || undefined
         };
 
         setMessages((prevMessages) => [...prevMessages, formattedMessage]);
@@ -137,7 +206,6 @@ export function useEventChat(eventId: string) {
         async (payload) => {
           if (!payload.new) return;
 
-          // Fetch the full message data including user details
           const { data, error } = await supabase
             .from('event_chat_messages')
             .select(`
@@ -145,7 +213,14 @@ export function useEventChat(eventId: string) {
               content,
               sender_id,
               created_at,
-              users (name, avatar_url)
+              media_url,
+              media_type,
+              users!inner (
+                id,
+                name,
+                username,
+                avatar_url
+              )
             `)
             .eq('id', payload.new.id)
             .single();
@@ -155,15 +230,19 @@ export function useEventChat(eventId: string) {
             return;
           }
 
+          const msg = data as DatabaseMessage;
           const formattedMessage: EventChatMessage = {
-            id: data.id,
-            content: data.content,
-            sender_id: data.sender_id,
-            created_at: data.created_at,
+            id: msg.id,
+            content: msg.content,
+            sender_id: msg.sender_id,
+            created_at: msg.created_at,
             sender: {
-              name: data.users?.name || 'Unknown',
-              avatar_url: data.users?.avatar_url || '/default-avatar.png'
-            }
+              name: msg.users.name || 'Unknown',
+              username: msg.users.username || undefined,
+              avatar_url: msg.users.avatar_url || '/default-avatar.png'
+            },
+            media_type: msg.media_type || undefined,
+            media_url: msg.media_url || undefined
           };
 
           setMessages(prevMessages => [...prevMessages, formattedMessage]);
