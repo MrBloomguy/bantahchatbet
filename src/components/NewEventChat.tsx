@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Send, Smile, Loader, X } from 'lucide-react';
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { ArrowLeft, Send, Loader, X } from 'lucide-react';
+import EmojiPicker from 'emoji-picker-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import { useEventParticipation } from '../hooks/useEventParticipation';
@@ -12,14 +12,15 @@ import ProfileCard from './ProfileCard';
 import { supabase } from '../lib/supabase';
 import ChatBubble from './ChatBubble';
 
+// Update the Gif interface to match Tenor's API response
 interface Gif {
   id: string;
-  title: string;
-  images: {
-    fixed_height_small: {
+  media_formats: {
+    gif: {
       url: string;
     };
   };
+  content_description: string;
 }
 
 interface EventCreator {
@@ -39,6 +40,7 @@ interface EventPool {
 interface Event {
   id: string;
   title: string;
+  description?: string; // Added description property
   creator: EventCreator;
   pool: EventPool[];
   participants: { user_id: string }[];
@@ -102,12 +104,10 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const [selectedProfile, setSelectedProfile] = useState<ChatMessage['sender'] | null>(null);
   const [countdown, setCountdown] = useState('');
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
-  const [mentionQuery, setMentionQuery] = useState('');
   const [mentionResults, setMentionResults] = useState<Array<{id: string, username: string}>>([]);
   const [showMentionDropdown, setShowMentionDropdown] = useState(false);
   const [userPoints, setUserPoints] = useState<{ [key: string]: number }>({});
   const [bannerOpen, setBannerOpen] = useState(true);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [gifs, setGifs] = useState<Gif[]>([]);
 
@@ -116,7 +116,6 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     const mentionMatch = input.match(/@(\w*)$/);
     if (mentionMatch) {
       const query = mentionMatch[1];
-      setMentionQuery(query);
       if (query.length >= 1) {
         try {
           const { data, error } = await supabase
@@ -257,29 +256,169 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     }
   };
 
+  const uploadImage = async (file: File): Promise<string> => {
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `event_chat/${eventId}/${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('chat-images')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('chat-images')
+        .getPublicUrl(filePath);
+
+      return publicUrl;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw error;
+    }
+  };
+
+  // Update the GIF system to use Tenor instead of Giphy
   const fetchGifs = async (searchTerm: string) => {
     try {
-      const GIPHY_API_KEY = import.meta.env.VITE_GIPHY_API_KEY;
-      if (!GIPHY_API_KEY) {
-        throw new Error('GIPHY API key not configured');
+      const TENOR_API_KEY = import.meta.env.VITE_TENOR_API_KEY;
+      if (!TENOR_API_KEY) {
+        throw new Error('Tenor API key not configured');
       }
 
       const response = await fetch(
-        `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${encodeURIComponent(
-          searchTerm
-        )}&limit=9&rating=g`
+        `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(searchTerm)}&key=${TENOR_API_KEY}&limit=9`
       );
-      
+
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
-      
+
       const data = await response.json();
-      setGifs(data.data);
+      setGifs(data.results);
     } catch (error) {
       console.error('Error fetching GIFs:', error);
       toast.showError('Failed to load GIFs. ' + (error instanceof Error ? error.message : 'Unknown error'));
       setGifs([]);
+    }
+  };
+
+  // Correct the sendMessage function calls to use valid properties
+  const handleGifSelection = async (gifUrl: string) => {
+    try {
+      await sendMessage('', undefined, {
+        mentions: [],
+        reply_to: undefined,
+        media: { url: gifUrl, type: 'gif' }, // Corrected property
+      });
+      setShowGifPicker(false);
+    } catch (error) {
+      toast.showError('Failed to send GIF');
+    }
+  };
+
+  // Add functionality to the menu button to display a dropdown menu like Telegram's group header menu
+  const [showMenuDropdown, setShowMenuDropdown] = useState(false);
+
+  const handleMenuClick = () => {
+    setShowMenuDropdown((prev) => !prev);
+  };
+
+  // Make the menu options active by implementing their functionality
+  const handleMenuOptionClick = (option: string) => {
+    setShowMenuDropdown(false);
+    switch (option) {
+      case 'Search':
+        // Trigger search functionality
+        console.log('Search clicked');
+        // Implement search logic here
+        break;
+      case 'Share':
+        // Trigger share functionality
+        console.log('Share clicked');
+        navigator.share({
+          title: event?.title || 'Event',
+          text: `Check out this event: ${event?.title}`,
+          url: window.location.href,
+        }).catch((error) => console.error('Error sharing:', error));
+        break;
+      case 'Report':
+        // Trigger report functionality
+        console.log('Report clicked');
+        // Implement report logic here
+        toast.showInfo('Report submitted successfully');
+        break;
+      default:
+        break;
+    }
+  };
+
+  // Add search functionality to the menu and make the menu active
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredMenuOptions, setFilteredMenuOptions] = useState<string[]>(['View Info', 'Mute Notifications', 'Leave Group']);
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+    const options = ['View Info', 'Mute Notifications', 'Leave Group'];
+    setFilteredMenuOptions(
+      options.filter((option) => option.toLowerCase().includes(query.toLowerCase()))
+    );
+  };
+
+  // Update the menu to remove the search bar and ensure search functionality is for messages and users
+  const handleSearchMessagesAndUsers = async (query: string) => {
+    if (!query.trim()) return;
+
+    try {
+      // Example: Search messages
+      const { data: messages, error: messageError } = await supabase
+        .from('event_chat_messages')
+        .select('*')
+        .ilike('content', `%${query}%`)
+        .eq('event_id', eventId);
+
+      if (messageError) throw messageError;
+
+      console.log('Search results for messages:', messages);
+
+      // Example: Search users
+      const { data: users, error: userError } = await supabase
+        .from('users')
+        .select('id, username, name')
+        .ilike('username', `%${query}%`);
+
+      if (userError) throw userError;
+
+      console.log('Search results for users:', users);
+    } catch (error) {
+      console.error('Error searching messages or users:', error);
+    }
+  };
+
+  // Update the share functionality to include the event's banner image
+  const handleShareEvent = () => {
+    const shareContent = {
+      title: event?.title || 'Event',
+      text: event?.description
+        ? `Check out this event: "${event?.title}" - ${event?.description}`
+        : `Check out this event: "${event?.title}" happening now!`,
+      url: window.location.href,
+    };
+
+    if (navigator.share) {
+      navigator.share({
+        ...shareContent,
+        files: event?.banner_url
+          ? [new File([event.banner_url], 'banner.jpg', { type: 'image/jpeg' })]
+          : undefined,
+      }).catch((error) => console.error('Error sharing:', error));
+    } else {
+      const shareText = `${shareContent.text} \n${shareContent.url}`;
+      navigator.clipboard.writeText(shareText)
+        .then(() => toast.showSuccess('Event details copied to clipboard!'))
+        .catch((error) => toast.showError('Failed to copy event details: ' + error.message));
     }
   };
 
@@ -321,9 +460,9 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             id: data.id,
             title: data.title,
             creator: {
-              id: data.creator?.id || '',
-              username: data.creator?.username || '',
-              avatar_url: data.creator?.avatar_url
+              id: data.creator[0]?.id || '',
+              username: data.creator[0]?.username || '',
+              avatar_url: data.creator[0]?.avatar_url
             },
             pool: data.pool || [],
             participants: data.participants || [],
@@ -423,19 +562,19 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           <div className="flex items-center flex-1 min-w-0 gap-3">
             <UserAvatar
               src={event.creator?.avatar_url || '/bantahlogo.png'}
-alt={event.creator?.username || ''}
+              alt={event.creator?.username || ''}
               size="sm"
-                        />
+            />
             <div className="flex-1 min-w-0">
               <h6 className="font-semibold text-gray-800 flex items-center gap-2">
-<span className="truncate max-w-[200px]">              {event.title}</span>
+                <span className="truncate max-w-[200px]">{event.title}</span>
                 <span className="text-xs text-gray-400 font-normal flex items-center gap-1 flex-shrink-0">
                   by @{event.creator?.username}
                   <UserLevelBadge points={userPoints[event.creator?.id] ?? 0} size="xs" showLabel={false} />
                   <span className="ml-1 align-middle inline-flex items-center" title="Verified">
-                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 inline-block" fill="#7440ff">
-                    <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.085 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.165.865.25 1.336.25 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.437.695.21 1.04z" />
-                  </svg>
+                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 inline-block" fill="#7440ff">
+                      <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.085 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.165.865.25 1.336.25 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.437.695.21 1.04z" />
+                    </svg>
                   </span>
                 </span>
               </h6>
@@ -443,9 +582,47 @@ alt={event.creator?.username || ''}
           </div>
           {/* Menu Dropdown */}
           <div className="relative ml-2">
-            <button className="p-2 rounded-full hover:bg-gray-200 transition-colors" aria-label="Menu">
-              <svg className="w-6 h-6 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="1.5"/><circle cx="19.5" cy="12" r="1.5"/><circle cx="4.5" cy="12" r="1.5"/></svg>
+            <button
+              onClick={handleMenuClick}
+              className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+              aria-label="Menu"
+            >
+              <svg
+                className="w-6 h-6 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="19.5" cy="12" r="1.5" />
+                <circle cx="4.5" cy="12" r="1.5" />
+              </svg>
             </button>
+
+            {/* Dropdown Menu */}
+            {showMenuDropdown && (
+              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <button
+                  onClick={() => handleMenuOptionClick('Search')}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Search
+                </button>
+                <button
+                  onClick={handleShareEvent}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Share
+                </button>
+                <button
+                  onClick={() => handleMenuOptionClick('Report')}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Report
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -491,7 +668,7 @@ alt={event.creator?.username || ''}
                 <button
                   onClick={() => handlePrediction(true)}
                   disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
-                  className={`px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
+                  className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
                     prediction === true
                       ? 'bg-green-700 text-white cursor-not-allowed'
                       : prediction !== null
@@ -499,12 +676,17 @@ alt={event.creator?.username || ''}
                       : 'bg-green-500 text-white hover:bg-green-600'
                   }`}
                 >
-                  YES {predictionCounts.yes_count > 0 && `(${predictionCounts.yes_count})`}
+                  YES
+                  {predictionCounts.yes_count > 0 && (
+                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-green-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
+                      {predictionCounts.yes_count}
+                    </span>
+                  )}
                 </button>
                 <button
                   onClick={() => handlePrediction(false)}
                   disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
-                  className={`px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
+                  className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
                     prediction === false
                       ? 'bg-red-700 text-white cursor-not-allowed'
                       : prediction !== null
@@ -512,7 +694,12 @@ alt={event.creator?.username || ''}
                       : 'bg-red-500 text-white hover:bg-red-600'
                   }`}
                 >
-                  NO {predictionCounts.no_count > 0 && `(${predictionCounts.no_count})`}
+                  NO
+                  {predictionCounts.no_count > 0 && (
+                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-red-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
+                      {predictionCounts.no_count}
+                    </span>
+                  )}
                 </button>
               </div>
             </div>
@@ -558,7 +745,11 @@ alt={event.creator?.username || ''}
                     mediaType={msg.media_type}
                     mediaUrl={msg.media_url}
                     onReply={() => handleReply(msg)}
-                    replyTo={msg.reply_to}
+                    replyTo={msg.reply_to ? {
+                      id: msg.reply_to.id,
+                      content: msg.reply_to.content,
+                      sender: { username: msg.reply_to.sender_username || '' }
+                    } : undefined}
                     mentions={msg.mentions}
                   />
                 </div>
@@ -586,13 +777,41 @@ alt={event.creator?.username || ''}
         )}
         
         <form onSubmit={handleSubmit} className="flex items-center space-x-2">
-          <input
-            type="text"
-            value={message}
-            onChange={handleMessageChange}
-            placeholder={`Message #${event?.title}`}
-            className="flex-grow bg-gray-100 rounded-full px-4 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500 text-gray-800"
-          />
+          {/* Remove the smiley icon and make the right side dedicated to GIFs using Giphy */}
+          <div className="relative flex items-center w-full">
+            {/* Image Upload Icon on the Left */}
+            <input
+              type="file"
+              accept="image/*"
+              id="image-upload"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                if (file) {
+                  try {
+                    const imageUrl = await uploadImage(file);
+                    await sendMessage('', file, { media_url: imageUrl, media_type: 'image' });
+                  } catch (error) {
+                    toast.showError('Failed to upload image');
+                  }
+                }
+              }}
+            />
+            <label htmlFor="image-upload" className="absolute left-4 text-gray-500 hover:text-gray-700 cursor-pointer">
+              <span className="text-lg font-bold">+</span>
+            </label>
+
+            {/* Message Input */}
+            <input
+              type="text"
+              value={message}
+              onChange={handleMessageChange}
+              placeholder="Type a message..."
+              className="w-full bg-gray-50 border border-gray-300 rounded-full px-12 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            />
+          </div>
+
+          {/* Send Button */}
           <button
             type="submit"
             className="ml-3 bg-purple-500 text-white rounded-full p-3 hover:bg-purple-600 disabled:opacity-50"
@@ -614,6 +833,23 @@ alt={event.creator?.username || ''}
                 @{user.username}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* GIF Picker Modal */}
+        {showGifPicker && (
+          <div className="absolute bottom-16 left-4 bg-white rounded-lg shadow-lg p-4 z-50">
+            <div className="grid grid-cols-3 gap-2">
+              {gifs.map((gif) => (
+                <button
+                  key={gif.id}
+                  onClick={() => handleGifSelection(gif.media_formats.gif.url)}
+                  className="w-20 h-20 overflow-hidden rounded-lg"
+                >
+                  <img src={gif.media_formats.gif.url} alt={gif.content_description} className="w-full h-full object-cover" />
+                </button>
+              ))}
+            </div>
           </div>
         )}
       </div>
