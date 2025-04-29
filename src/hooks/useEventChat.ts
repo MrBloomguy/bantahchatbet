@@ -16,6 +16,15 @@ interface EventChatMessage {
   };
   media_type?: 'image' | 'gif';
   media_url?: string;
+  mentions?: Array<{
+    id: string;
+    username: string;
+  }>;
+  reply_to?: {
+    id: string;
+    content: string;
+    sender_username?: string;
+  };
 }
 
 interface DatabaseMessage {
@@ -25,6 +34,12 @@ interface DatabaseMessage {
   created_at: string;
   media_url: string | null;
   media_type: 'image' | 'gif' | null;
+  mentions: Array<{ id: string; username: string }> | null;
+  reply_to: {
+    id: string;
+    content: string;
+    sender_username?: string;
+  } | null;
   users: {
     id: string;
     name: string;
@@ -112,7 +127,14 @@ export function useEventChat(eventId: string) {
   }, [eventId, toast]);
 
   const sendMessage = useCallback(
-    async (content: string, file?: File): Promise<boolean> => {
+    async (content: string, file?: File, metadata?: {
+      mentions?: Array<{ id: string; username: string }>;
+      reply_to?: {
+        id: string;
+        content: string;
+        sender_username?: string;
+      };
+    }): Promise<boolean> => {
       if (!currentUser) {
         toast.showError('You must be logged in to send messages.');
         return false;
@@ -138,7 +160,9 @@ export function useEventChat(eventId: string) {
             sender_id: currentUser.id,
             content,
             media_url: mediaUrl || null,
-            media_type: mediaType
+            media_type: mediaType,
+            mentions: metadata?.mentions || null,
+            reply_to: metadata?.reply_to || null
           }])
           .select(`
             id,
@@ -147,6 +171,8 @@ export function useEventChat(eventId: string) {
             created_at,
             media_url,
             media_type,
+            mentions,
+            reply_to,
             users!inner (
               id,
               name,
@@ -169,7 +195,9 @@ export function useEventChat(eventId: string) {
             avatar_url: data.users.avatar_url || '/default-avatar.png'
           },
           media_type: data.media_type || undefined,
-          media_url: data.media_url || undefined
+          media_url: data.media_url || undefined,
+          mentions: data.mentions || undefined,
+          reply_to: data.reply_to || undefined
         };
 
         setMessages((prevMessages) => [...prevMessages, formattedMessage]);
@@ -215,6 +243,8 @@ export function useEventChat(eventId: string) {
               created_at,
               media_url,
               media_type,
+              mentions,
+              reply_to,
               users!inner (
                 id,
                 name,
@@ -230,19 +260,20 @@ export function useEventChat(eventId: string) {
             return;
           }
 
-          const msg = data as DatabaseMessage;
           const formattedMessage: EventChatMessage = {
-            id: msg.id,
-            content: msg.content,
-            sender_id: msg.sender_id,
-            created_at: msg.created_at,
+            id: data.id,
+            content: data.content,
+            sender_id: data.sender_id,
+            created_at: data.created_at,
             sender: {
-              name: msg.users.name || 'Unknown',
-              username: msg.users.username || undefined,
-              avatar_url: msg.users.avatar_url || '/default-avatar.png'
+              name: data.users.name || 'Unknown',
+              username: data.users.username || undefined,
+              avatar_url: data.users.avatar_url || '/default-avatar.png'
             },
-            media_type: msg.media_type || undefined,
-            media_url: msg.media_url || undefined
+            media_type: data.media_type || undefined,
+            media_url: data.media_url || undefined,
+            mentions: data.mentions || undefined,
+            reply_to: data.reply_to || undefined
           };
 
           setMessages(prevMessages => [...prevMessages, formattedMessage]);
@@ -258,6 +289,6 @@ export function useEventChat(eventId: string) {
   return {
     messages,
     sendMessage,
-    isLoading,
+    isLoading
   };
 }

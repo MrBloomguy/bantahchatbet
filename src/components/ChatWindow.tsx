@@ -32,13 +32,14 @@ interface ChatWindowProps {
     userId: string; // Ensure userId prop is required
 }
 
-const ChatWindow: React.FC<ChatWindowProps> = ({ onNewMessageSent, userId: otherUserId }) => {
+const ChatWindow: React.FC<ChatWindowProps> = ({ userId, onNewMessageSent }) => {
     const { currentUser } = useAuth();
     const [messages, setMessages] = useState<Message[]>([]);
     const [message, setMessage] = useState('');
     const [loading, setLoading] = useState(true);
     const [chatId, setChatId] = useState<string | null>(null);
     const [otherUser, setOtherUser] = useState<OtherUser | null>(null);
+    const [showScrollButton, setShowScrollButton] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
     const findOrCreateChat = async (currentUserId: string, otherUserId: string): Promise<string | null> => {
@@ -108,21 +109,21 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewMessageSent, userId: other
 
     useEffect(() => {
         const initializeChat = async () => {
-            if (!currentUser || !otherUserId) return;
+            if (!currentUser || !userId) return;
 
             setLoading(true);
             try {
                 const { data: userData, error: userError } = await supabase
                     .from('users_view')
                     .select('id, name, username, avatar_url')
-                    .eq('id', otherUserId)
+                    .eq('id', userId)
                     .single();
 
                 if (userError) throw new Error(`Error fetching user details: ${userError.message}`);
                 if (!userData) throw new Error('Other user not found.');
                 setOtherUser(userData as OtherUser);
 
-                const foundChatId = await findOrCreateChat(currentUser.id, otherUserId);
+                const foundChatId = await findOrCreateChat(currentUser.id, userId);
                 if (!foundChatId) {
                     console.error('Could not find or create chat ID');
                     setLoading(false);
@@ -149,19 +150,44 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewMessageSent, userId: other
         };
 
         initializeChat();
-    }, [currentUser, otherUserId]);
+    }, [currentUser, userId]);
 
-    const scrollToBottom = () => {
+    const scrollToBottom = (behavior: ScrollBehavior = 'auto') => {
         requestAnimationFrame(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+            const messagesContainer = messagesEndRef.current?.parentElement;
+            if (messagesContainer) {
+                const isAtBottom = messagesContainer.scrollHeight - messagesContainer.scrollTop <= messagesContainer.clientHeight + 100;
+                if (isAtBottom || behavior === 'auto') {
+                    messagesEndRef.current?.scrollIntoView({ behavior });
+                }
+            }
         });
+    };
+
+    // Handle scroll to show/hide jump to bottom button
+    const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+        const target = e.target as HTMLDivElement;
+        const isNearBottom = target.scrollHeight - target.scrollTop <= target.clientHeight + 300;
+        setShowScrollButton(!isNearBottom);
+        
+        if (target.scrollTop === 0) {
+            // Load more messages when scrolling to top
+            // Implement pagination here if needed
+        }
     };
 
     useEffect(() => {
         if (!loading) {
             scrollToBottom();
         }
-    }, [messages, loading]);
+    }, [loading]);
+
+    // Scroll smoothly for new messages
+    useEffect(() => {
+        if (!loading && messages.length > 0) {
+            scrollToBottom('smooth');
+        }
+    }, [messages]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -216,7 +242,10 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewMessageSent, userId: other
     return (
         <div className="flex flex-col h-full bg-gray-50">
             {/* Messages List */}
-            <div className="flex-1 overflow-y-auto px-4 py-6">
+            <div 
+                className="flex-1 overflow-y-auto px-4 py-6 scroll-smooth relative"
+                onScroll={handleScroll}
+            >
                 {loading ? (
                     <div className="flex justify-center items-center h-full">
                         <LoadingSpinner />
@@ -255,6 +284,27 @@ const ChatWindow: React.FC<ChatWindowProps> = ({ onNewMessageSent, userId: other
                             </div>
                         </div>
                     ))
+                )}
+                {/* Jump to bottom button */}
+                {showScrollButton && (
+                    <button
+                        onClick={() => scrollToBottom('smooth')}
+                        className="absolute bottom-4 right-4 p-2 bg-gray-800 text-white rounded-full shadow-lg hover:bg-gray-700 transition-all transform hover:scale-105 z-10"
+                        aria-label="Scroll to bottom"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            viewBox="0 0 20 20"
+                            fill="currentColor"
+                        >
+                            <path
+                                fillRule="evenodd"
+                                d="M16.707 10.293a1 1 0 010 1.414l-6 6a1 1 0 01-1.414 0l-6-6a1 1 0 111.414-1.414L10 15.586l5.293-5.293a1 1 0 011.414 0z"
+                                clipRule="evenodd"
+                            />
+                        </svg>
+                    </button>
                 )}
                 <div ref={messagesEndRef} />
             </div>

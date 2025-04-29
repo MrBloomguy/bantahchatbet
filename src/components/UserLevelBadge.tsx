@@ -54,7 +54,7 @@ const UserLevelBadge: React.FC<UserLevelBadgeProps> = ({
   };
 
   const sizeClasses = {
-    xs: {
+xs: {
       badge: 'h-4 text-[10px]',
       icon: 'w-2 h-2'
     },
