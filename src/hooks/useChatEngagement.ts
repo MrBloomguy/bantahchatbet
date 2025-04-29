@@ -16,38 +16,46 @@ export function useChatEngagement() {
     try {
       setLoading(true);
 
-      // Find events where the user has sent chat messages but hasn't placed a bet
-      const { data: chatEvents, error: chatError } = await supabase
+      // Get distinct event IDs where the user has sent messages
+      const { data: distinctEventIds, error: distinctError } = await supabase
         .from('event_chat_messages')
-        .select(`
-          event_id,
-          event:event_id (
-            id,
-            title,
-            description,
-            category,
-            start_time,
-            end_time,
-            status,
-            creator_id,
-            banner_url,
-            pool:event_pools (
-              total_amount
-            ),
-            creator:creator_id (
-              id,
-              username,
-              avatar_url
-            ),
-            participant_count:event_participants(count)
-          )
-        `)
+        .select('event_id')
         .eq('sender_id', currentUser.id)
         .not('event_id', 'is', null);
 
-      if (chatError) throw chatError;
+      if (distinctError) throw distinctError;
 
-      // Get list of events where user is a participant (has placed a bet)
+      // Get unique event IDs
+      const uniqueEventIds = [...new Set((distinctEventIds || []).map(item => item.event_id))];
+
+      // Get full event details for these IDs
+      const { data: events, error: eventsError } = await supabase
+        .from('events')
+        .select(`
+          id,
+          title,
+          description,
+          category,
+          start_time,
+          end_time,
+          status,
+          creator_id,
+          banner_url,
+          pool:event_pools (
+            total_amount
+          ),
+          creator:creator_id (
+            id,
+            username,
+            avatar_url
+          ),
+          participant_count:event_participants(count)
+        `)
+        .in('id', uniqueEventIds);
+
+      if (eventsError) throw eventsError;
+
+      // Get list of events where user is a participant
       const { data: participatedEvents, error: participatedError } = await supabase
         .from('event_participants')
         .select('event_id')
@@ -59,20 +67,22 @@ export function useChatEngagement() {
       const participatedEventIds = (participatedEvents || []).map(p => p.event_id);
       
       // Process the events
-      const processedEvents = (chatEvents || [])
-        .filter(item => !participatedEventIds.includes(item.event_id))
-        .map(({ event }) => {
-          if (!event) return null;
-          
-          return {
-            ...event,
-            is_editable: false,
-            pool_amount: event.pool?.total_amount || 0,
-            participant_count: event.participant_count || 0,
-            engagement_type: 'chat'
-          };
-        })
-        .filter(Boolean); // Remove null entries
+      const processedEvents = (events || [])
+        .filter(event => !participatedEventIds.includes(event.id))
+        .map((event) => ({
+          ...event,
+          is_editable: false,
+          pool_amount: event.pool?.[0]?.total_amount || 0,
+          participant_count: typeof event.participant_count === 'number' 
+            ? event.participant_count 
+            : event.participant_count?.[0]?.count || 0,
+          engagement_type: 'chat',
+          creator: event.creator?.[0] || {
+            id: '',
+            username: '',
+            avatar_url: ''
+          }
+        }));
 
       setEngagedEvents(processedEvents);
     } catch (error) {

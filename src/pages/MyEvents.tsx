@@ -13,8 +13,8 @@ import PageHeader from '../components/PageHeader';
 
 const tabs = [
   { id: 'created', label: 'Created', icon: Star },
-  { id: 'joined', label: 'Joined', icon: Clock },
-  { id: 'engaged', label: 'Engaged', icon: MessageCircle },
+  { id: 'joined', label: 'Active', icon: Clock },
+  { id: 'engaged', label: 'Discuss', icon: MessageCircle },
   { id: 'won', label: 'Won', icon: Trophy },
   { id: 'lost', label: 'Lost', icon: Award },
 ];
