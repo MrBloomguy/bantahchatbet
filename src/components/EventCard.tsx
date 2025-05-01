@@ -275,10 +275,10 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
               ['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label)
                 ? 'bg-gray-500 cursor-not-allowed text-white'
                 : requestSent
-                  ? 'bg-[#CCFF00] text-black'
+                  ? 'bg-[#CCFF00] text-black hover:bg-[#CCFF00]'
                   : isProcessing
-                    ? 'bg-gray-400 text-white'
-                    : 'btn-primary bg-[#ccff00] text-black'
+                    ? 'bg-gray-400 text-white hover:bg-gray-400'
+                    : 'btn-primary bg-[#ccff00] text-black hover:bg-[#ccff00]'
             } h-10 flex items-center justify-center gap-1 px-4 rounded-3x1'`}
           >
             {updatedEvent.is_private && !requestSent && <Lock className="h-4 w-4" />}

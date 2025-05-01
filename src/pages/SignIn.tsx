@@ -301,8 +301,8 @@ const SignIn: React.FC = () => {
 
           {/* Tagline */}
           <div className="text-center mb-6">
-            <h1 className="text-2xl font-bold text-white mb-1 font-sans">Bet on Anything</h1>
-            <p className="text-base text-[#CCFF00] font-medium font-sans">Challenge Friends & Win</p>
+            <h1 className="text-2xl font-bold text-white mb-1 font-sans"></h1>
+            <p className="text-2x1 text-[#ffffff] font-medium font-sans">Chat, challenge and win your friends.</p>
           </div>
         </div>
 
@@ -311,6 +311,20 @@ const SignIn: React.FC = () => {
 
         {/* Social Login Buttons - Positioned at bottom */}
         <div className="w-full space-y-2 mb-2 max-w-[240px]">
+           {/* Log In Button (opens email form) */}
+           <button
+            type="button"
+            onClick={toggleEmailForm}
+            className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-gray-800 font-medium py-2 px-3 rounded-full transition-colors text-sm font-sans"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            Sign in with Email
+          </button>
+
+
           {/* Add Google Sign-in Button */}
           <button
             type="button"
@@ -324,7 +338,7 @@ const SignIn: React.FC = () => {
               <path d="M12 22C14.583 22 16.93 21.0115 18.7045 19.404L15.6095 16.785C14.5718 17.5742 13.3037 18.001 12 18C9.39897 18 7.19047 16.3415 6.35847 14.027L3.09747 16.5395C4.75247 19.778 8.11347 22 12 22Z" fill="#4CAF50"/>
               <path d="M21.8055 10.0415H21V10H12V14H17.6515C17.2571 15.1082 16.5467 16.0766 15.608 16.7855L15.6095 16.785L18.7045 19.404C18.4855 19.6025 22 17 22 12C22 11.3295 21.931 10.675 21.8055 10.0415Z" fill="#1976D2"/>
             </svg>
-            Continue with Google
+            Sign in with Google
           </button>
 
           {/* Twitter Sign-in Button */}
@@ -337,34 +351,11 @@ const SignIn: React.FC = () => {
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
               <path d="M23.643 4.937c-.835.37-1.732.62-2.675.733.962-.576 1.7-1.49 2.048-2.578-.9.534-1.897.922-2.958 1.13-.85-.904-2.06-1.47-3.4-1.47-2.572 0-4.658 2.086-4.658 4.66 0 .364.042.718.12 1.06-3.873-.195-7.304-2.05-9.602-4.868-.4.69-.63 1.49-.63 2.342 0 1.616.823 3.043 2.072 3.878-.764-.025-1.482-.234-2.11-.583v.06c0 2.257 1.605 4.14 3.737 4.568-.392.106-.803.162-1.227.162-.3 0-.593-.028-.877-.082.593 1.85 2.313 3.198 4.352 3.234-1.595 1.25-3.604 1.995-5.786 1.995-.376 0-.747-.022-1.112-.065 2.062 1.323 4.51 2.093 7.14 2.093 8.57 0 13.255-7.098 13.255-13.254 0-.2-.005-.402-.014-.602.91-.658 1.7-1.477 2.323-2.41z"/>
             </svg>
-            Continue with Twitter
-          </button>
-
-          {/* Log In Button (opens email form) */}
-          <button
-            type="button"
-            onClick={toggleEmailForm}
-            className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-gray-800 font-medium py-2 px-3 rounded-full transition-colors text-sm font-sans"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <polyline points="22,6 12,13 2,6"></polyline>
-            </svg>
-            Sign in with Email
+            Sign in with X
           </button>
 
           {/* Privy Sign-in Button */}
-          <button
-            type="button"
-            onClick={login}
-            className="w-full flex items-center justify-center gap-2 bg-[#7440ff] hover:bg-[#6030e0] text-white font-medium py-2 px-3 rounded-full transition-colors text-sm font-sans"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
-              <polyline points="22,6 12,13 2,6"></polyline>
-            </svg>
-            Sign in with Privy
-          </button>
+          
         </div>
 
         {/* Email Form */}
