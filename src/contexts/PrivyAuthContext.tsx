@@ -329,10 +329,7 @@ const PrivyAuthManager: React.FC<{ children: React.ReactNode }> = ({ children })
 
 // Provider component that wraps the app
 export const PrivyAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Get your Privy App ID from environment variables
   const privyAppId = import.meta.env.VITE_PRIVY_APP_ID;
-
-  // Log the Privy App ID for debugging
   console.log('Privy App ID:', privyAppId);
 
   if (!privyAppId) {
@@ -347,7 +344,6 @@ export const PrivyAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       event.message.includes('Content Security Policy')
     )) {
       console.warn('Caught Privy-related error:', event.message);
-      // Prevent the error from bubbling up
       event.preventDefault();
       return true;
     }
@@ -357,18 +353,24 @@ export const PrivyAuthProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   return (
     <PrivyProvider
       appId={privyAppId || ''}
-      // Use minimal configuration to respect Privy dashboard settings
       config={{
-        // Only set essential properties, let dashboard settings handle the rest
         appearance: {
           theme: 'dark',
           accentColor: '#CCFF00',
+          showWalletLoginFirst: false
+        },
+        loginMethods: ['email', 'wallet', 'google', 'twitter'],
+        defaultChain: undefined,
+        supportedChains: undefined,
+        embeddedWallets: {
+          createOnLogin: false,
+          noPromptOnSignature: true
         },
         ui: {
           modal: {
-            displayMode: 'popup',
-          },
-        },
+            displayMode: 'popup'
+          }
+        }
       }}
     >
       <PrivyAuthManager>{children}</PrivyAuthManager>

@@ -397,7 +397,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     }
   };
 
-  // Update the share functionality to include the event's banner image
+  // Update the share functionality to share the event link
   const handleShareEvent = () => {
     const shareContent = {
       title: event?.title || 'Event',
@@ -408,18 +408,22 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     };
 
     if (navigator.share) {
-      navigator.share({
-        ...shareContent,
-        files: event?.banner_url
-          ? [new File([event.banner_url], 'banner.jpg', { type: 'image/jpeg' })]
-          : undefined,
-      }).catch((error) => console.error('Error sharing:', error));
+      navigator.share(shareContent)
+        .catch((error) => {
+          console.error('Error sharing:', error);
+          // Fallback to clipboard if Web Share API fails
+          copyToClipboard();
+        });
     } else {
-      const shareText = `${shareContent.text} \n${shareContent.url}`;
-      navigator.clipboard.writeText(shareText)
-        .then(() => toast.showSuccess('Event details copied to clipboard!'))
-        .catch((error) => toast.showError('Failed to copy event details: ' + error.message));
+      copyToClipboard();
     }
+  };
+
+  const copyToClipboard = () => {
+    const shareText = `${event?.title}\n${window.location.href}`;
+    navigator.clipboard.writeText(shareText)
+      .then(() => toast.showSuccess('Event link copied to clipboard!'))
+      .catch((error) => toast.showError('Failed to copy event link'));
   };
 
   useEffect(() => {
@@ -460,9 +464,9 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             id: data.id,
             title: data.title,
             creator: {
-              id: data.creator[0]?.id || '',
-              username: data.creator[0]?.username || '',
-              avatar_url: data.creator[0]?.avatar_url
+              id: data.creator?.id || '',
+              username: data.creator?.username || '',
+              avatar_url: data.creator?.avatar_url
             },
             pool: data.pool || [],
             participants: data.participants || [],
@@ -569,13 +573,13 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
               <h6 className="font-semibold text-gray-800 flex items-center gap-2">
                 <span className="truncate max-w-[200px]">{event.title}</span>
                 <span className="text-xs text-gray-400 font-normal flex items-center gap-1 flex-shrink-0">
-                  by @{event.creator?.username}
-                  <UserLevelBadge points={userPoints[event.creator?.id] ?? 0} size="xs" showLabel={false} />
-                  <span className="ml-1 align-middle inline-flex items-center" title="Verified">
-                    <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 inline-block" fill="#7440ff">
-                      <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.085 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.165.865.25 1.336.25 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.437.695.21 1.04z" />
-                    </svg>
-                  </span>
+                  {event.creator?.username ? `by @${event.creator.username}` : ''}
+                </span>
+                <UserLevelBadge points={userPoints[event.creator?.id] ?? 0} size="xs" showLabel={false} />
+                <span className="ml-1 align-middle inline-flex items-center" title="Verified">
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 inline-block" fill="#7440ff">
+                    <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.085 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.165.865.25 1.336.25 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.437.695.21 1.04z" />
+                  </svg>
                 </span>
               </h6>
             </div>

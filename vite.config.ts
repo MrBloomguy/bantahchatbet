@@ -8,24 +8,33 @@ export default defineConfig({
     headers: {
       'Content-Security-Policy': `
         default-src 'self';
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.tawk.to https://*.privy.io https://*.walletconnect.org https://*.walletconnect.com https://telegram.org https://*.telegram.org;
-        style-src 'self' 'unsafe-inline' https://paystack.com https://*.tawk.to;
-        style-src-elem 'self' 'unsafe-inline' https://*.tawk.to;
-        img-src 'self' data: https: blob: https://*.tawk.to https://*.telegram.org https://*.giphy.com https://media.giphy.com;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.privy.io https://*.walletconnect.org https://*.walletconnect.com https://telegram.org https://*.telegram.org https://*.tawk.to https://js.paystack.co https://*.firebaseapp.com https://*.googleapis.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.tawk.to https://paystack.com;
+        img-src 'self' data: https: blob: https://*.tawk.to https://*.telegram.org https://*.giphy.com https://media.giphy.com https://i.ibb.co https://*.ibb.co;
         connect-src 'self'
           https://*.tawk.to
           wss://*.tawk.to
           https://*.supabase.co
+          wss://*.supabase.co
           https://api.paystack.co
           https://*.privy.io
           https://auth.privy.io
-          https://api.giphy.com
+          https://api.privy.io
+          https://embedded-wallet.privy.io
           https://*.walletconnect.org
           https://*.walletconnect.com
+          wss://*.walletconnect.org
+          wss://*.walletconnect.com;
+        frame-src 'self'
+          https://tawk.to
+          https://*.tawk.to
+          https://checkout.paystack.com
+          https://*.privy.io
+          https://auth.privy.io
+          https://privy.io
           https://*.telegram.org;
-        frame-src 'self' https://tawk.to https://*.tawk.to https://checkout.paystack.com https://*.privy.io https://*.telegram.org;
-        font-src 'self' data: https://*.tawk.to;
-        manifest-src 'self' https://idx-bantahlion-1744467813686.cluster-blu4edcrfnajktuztkjzgyxzek.cloudworkstations.dev;
+        font-src 'self' data: https://fonts.gstatic.com https://*.tawk.to;
+        manifest-src 'self';
         media-src 'self' https://*.tawk.to https://*.giphy.com https://media.giphy.com;
         worker-src 'self' blob:;
         child-src blob:;

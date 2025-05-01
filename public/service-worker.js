@@ -3,20 +3,29 @@
 // Cache name for offline support
 const CACHE_NAME = 'bantahchatbet-cache-v1';
 
+// Skip service worker interception for these domains
+const SKIP_DOMAINS = [
+  'privy.io',
+  'auth.privy.io',
+  'api.privy.io',
+  'embedded-wallet.privy.io',
+  'walletconnect.org',
+  'walletconnect.com',
+  'i.ibb.co',
+  'ibb.co'
+];
+
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
   console.log('Service Worker installing.');
-
-  // Skip waiting to ensure the new service worker activates immediately
   self.skipWaiting();
-
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
       return cache.addAll([
         '/',
         '/index.html',
         '/manifest.json',
-        // Add other static assets here
+        '/bantahblue.svg'
       ]);
     })
   );
@@ -25,11 +34,7 @@ self.addEventListener('install', (event) => {
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
   console.log('Service Worker activating.');
-
-  // Claim clients to ensure the service worker controls all clients
   event.waitUntil(self.clients.claim());
-
-  // Clean up old caches
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -45,21 +50,40 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve cached content when offline
 self.addEventListener('fetch', (event) => {
-  // Skip Privy API requests to avoid CSP issues
-  if (event.request.url.includes('privy.io') ||
-      event.request.url.includes('walletconnect') ||
-      event.request.url.includes('auth.privy') ||
-      event.request.url.includes('api.privy') ||
-      event.request.url.includes('embedded-wallet.privy')) {
-    // Do not intercept these requests at all
-    console.log('Skipping service worker interception for Privy request:', event.request.url);
+  // Skip service worker for certain domains
+  if (SKIP_DOMAINS.some(domain => event.request.url.includes(domain))) {
+    console.log('Skipping service worker interception for:', event.request.url);
     return;
   }
 
   // For all other requests, try to serve from cache first
   event.respondWith(
     caches.match(event.request).then((response) => {
-      return response || fetch(event.request);
+      if (response) {
+        return response;
+      }
+      
+      // Clone the request because it can only be used once
+      const fetchRequest = event.request.clone();
+
+      return fetch(fetchRequest).then(response => {
+        // Don't cache non-successful responses
+        if (!response || response.status !== 200 || response.type !== 'basic') {
+          return response;
+        }
+
+        // Clone the response because it can only be used once
+        const responseToCache = response.clone();
+
+        caches.open(CACHE_NAME).then(cache => {
+          cache.put(event.request, responseToCache);
+        });
+
+        return response;
+      }).catch(error => {
+        console.error('Fetch failed:', error);
+        // You might want to return a custom offline page or fallback content here
+      });
     })
   );
 });
@@ -74,11 +98,10 @@ self.addEventListener('push', (event) => {
     notificationData = event.data.json();
   } catch (e) {
     console.error('Error parsing push notification data:', e);
-    // If the data isn't JSON, use a default
     notificationData = {
       title: 'New Notification',
       body: 'You have a new notification',
-      icon: '/logo192.png',
+      icon: '/bantahblue.svg',
       badge: '/notification-badge.png',
       data: {
         url: '/notifications'
@@ -86,18 +109,13 @@ self.addEventListener('push', (event) => {
     };
   }
 
-  // Log the notification data for debugging
-  console.log('Notification data:', notificationData);
-
   const title = notificationData.title || 'New Notification';
   const options = {
     body: notificationData.body || 'You have a new notification',
-    icon: notificationData.icon || '/logo192.png',
+    icon: notificationData.icon || '/bantahblue.svg',
     badge: notificationData.badge || '/notification-badge.png',
     data: notificationData.data || {},
-    // Vibration pattern
     vibrate: [100, 50, 100],
-    // Show notification even if app is in foreground
     requireInteraction: true
   };
 
@@ -106,27 +124,21 @@ self.addEventListener('push', (event) => {
   );
 });
 
-// Notification click event - handle user interaction with the notification
+// Notification click event
 self.addEventListener('notificationclick', (event) => {
   console.log('Notification clicked:', event);
-
   event.notification.close();
 
-  // Get the notification data
   const notificationData = event.notification.data;
 
-  // Open the relevant page when the user clicks the notification
   if (notificationData && notificationData.url) {
     event.waitUntil(
       clients.matchAll({ type: 'window' }).then((clientList) => {
-        // Check if there's already a window/tab open with the target URL
         for (const client of clientList) {
           if (client.url === notificationData.url && 'focus' in client) {
             return client.focus();
           }
         }
-
-        // If no window/tab is open with the URL, open a new one
         if (clients.openWindow) {
           return clients.openWindow(notificationData.url);
         }

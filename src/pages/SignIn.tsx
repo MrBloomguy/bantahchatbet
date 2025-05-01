@@ -7,6 +7,7 @@ import backgroundVideo from '../new_background_video.mp4';
 import Logo from '../components/Logo';
 import { supabase } from '../lib/supabase';
 import { usePrivyAuth } from '../contexts/PrivyAuthContext';
+import { usePrivy } from '@privy-io/react-auth';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
@@ -28,6 +29,7 @@ const SignIn: React.FC = () => {
   const [resetEmail, setResetEmail] = useState('');
   const [timeSinceLastRequest, setTimeSinceLastRequest] = useState(0);
   const [currentRetryCount, setCurrentRetryCount] = useState(0);
+  const { login, ready } = usePrivy();
 
   useEffect(() => {
     if (currentUser) {
@@ -351,7 +353,18 @@ const SignIn: React.FC = () => {
             Sign in with Email
           </button>
 
-          {/* Privy button removed from here, but functionality kept in the component */}
+          {/* Privy Sign-in Button */}
+          <button
+            type="button"
+            onClick={login}
+            className="w-full flex items-center justify-center gap-2 bg-[#7440ff] hover:bg-[#6030e0] text-white font-medium py-2 px-3 rounded-full transition-colors text-sm font-sans"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            Sign in with Privy
+          </button>
         </div>
 
         {/* Email Form */}
