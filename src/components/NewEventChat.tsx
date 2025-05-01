@@ -463,10 +463,10 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           const formattedEvent: Event = {
             id: data.id,
             title: data.title,
-            creator: data.creator || {
-              id: '',
-              username: '',
-              avatar_url: null
+            creator: {
+              id: data.creator?.id || '',
+              username: data.creator?.username || '',
+              avatar_url: data.creator?.avatar_url || null
             },
             pool: data.pool || [],
             participants: data.participants || [],
