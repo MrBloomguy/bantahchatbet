@@ -5,6 +5,11 @@ import CustomToastContainer, { ToastItem } from '../components/CustomToastContai
 interface ToastOptions {
   message?: string;
   duration?: number;
+  description?: string;
+  action?: {
+    label: string;
+    onClick: () => void;
+  };
 }
 
 interface ToastContextType {

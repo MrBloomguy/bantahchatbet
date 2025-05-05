@@ -15,6 +15,9 @@ const NotificationListener: React.FC = () => {
   useEffect(() => {
     if (!currentUser) return;
 
+    // Use a Set to track processed notification IDs
+    const processedNotifications = new Set();
+
     // Set up Supabase Realtime subscription for notifications
     const notificationChannel = supabase
       .channel('user-notifications')
@@ -24,21 +27,29 @@ const NotificationListener: React.FC = () => {
         table: 'notifications',
         filter: `user_id=eq.${currentUser.id}`
       }, (payload) => {
-        console.log('New notification received via Supabase Realtime:', payload);
+        const notification = payload.new;
+
+        // Avoid duplicate toasts for the same notification ID
+        if (processedNotifications.has(notification.id)) {
+          console.log('Duplicate notification prevented:', notification.id);
+          return;
+        }
+        processedNotifications.add(notification.id);
+
+        console.log('Processing notification:', notification.id);
         
         // Show toast notification based on type
-        const notification = payload.new;
-        
-        // Special handling for challenge notifications
-        if (notification.notification_type?.includes('challenge_')) {
-          const title = notification.title || 'New Challenge Notification';
-          const content = notification.content || '';
-          
-          // Use different toast styles based on notification type
+        const title = notification.title || 'New Notification';
+        const content = notification.content || '';
+
+        if (notification.type === 'system' || notification.type === 'broadcast') {
+          toast.showInfo(title, { description: content });
+        } else if (notification.notification_type?.includes('challenge_')) {
+          // Special handling for challenge notifications
           if (notification.notification_type === 'challenge_received') {
             toast.showInfo(title, { 
               description: content,
-              duration: 8000, // Show longer for important notifications
+              duration: 8000,
               action: {
                 label: 'View',
                 onClick: () => {
@@ -57,55 +68,9 @@ const NotificationListener: React.FC = () => {
       })
       .subscribe();
 
-    // Set up BroadcastChannel for even faster in-app notifications
-    let broadcastChannel: BroadcastChannel | null = null;
-    
-    try {
-      if (typeof BroadcastChannel !== 'undefined') {
-        broadcastChannel = new BroadcastChannel('bantahchatbet-notifications');
-        
-        broadcastChannel.onmessage = (event) => {
-          const { userId, notification } = event.data;
-          
-          // Only process if this notification is for the current user
-          if (userId === currentUser.id) {
-            console.log('Instant notification received via BroadcastChannel:', notification);
-            
-            // Show toast notification
-            if (notification.type?.includes('challenge_')) {
-              const title = notification.title || 'New Challenge Notification';
-              
-              if (notification.type === 'challenge_received') {
-                // Play sound for new challenge notifications
-                const audio = new Audio('/notification-sound.mp3');
-                audio.play().catch(e => console.warn('Could not play notification sound', e));
-                
-                toast.showInfo(title, { 
-                  description: notification.content,
-                  duration: 8000,
-                  action: {
-                    label: 'View',
-                    onClick: () => {
-                      window.location.href = `/messages?tab=challenges&chatId=${notification.metadata?.challenge_id}`;
-                    }
-                  }
-                });
-              }
-            }
-          }
-        };
-      }
-    } catch (error) {
-      console.warn('BroadcastChannel not supported:', error);
-    }
-
     // Cleanup function
     return () => {
       supabase.removeChannel(notificationChannel);
-      
-      if (broadcastChannel) {
-        broadcastChannel.close();
-      }
     };
   }, [currentUser, toast]);
 

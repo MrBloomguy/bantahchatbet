@@ -45,7 +45,7 @@ interface DatabaseMessage {
     name: string;
     username: string | null;
     avatar_url: string | null;
-  };
+  }[];
 }
 
 export function useEventChat(eventId: string) {
@@ -109,9 +109,9 @@ export function useEventChat(eventId: string) {
         sender_id: msg.sender_id,
         created_at: msg.created_at,
         sender: {
-          name: msg.users.name || 'Unknown',
-          username: msg.users.username || undefined,
-          avatar_url: msg.users.avatar_url || '/default-avatar.png'
+          name: msg.users[0]?.name || 'Unknown',
+          username: msg.users[0]?.username || undefined,
+          avatar_url: msg.users[0]?.avatar_url || '/default-avatar.png'
         },
         media_type: msg.media_type || undefined,
         media_url: msg.media_url || undefined
@@ -190,9 +190,9 @@ export function useEventChat(eventId: string) {
           sender_id: data.sender_id,
           created_at: data.created_at,
           sender: {
-            name: data.users.name || 'Unknown',
-            username: data.users.username || undefined,
-            avatar_url: data.users.avatar_url || '/default-avatar.png'
+            name: data.users[0]?.name || 'Unknown',
+            username: data.users[0]?.username || undefined,
+            avatar_url: data.users[0]?.avatar_url || '/default-avatar.png'
           },
           media_type: data.media_type || undefined,
           media_url: data.media_url || undefined,
@@ -221,7 +221,7 @@ export function useEventChat(eventId: string) {
     if (!eventId) return;
 
     const channel = supabase.channel(`event-chat-${eventId}`);
-    
+
     channel
       .on(
         'postgres_changes',
@@ -231,52 +231,32 @@ export function useEventChat(eventId: string) {
           table: 'event_chat_messages',
           filter: `event_id=eq.${eventId}`,
         },
-        async (payload) => {
+        (payload) => {
           if (!payload.new) return;
 
-          const { data, error } = await supabase
-            .from('event_chat_messages')
-            .select(`
-              id,
-              content,
-              sender_id,
-              created_at,
-              media_url,
-              media_type,
-              mentions,
-              reply_to,
-              users!inner (
-                id,
-                name,
-                username,
-                avatar_url
-              )
-            `)
-            .eq('id', payload.new.id)
-            .single();
-
-          if (error || !data) {
-            console.error('Error fetching new message details:', error);
-            return;
-          }
-
-          const formattedMessage: EventChatMessage = {
-            id: data.id,
-            content: data.content,
-            sender_id: data.sender_id,
-            created_at: data.created_at,
+          const newMessage: EventChatMessage = {
+            id: payload.new.id,
+            content: payload.new.content,
+            sender_id: payload.new.sender_id,
+            created_at: payload.new.created_at,
             sender: {
-              name: data.users.name || 'Unknown',
-              username: data.users.username || undefined,
-              avatar_url: data.users.avatar_url || '/default-avatar.png'
+              name: payload.new.users?.[0]?.name || 'Unknown',
+              username: payload.new.users?.[0]?.username || undefined,
+              avatar_url: payload.new.users?.[0]?.avatar_url || '/default-avatar.png',
             },
-            media_type: data.media_type || undefined,
-            media_url: data.media_url || undefined,
-            mentions: data.mentions || undefined,
-            reply_to: data.reply_to || undefined
+            media_type: payload.new.media_type || undefined,
+            media_url: payload.new.media_url || undefined,
+            mentions: payload.new.mentions || undefined,
+            reply_to: payload.new.reply_to || undefined,
           };
 
-          setMessages(prevMessages => [...prevMessages, formattedMessage]);
+          setMessages((prevMessages) => {
+            // Avoid adding duplicate messages
+            if (prevMessages.some((msg) => msg.id === newMessage.id)) {
+              return prevMessages;
+            }
+            return [...prevMessages, newMessage];
+          });
         }
       )
       .subscribe();

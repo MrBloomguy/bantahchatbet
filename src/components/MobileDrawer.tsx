@@ -65,10 +65,17 @@ const MobileDrawer: React.FC<MobileDrawerProps> = ({ isOpen, onClose }) => {
       <div className={`absolute top-0 ${isMobile ? 'left-0' : 'right-0'} bottom-0 w-64 bg-[#242538] p-4 safe-top`}>
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
+          <button
+            onClick={() => {
+              navigate('/');
+              onClose();
+            }}
+            className="flex items-center gap-2"
+            aria-label="Go to homepage"
+          >
             <Logo className="w-8 h-8 text-[#CCFF00]" />
             <span className="text-white font-bold text-xl">Bantah</span>
-          </div>
+          </button>
           <button
             onClick={onClose}
             className="p-2 hover:bg-white/10 rounded-lg transition-colors"

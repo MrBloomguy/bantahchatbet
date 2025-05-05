@@ -70,6 +70,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   useEffect(() => {
+    const processedNotifications = new Set(); // Track processed notifications
+
     const fetchUserAndSubscribe = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -85,11 +87,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           table: 'notifications',
           filter: `user_id=eq.${user.id}`
         }, (payload) => {
-          console.log('New notification in context:', payload);
-          // Increment unread count
+          const notification = payload.new;
+
+          // Avoid duplicate toasts for the same notification ID
+          if (processedNotifications.has(notification.id)) return;
+          processedNotifications.add(notification.id);
+
+          console.log('New notification in context:', notification);
           setUnreadCount(prev => prev + 1);
-          // Show a toast notification
-          toast.showInfo(payload.new.title || 'New notification received');
+          toast.showInfo(notification.title || 'New notification received');
         })
         .on('postgres_changes', {
           event: 'UPDATE',
@@ -97,7 +103,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
           table: 'notifications',
           filter: `user_id=eq.${user.id}`
         }, () => {
-          // Refresh count when notifications are updated (marked as read)
           loadUnreadCount();
         })
         .subscribe();
@@ -177,7 +182,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
       if (subscription) {
         // Remove subscription from server
-        await deleteSubscription(subscription);
+        await deleteSubscription();
 
         // Unsubscribe locally
         await subscription.unsubscribe();
@@ -232,7 +237,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   };
 
   // Delete subscription from your backend
-  const deleteSubscription = async (subscription: PushSubscription) => {
+  const deleteSubscription = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;

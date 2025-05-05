@@ -86,7 +86,15 @@ const Header: React.FC<HeaderProps> = ({
               </button>
             )}
             {/* Show logo only if no back button and no title (i.e. Home/Events page) and on mobile */}
-            {(!showBackButton && (!title || location.pathname === '/events') && isMobile) && <Logo className="w-8 h-8" />}
+            {(!showBackButton && (!title || location.pathname === '/events') && isMobile) && (
+              <button 
+                onClick={() => navigate('/')} 
+                className="flex items-center"
+                aria-label="Go to homepage"
+              >
+                <Logo className="w-8 h-8" />
+              </button>
+            )}
             {/* Title always visible if provided and not on /events */}
             {title && (
               <span className="font-bold text-xl text-gray-900 ml-2">{title}</span>

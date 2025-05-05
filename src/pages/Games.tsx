@@ -506,7 +506,17 @@ const Games: React.FC = () => {
         return (
           <div
             key={challenge.id}
-            onClick={() => navigate(`/messages?tab=challenges&chatId=${challenge.id}`)}
+            onClick={(e) => {
+              e.stopPropagation(); // Prevent any default navigation behavior
+              if (challenge.challenger.id === currentUser?.id || challenge.challenged.id === currentUser?.id) {
+                // Open chat for participants
+                navigate(`/challenge-chat/${challenge.id}`);
+              } else {
+                // Show details modal for non-participants
+                setSelectedChallenge(challenge);
+                setShowChallengeDetailsModal(true);
+              }
+            }}
             className="bg-[#242538] rounded-xl p-4 hover:bg-[#2a2b42] transition-colors cursor-pointer"
           >
             {/* Title and Amount */}
@@ -729,7 +739,7 @@ const Games: React.FC = () => {
                         key={challenge.id}
                         onClick={() => {
                           // For active challenges, go directly to the challenge chat
-                          if (challenge.status === 'accepted') {
+                          if (challenge.challenger.id === currentUser?.id || challenge.challenged.id === currentUser?.id) {
                             navigate(`/challenge-chat/${challenge.id}`);
                           } else if (activeTab === 'scheduled') {
                             // For scheduled challenges, show the details modal

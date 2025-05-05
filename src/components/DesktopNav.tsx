@@ -111,9 +111,13 @@ const DesktopNav: React.FC<DesktopNavProps> = ({ onMenuToggle }) => {
       className="hidden lg:flex fixed left-0 top-0 bottom-0 bg-light-bg border-r border-gray-200 flex-col z-40 transition-all duration-200 ease-in-out overflow-hidden"
     >
       {/* Logo at the top */}
-      <div className="w-full h-[70px] flex items-center justify-center hover:bg-white/10 transition-all">
+      <button 
+        onClick={() => navigate('/')}
+        className="w-full h-[70px] flex items-center justify-center hover:bg-white/10 transition-all"
+        aria-label="Go to homepage"
+      >
         <Logo className="w-8 h-8 text-[#CCFF00]" />
-      </div>
+      </button>
 
       {/* Menu Drawer Button (always visible as the first item) */}
       <button
