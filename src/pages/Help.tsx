@@ -1,16 +1,16 @@
 import React from 'react';
-import TawkMessenger from '../components/TawkMessenger';
+import SupportChat from '../components/SupportChat';
 import MobileFooterNav from '../components/MobileFooterNav';
-import PageHeader from '../components/PageHeader';
 
 const Help: React.FC = () => {
-
   return (
-    <div className="flex flex-col min-h-screen bg-white">
-      <PageHeader title="Support" />
-
-      <div className="flex-1 relative pb-[72px] lg:pb-0">
-        <TawkMessenger />
+    <div className="min-h-screen bg-white">
+      <div className="container mx-auto px-4 py-8">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Help & Support</h1>
+        
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden h-[calc(100vh-200px)]">
+          <SupportChat />
+        </div>
       </div>
 
       <div className="lg:hidden">

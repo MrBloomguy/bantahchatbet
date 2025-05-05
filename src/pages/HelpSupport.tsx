@@ -1,6 +1,6 @@
 import React from 'react';
 import PageHeader from '../components/PageHeader';
-import TawkMessenger from '../components/TawkMessenger';
+import SupportChat from '../components/SupportChat';
 import MobileFooterNav from '../components/MobileFooterNav';
 
 const HelpSupport: React.FC = () => {
@@ -9,7 +9,11 @@ const HelpSupport: React.FC = () => {
       <PageHeader title="Help & Support" showBackButton={true} />
 
       <div className="flex-1 relative pb-[72px] lg:pb-0">
-        <TawkMessenger />
+        <div className="container mx-auto p-4">
+          <div className="bg-white rounded-lg shadow-lg overflow-hidden h-[calc(100vh-200px)]">
+            <SupportChat />
+          </div>
+        </div>
       </div>
 
       <div className="lg:hidden">

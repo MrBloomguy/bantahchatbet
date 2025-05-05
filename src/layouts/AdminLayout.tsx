@@ -13,7 +13,8 @@ import {
   Bell,
   Users,
   Gamepad2,
-  Award
+  Award,
+  MessageSquare
 } from 'lucide-react';
 import AdminMobileNav from '../components/AdminMobileNav';
 
@@ -41,6 +42,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'Stories', href: '/admin/stories', icon: Newspaper },
     { name: 'Broadcast', href: '/admin/broadcast', icon: Bell },
     { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Support Chat', href: '/admin/support-chat', icon: MessageSquare },
     { name: 'Bonus Points', href: '/admin/bonus-points', icon: Award },
     { name: 'Reports', href: '/admin/reports', icon: AlertCircle },
     { name: 'Withdrawals', href: '/admin/withdrawals', icon: Wallet },

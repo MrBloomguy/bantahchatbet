@@ -1,97 +1,125 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 
+interface SupportMessage {
+  id: string;
+  content: string;
+  created_at: string;
+  is_support: boolean;
+  read: boolean;
+  read_at?: string;
+  user_id: string;
+  user_name?: string;
+  user_avatar_url?: string;
+}
+
 export const useSupport = () => {
   const { currentUser } = useAuth();
-  const [activeTicket, setActiveTicket] = useState(null);
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
-  useEffect(() => {
-    if (currentUser) {
-      loadTicketAndMessages();
-    }
-  }, [currentUser]);
+  // Fetch messages
+  const fetchMessages = useCallback(async () => {
+    if (!currentUser) return;
 
-  const loadTicketAndMessages = async () => {
     try {
       setLoading(true);
-      // Load active ticket
-      const { data: ticket } = await supabase
-        .from('support_tickets')
+      const { data, error } = await supabase
+        .from('support_messages_with_details')
         .select('*')
-        .eq('user_id', currentUser.id)
-        .eq('status', 'open')
-        .single();
+        .or(`user_id.eq.${currentUser.id},is_support.eq.true`)
+        .order('created_at', { ascending: true });
 
-      if (ticket) {
-        setActiveTicket(ticket);
-        // Load messages for active ticket
-        const { data: messages } = await supabase
-          .from('support_messages')
-          .select('*')
-          .eq('ticket_id', ticket.id)
-          .order('created_at', { ascending: true });
-        
-        setMessages(messages || []);
-      }
+      if (error) throw error;
+      setMessages(data || []);
     } catch (error) {
-      setError(error.message);
+      console.error('Error fetching support messages:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentUser]);
 
-  const createTicket = async (message: string) => {
+  // Send a message
+  const sendMessage = async (content: string) => {
+    if (!currentUser) return;
+
     try {
-      const { data: ticket } = await supabase
-        .from('support_tickets')
-        .insert([
-          {
-            user_id: currentUser.id,
-            status: 'open',
-          },
-        ])
-        .single();
-
-      if (ticket) {
-        await sendMessage(message, ticket.id);
-        setActiveTicket(ticket);
-      }
-    } catch (error) {
-      throw error;
-    }
-  };
-
-  const sendMessage = async (content: string, ticketId = activeTicket?.id) => {
-    try {
-      const { data: message } = await supabase
+      const { error } = await supabase
         .from('support_messages')
-        .insert([
-          {
-            ticket_id: ticketId,
-            sender_id: currentUser.id,
-            content,
-          },
-        ])
-        .single();
+        .insert([{
+          user_id: currentUser.id,
+          content,
+          is_support: false
+        }]);
 
-      if (message) {
-        setMessages((prev) => [...prev, message]);
-      }
+      if (error) throw error;
+      await fetchMessages();
     } catch (error) {
+      console.error('Error sending support message:', error);
       throw error;
     }
   };
+
+  // Subscribe to new messages
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const channel = supabase.channel(`support-${currentUser.id}`);
+    
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'support_messages',
+          filter: `user_id=eq.${currentUser.id}`
+        },
+        async () => {
+          await fetchMessages();
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('Successfully subscribed to support messages');
+        }
+      });
+
+    fetchMessages();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, [currentUser, fetchMessages]);
+
+  // Mark messages as read
+  useEffect(() => {
+    if (!currentUser || messages.length === 0) return;
+
+    const markMessagesAsRead = async () => {
+      const unreadMessages = messages.filter(
+        msg => !msg.read && msg.is_support && msg.user_id === currentUser.id
+      );
+
+      if (unreadMessages.length === 0) return;
+
+      const { error } = await supabase
+        .from('support_messages')
+        .update({ read: true, read_at: new Date().toISOString() })
+        .in('id', unreadMessages.map(msg => msg.id));
+
+      if (error) {
+        console.error('Error marking messages as read:', error);
+      }
+    };
+
+    markMessagesAsRead();
+  }, [currentUser, messages]);
 
   return {
-    activeTicket,
     messages,
     loading,
-    error,
-    createTicket,
     sendMessage,
   };
 };

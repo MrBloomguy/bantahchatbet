@@ -19,7 +19,7 @@ interface ToastContextType {
   showWarning: (title: string, options?: ToastOptions) => void;
 }
 
-const ToastContext = createContext<ToastContextType | null>(null);
+export const ToastContext = createContext<ToastContextType | null>(null);
 
 export const useToast = () => {
   const context = useContext(ToastContext);
@@ -29,7 +29,11 @@ export const useToast = () => {
   return context;
 };
 
-export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+interface ToastProviderProps {
+  children: React.ReactNode;
+}
+
+export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
   const removeToast = useCallback((id: string) => {
@@ -40,14 +44,13 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const id = uuidv4();
     const newToast: ToastItem = {
       id,
-      type: type === 'warning' ? 'info' : type, // Map warning to info for simplicity
+      type: type === 'warning' ? 'info' : type,
       title,
       message: options?.message,
       duration: options?.duration || 5000
     };
 
     setToasts(prev => [...prev, newToast]);
-
     return id;
   }, []);
 
@@ -64,18 +67,18 @@ export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [addToast]);
 
   const showWarning = useCallback((title: string, options?: ToastOptions) => {
-    return addToast('info', title, options); // Use info type with warning content
+    return addToast('info', title, options);
   }, [addToast]);
 
+  const value = {
+    showSuccess,
+    showError,
+    showInfo,
+    showWarning
+  };
+
   return (
-    <ToastContext.Provider
-      value={{
-        showSuccess,
-        showError,
-        showInfo,
-        showWarning
-      }}
-    >
+    <ToastContext.Provider value={value}>
       {children}
       <CustomToastContainer
         toasts={toasts}

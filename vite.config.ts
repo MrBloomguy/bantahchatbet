@@ -8,12 +8,10 @@ export default defineConfig({
     headers: {
       'Content-Security-Policy': `
         default-src 'self';
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.privy.io https://*.walletconnect.org https://*.walletconnect.com https://telegram.org https://*.telegram.org https://*.tawk.to https://js.paystack.co https://*.firebaseapp.com https://*.googleapis.com;
-        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://*.tawk.to https://paystack.com;
-        img-src 'self' data: https: blob: https://*.tawk.to https://*.telegram.org https://*.giphy.com https://media.giphy.com https://i.ibb.co https://*.ibb.co;
+        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.privy.io https://*.walletconnect.org https://*.walletconnect.com https://telegram.org https://*.telegram.org https://js.paystack.co https://*.firebaseapp.com https://*.googleapis.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://paystack.com;
+        img-src 'self' data: https: blob: https://*.telegram.org https://*.giphy.com https://media.giphy.com https://i.ibb.co https://*.ibb.co;
         connect-src 'self'
-          https://*.tawk.to
-          wss://*.tawk.to
           https://*.supabase.co
           wss://*.supabase.co
           https://api.paystack.co
@@ -24,18 +22,19 @@ export default defineConfig({
           https://*.walletconnect.org
           https://*.walletconnect.com
           wss://*.walletconnect.org
-          wss://*.walletconnect.com;
+          wss://*.walletconnect.com
+          wss://*.app.github.dev
+          wss://localhost:*
+          wss://github.dev;
         frame-src 'self'
-          https://tawk.to
-          https://*.tawk.to
           https://checkout.paystack.com
           https://*.privy.io
           https://auth.privy.io
           https://privy.io
           https://*.telegram.org;
-        font-src 'self' data: https://fonts.gstatic.com https://*.tawk.to;
-        manifest-src 'self';
-        media-src 'self' https://*.tawk.to https://*.giphy.com https://media.giphy.com;
+        font-src 'self' data: https://fonts.gstatic.com;
+        manifest-src 'self' https://*.app.github.dev https://*.cloudworkstations.dev https://github.dev;
+        media-src 'self' https://*.giphy.com https://media.giphy.com;
         worker-src 'self' blob:;
         child-src blob:;
         object-src 'none';

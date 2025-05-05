@@ -36,6 +36,7 @@ import AdminChallenges from './pages/AdminChallenges';
 import AdminEventPools from './pages/AdminEventPools';
 import AdminBonusPoints from './pages/AdminBonusPoints';
 import AdminEventBoost from './pages/AdminEventBoost';
+import AdminSupportChat from './pages/AdminSupportChat';
 
 // User Pages
 import SignIn from './pages/SignIn';
@@ -65,6 +66,7 @@ import TikTokAuthCallback from './components/TikTokAuthCallback';
 import DataDeletionCallback from './pages/DataDeletionCallback';
 import DataDeletionDocs from './pages/DataDeletionDocs';
 import Terms from './pages/Terms';
+import SupportChat from './pages/SupportChat';
 
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -109,6 +111,11 @@ const App: React.FC = () => {
                           <Route path="/stories" element={<Stories />} />
                           <Route path="/data-deletion-callback" element={<DataDeletionCallback />} />
                           <Route path="/auth/tiktok-callback" element={<TikTokAuthCallback />} />
+                          <Route path="/support-chat" element={
+                            <ProtectedRoute>
+                              <SupportChat />
+                            </ProtectedRoute>
+                          } />
 
                           {/* Admin routes */}
                           <Route path="/admin/login" element={<AdminLogin />} />
@@ -213,6 +220,14 @@ const App: React.FC = () => {
                               <AdminEventBoost />
                             </AdminRoute>
                           } />
+                          <Route
+                            path="/admin/support-chat"
+                            element={
+                              <AdminRoute>
+                                <AdminSupportChat />
+                              </AdminRoute>
+                            }
+                          />
 
                           {/* Protected routes */}
                           <Route

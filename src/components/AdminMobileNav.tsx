@@ -14,7 +14,8 @@ import {
   Menu,
   X,
   Gamepad2,
-  Award
+  Award,
+  MessageSquare
 } from 'lucide-react';
 
 const AdminMobileNav = () => {
@@ -34,6 +35,7 @@ const AdminMobileNav = () => {
     { name: 'Stories', href: '/admin/stories', icon: Newspaper },
     { name: 'Broadcast', href: '/admin/broadcast', icon: Bell },
     { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Support Chat', href: '/admin/support-chat', icon: MessageSquare },
     { name: 'Bonus Points', href: '/admin/bonus-points', icon: Award },
     { name: 'Reports', href: '/admin/reports', icon: AlertCircle },
     { name: 'Withdrawals', href: '/admin/withdrawals', icon: Wallet },
@@ -46,7 +48,7 @@ const AdminMobileNav = () => {
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     { name: 'Events', href: '/admin/events', icon: Trophy },
     { name: 'Pools', href: '/admin/event-pools', icon: Coins },
-    { name: 'Challenges', href: '/admin/challenges', icon: Gamepad2 },
+    { name: 'Support', href: '/admin/support-chat', icon: MessageSquare },
     { name: 'More', href: '#', icon: Menu, action: () => setMenuOpen(true) }
   ];
 

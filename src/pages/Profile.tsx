@@ -18,16 +18,28 @@ const Profile: React.FC = () => {
       path: '/settings/profile'
     },
     {
+      label: 'Wallet',
+      path: '/wallet'
+    },
+    {
+      label: 'My Events',
+      path: '/myevents'
+    },
+    {
       label: 'Levels & Badges',
       path: '/levels'
     },
     {
-      label: 'Settings',
-      path: '/settings'
+      label: 'Support Chat',
+      path: '/support-chat'
     },
     {
       label: 'Refer & Earn',
       path: '/referral'
+    },
+    {
+      label: 'Settings',
+      path: '/settings'
     },
     {
       label: 'Privacy & Security',
@@ -46,8 +58,6 @@ const Profile: React.FC = () => {
       path: '/help'
     }
   ];
-
-
 
   return (
     <div className="min-h-screen bg-[#F6F7FB] flex flex-col pb-[70px]">
