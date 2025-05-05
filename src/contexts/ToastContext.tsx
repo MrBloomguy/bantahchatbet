@@ -36,23 +36,36 @@ interface ToastProviderProps {
 export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
 
+  // Prevent duplicate toasts
+  const isDuplicateToast = (newToast: Omit<ToastItem, 'id'>) => {
+    return toasts.some(
+      toast => 
+        toast.type === newToast.type && 
+        toast.title === newToast.title && 
+        toast.message === newToast.message
+    );
+  };
+
   const removeToast = useCallback((id: string) => {
     setToasts(prev => prev.filter(toast => toast.id !== id));
   }, []);
 
   const addToast = useCallback((type: 'success' | 'error' | 'info' | 'warning', title: string, options?: ToastOptions) => {
-    const id = uuidv4();
-    const newToast: ToastItem = {
-      id,
+    const newToast = {
       type: type === 'warning' ? 'info' : type,
       title,
       message: options?.message,
       duration: options?.duration || 5000
     };
 
-    setToasts(prev => [...prev, newToast]);
-    return id;
-  }, []);
+    // Check for duplicates before adding
+    if (!isDuplicateToast(newToast)) {
+      const id = uuidv4();
+      setToasts(prev => [...prev, { ...newToast, id }]);
+      return id;
+    }
+    return null;
+  }, [toasts]);
 
   const showSuccess = useCallback((title: string, options?: ToastOptions) => {
     return addToast('success', title, options);
@@ -67,7 +80,7 @@ export const ToastProvider: React.FC<ToastProviderProps> = ({ children }) => {
   }, [addToast]);
 
   const showWarning = useCallback((title: string, options?: ToastOptions) => {
-    return addToast('info', title, options);
+    return addToast('warning', title, options);
   }, [addToast]);
 
   const value = {

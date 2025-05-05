@@ -18,6 +18,7 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import LevelUpDialog from './components/LevelUpDialog';
 import PointsNotification from './components/PointsNotification';
 import SimpleAuthDebugger from './components/SimpleAuthDebugger';
+import { Toaster } from 'react-hot-toast'; // Add this import
 
 // Admin Pages
 import AdminLogin from './pages/AdminLogin';
