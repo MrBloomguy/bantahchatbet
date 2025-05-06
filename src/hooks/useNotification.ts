@@ -71,7 +71,6 @@ export function useNotification() {
             n.id === notificationId ? { ...n, read_at: new Date() } : n
           ));
           setUnreadCount(Math.max(0, unreadCount - 1));
-          toast.showSuccess('Notification marked as read');
         } catch (error) {
           console.error('Error marking notification as read:', error);
           toast.showError('Failed to mark notification as read');

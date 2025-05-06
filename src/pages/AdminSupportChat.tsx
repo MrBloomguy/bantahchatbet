@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Send, Search, UserCircle } from 'lucide-react';
-import AdminLayout from '../components/layouts/AdminLayout';
-import AdminPageLayout from '../components/layouts/AdminPageLayout';
-import { supabase } from '../lib/supabase-client';
+import AdminLayout from "../layouts/AdminLayout";
+import { supabase } from '../lib/supabase';
 import LoadingSpinner from '../components/LoadingSpinner';
 
 interface SupportMessage {

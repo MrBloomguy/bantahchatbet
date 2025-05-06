@@ -11,14 +11,12 @@ import { WalletProvider } from './contexts/WalletContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { SplashScreenProvider } from './contexts/SplashScreenContext';
 import { PrivyAuthProvider } from './contexts/PrivyAuthContext';
-
 import { PointsProvider } from './contexts/PointsContext';
 import { UserPresenceProvider } from './contexts/UserPresenceContext';
 import { NotificationProvider } from './contexts/NotificationContext';
 import LevelUpDialog from './components/LevelUpDialog';
 import PointsNotification from './components/PointsNotification';
 import SimpleAuthDebugger from './components/SimpleAuthDebugger';
-import { Toaster } from 'react-hot-toast'; // Add this import
 
 // Admin Pages
 import AdminLogin from './pages/AdminLogin';

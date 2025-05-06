@@ -5,9 +5,9 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { privyDIDtoUUID } from '../utils/auth';
 import LoadingSpinner from '../components/LoadingSpinner';
-import { toast } from 'react-toastify';
 import PageHeader from '../components/PageHeader';
 import MobileFooterNav from '../components/MobileFooterNav';
+import { useToast } from '../contexts/ToastContext';
 
 const DataDeletionRequest: React.FC = () => {
   const navigate = useNavigate();
@@ -15,6 +15,7 @@ const DataDeletionRequest: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [reason, setReason] = useState('');
   const [confirmed, setConfirmed] = useState(false);
+  const toast = useToast();
 
   const sections = [
     {
@@ -59,11 +60,11 @@ const DataDeletionRequest: React.FC = () => {
 
       if (error) throw error;
 
-      toast.success('Your data deletion request has been submitted. We will process it within 30 days.');
+      toast.showSuccess('Your data deletion request has been submitted. We will process it within 30 days.');
       navigate('/settings');
     } catch (error) {
       console.error('Error submitting data deletion request:', error);
-      toast.error('Failed to submit data deletion request. Please try again.');
+      toast.showError('Failed to submit data deletion request. Please try again.');
     } finally {
       setLoading(false);
     }
