@@ -371,11 +371,13 @@ export function useChat(chatId?: string) {
     const messageSubscription = supabase
       .channel(`chat:${chatId}`)
       .on('postgres_changes', {
-        event: 'INSERT',
+        event: '*', // Listen to all changes
         schema: 'public',
         table: 'chat_messages',
         filter: `chat_id=eq.${chatId}`
       }, async payload => {
+        // Immediately add message to UI for better responsiveness
+        if (payload.eventType === 'INSERT') {
         console.log('New message received via subscription:', payload.new);
 
         // Immediately add a basic version of the message to the UI

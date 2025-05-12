@@ -166,24 +166,27 @@ const ChatMessage: React.FC = () => {
  }, [supabase, recipientId, currentUserId, userProfiles]);
 
  const sendMessage = async (text: string) => {
-  console.log('sendMessage called with:', {
-   hasSupabase: !!supabase,
-   trimmedText: text.trim(),
-   currentUserId,
-   recipientId
-  }); // <-- Added this log
+    if (!supabase || text.trim() === '' || !currentUserId || !recipientId) {
+      console.error('Cannot send message: Invalid parameters');
+      return;
+    }
 
-  // Ensure recipientId is valid before sending
-  if (!supabase || text.trim() === '' || !currentUserId || !recipientId) {
-   console.error('Cannot send message: Invalid parameters');
-   return;
-  }
+    // Optimistically add message to UI
+    const tempId = crypto.randomUUID();
+    const tempMessage = {
+      id: tempId,
+      content: text,
+      sender_id: currentUserId,
+      created_at: new Date().toISOString(),
+      reactions: {}
+    };
+    setMessages(prev => [...prev, tempMessage]);
 
-  const { error } = await supabase.rpc('send_private_message', {
-   p_content: text,
-   p_receiver_id: recipientId,
-   p_sender_id: currentUserId,
-  });
+    const { error } = await supabase.rpc('send_private_message', {
+      p_content: text,
+      p_receiver_id: recipientId,
+      p_sender_id: currentUserId,
+    });
 
   if (error) {
    console.error('Error sending message:', error);
