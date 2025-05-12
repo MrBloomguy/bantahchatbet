@@ -1,0 +1,10 @@
+(index):65 Refused to load the script 'https://connect.facebook.net/en_US/sdk.js' because it violates the following Content Security Policy directive: "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.paystack.co https://*.firebaseapp.com https://*.googleapis.com https://www.google.com https://www.gstatic.com https://apis.google.com https://*.privy.io https://privy.io https://www.recaptcha.net https://recaptcha.net https://www.google.com/recaptcha/ https://*.tawk.to https://telegram.org https://*.telegram.org https://*.tiktok.com https://*.byteoversea.com https://*.ibytedtos.com https://open-api.tiktok.com". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback.
+
+(anonymous) @ (index):65Understand this error
+client:536 Refused to connect to 'wss://9db8b7c8-6a65-4985-ae0f-4060615cc8c2-00-2c4t8kc0c2f8i.spock.replit.dev/?token=olcIlJsYB2wv' because it violates the following Content Security Policy directive: "connect-src 'self' https://*.googleapis.com https://fonts.googleapis.com https://*.tawk.to wss://*.tawk.to https://api.paystack.co https://*.supabase.co wss://*.supabase.co https://*.privy.io https://auth.privy.io https://privy.io https://api.privy.io https://embedded-wallet.privy.io https://*.walletconnect.org https://*.walletconnect.com wss://*.walletconnect.org wss://*.walletconnect.com".
+
+setupWebSocket @ client:536Understand this error
+App.tsx:2 Uncaught SyntaxError: The requested module '/node_modules/.vite/deps/react-shepherd.js?v=41ebefcd' does not provide an export named 'ShepherdTour' (at App.tsx:2:10)Understand this error
+vendor-FR6lKvhP.js:1 Datadog Browser SDK: No storage available for session. We will not send any data.
+init @ vendor-FR6lKvhP.js:1Understand this warning
+9db8b7c8-6a65-4985-ae0f-4060615cc8c2-00-2c4t8kc0c2f8i.spock.replit.dev/:1 Error while trying to use the following icon from the Manifest: https://9db8b7c8-6a65-4985-ae0f-4060615cc8c2-00-2c4t8kc0c2f8i.spock.replit.dev:5000/icons/icon-192x192.png (Download error or resource isn't a valid image)
