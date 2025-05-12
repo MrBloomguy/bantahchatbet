@@ -1,5 +1,5 @@
 import React from 'react';
-import { ShepherdTour } from 'react-shepherd';
+import { ShepherdTour } from 'react-shepherd/dist/index';
 import { useState, useEffect } from 'react';
 import { useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import AdminRoute from './components/AdminRoute';
