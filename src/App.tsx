@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import { ShepherdTour } from 'react-shepherd';
+import { useState, useEffect } from 'react';
 import { useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import AdminRoute from './components/AdminRoute';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -79,7 +81,19 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const isEventsPage = location.pathname === '/events';
 
+  const tourOptions = {
+    defaultStepOptions: {
+      cancelIcon: {
+        enabled: true
+      },
+      classes: 'shepherd-theme-custom',
+      scrollTo: true
+    },
+    useModalOverlay: true
+  };
+
   return (
+    <ShepherdTour steps={[]} tourOptions={tourOptions}>
     <ToastProvider>
       <SupabaseProvider>
         <PrivyAuthProvider>
@@ -364,6 +378,7 @@ const App: React.FC = () => {
         </PrivyAuthProvider>
       </SupabaseProvider>
     </ToastProvider>
+    </ShepherdTour>
   );
 };
 

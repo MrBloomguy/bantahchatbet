@@ -13,6 +13,7 @@ import { useSplashScreen } from '../contexts/SplashScreenContext';
 
 function Home() {
   const navigate = useNavigate();
+  const [showTour, setShowTour] = useState(true);
   const { currentUser } = useAuth();
   const { events, loading, joinEvent, fetchEvents } = useEvent();
   const toast = useToast();
@@ -65,6 +66,7 @@ function Home() {
       </Header>
       {/* Rest of your JSX */}
       <MobileFooterNav />
+      {showTour && <AppTour />}
     </div>
   );
 }
