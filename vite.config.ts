@@ -5,6 +5,9 @@ export default defineConfig({
   plugins: [react()],
   server: {
     host: '0.0.0.0',
+    hmr: {
+      host: '0.0.0.0',
+    },
     headers: {
       'Content-Security-Policy': `
         default-src 'self';
