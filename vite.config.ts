@@ -8,6 +8,10 @@ export default defineConfig({
     hmr: {
       host: '0.0.0.0',
     },
+    watch: {
+      usePolling: true
+    },
+    cors: true,
     headers: {
       'Content-Security-Policy': `
         default-src 'self';
