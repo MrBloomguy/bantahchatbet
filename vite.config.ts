@@ -16,15 +16,7 @@ export default defineConfig({
     },
     headers: {
       'Access-Control-Allow-Origin': '*',
-      'Content-Security-Policy': `
-        default-src 'self';
-        script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.facebook.net https://connect.facebook.net https://js.paystack.co https://*.firebaseapp.com https://*.googleapis.com https://*.privy.io https://*.walletconnect.org https://*.walletconnect.com https://telegram.org https://*.telegram.org;
-        connect-src 'self' wss://*.replit.dev https://*.supabase.co wss://*.supabase.co https://api.paystack.co https://*.privy.io https://auth.privy.io https://api.privy.io https://embedded-wallet.privy.io https://*.walletconnect.org https://*.walletconnect.com wss://*.walletconnect.org wss://*.walletconnect.com;
-        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-        img-src 'self' data: blob: https: https://*.facebook.com;
-        font-src 'self' https://fonts.gstatic.com;
-        frame-src 'self' https://*.facebook.com https://connect.facebook.net;
-      `
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.facebook.net https://connect.facebook.net https://js.paystack.co https://*.firebaseapp.com https://*.googleapis.com https://www.google.com https://www.gstatic.com https://apis.google.com https://*.privy.io https://privy.io https://www.recaptcha.net https://recaptcha.net https://www.google.com/recaptcha/ https://*.tawk.to https://telegram.org https://*.telegram.org https://*.tiktok.com https://*.byteoversea.com https://*.ibytedtos.com https://open-api.tiktok.com; connect-src 'self' wss://*.replit.dev https://*.googleapis.com https://fonts.googleapis.com https://*.tawk.to wss://*.tawk.to https://api.paystack.co https://*.supabase.co wss://*.supabase.co https://*.privy.io https://auth.privy.io https://privy.io https://api.privy.io https://embedded-wallet.privy.io https://*.walletconnect.org https://*.walletconnect.com wss://*.walletconnect.org wss://*.walletconnect.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https: https://*.facebook.com; font-src 'self' https://fonts.gstatic.com; frame-src 'self' https://*.facebook.com https://connect.facebook.net https://*.firebaseapp.com https://*.privy.io https://privy.io https://*.telegram.org https://*.tawk.to https://checkout.paystack.com"
     }
   },
   resolve: {
