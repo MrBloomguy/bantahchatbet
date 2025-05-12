@@ -222,36 +222,62 @@ export function useEventChat(eventId: string) {
 
     const channel = supabase.channel(`event-chat-${eventId}`);
 
-    channel
+    const subscription = channel
       .on(
         'postgres_changes',
         {
-          event: 'INSERT',
+          event: '*', // Listen to all changes
           schema: 'public',
           table: 'event_chat_messages',
           filter: `event_id=eq.${eventId}`,
         },
-        (payload) => {
+        async (payload) => {
           if (!payload.new) return;
 
+          // Fetch complete message data with sender info
+          const { data: messageData, error } = await supabase
+            .from('event_chat_messages')
+            .select(`
+              id,
+              content,
+              sender_id,
+              created_at,
+              media_url,
+              media_type,
+              mentions,
+              reply_to,
+              users!inner (
+                id,
+                name,
+                username,
+                avatar_url
+              )
+            `)
+            .eq('id', payload.new.id)
+            .single();
+
+          if (error || !messageData) {
+            console.error('Error fetching message data:', error);
+            return;
+          }
+
           const newMessage: EventChatMessage = {
-            id: payload.new.id,
-            content: payload.new.content,
-            sender_id: payload.new.sender_id,
-            created_at: payload.new.created_at,
+            id: messageData.id,
+            content: messageData.content,
+            sender_id: messageData.sender_id,
+            created_at: messageData.created_at,
             sender: {
-              name: payload.new.users?.[0]?.name || 'Unknown',
-              username: payload.new.users?.[0]?.username || undefined,
-              avatar_url: payload.new.users?.[0]?.avatar_url || '/default-avatar.png',
+              name: messageData.users?.name || 'Unknown',
+              username: messageData.users?.username || undefined,
+              avatar_url: messageData.users?.avatar_url || '/default-avatar.png',
             },
-            media_type: payload.new.media_type || undefined,
-            media_url: payload.new.media_url || undefined,
-            mentions: payload.new.mentions || undefined,
-            reply_to: payload.new.reply_to || undefined,
+            media_type: messageData.media_type || undefined,
+            media_url: messageData.media_url || undefined,
+            mentions: messageData.mentions || undefined,
+            reply_to: messageData.reply_to || undefined,
           };
 
           setMessages((prevMessages) => {
-            // Avoid adding duplicate messages
             if (prevMessages.some((msg) => msg.id === newMessage.id)) {
               return prevMessages;
             }
@@ -259,12 +285,14 @@ export function useEventChat(eventId: string) {
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log(`Event chat subscription status for ${eventId}:`, status);
+      });
 
     return () => {
-      channel.unsubscribe();
+      subscription.unsubscribe();
     };
-  }, [eventId]);
+  }, [eventId, supabase]);
 
   return {
     messages,
