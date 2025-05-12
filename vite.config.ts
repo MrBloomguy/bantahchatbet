@@ -7,11 +7,15 @@ export default defineConfig({
     host: '0.0.0.0',
     hmr: {
       host: '0.0.0.0',
+      clientPort: 443,
+      protocol: 'wss'
     },
     watch: {
       usePolling: true
     },
     cors: true,
+    strictPort: true,
+    allowedHosts: 'all',
     headers: {
       'Content-Security-Policy': `
         default-src 'self';
