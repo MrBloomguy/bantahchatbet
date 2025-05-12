@@ -1,21 +1,16 @@
+
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
   plugins: [react()],
   server: {
-    host: '0.0.0.0',
-    hmr: {
-      host: '0.0.0.0',
-      clientPort: 443,
-      protocol: 'wss'
-    },
-    watch: {
-      usePolling: true
-    },
-    cors: true,
+    host: true,
     strictPort: true,
-    allowedHosts: 'all',
+    hmr: {
+      clientPort: 443,
+      port: 5173
+    },
     headers: {
       'Content-Security-Policy': `
         default-src 'self';
