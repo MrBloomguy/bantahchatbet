@@ -8,9 +8,11 @@ export default defineConfig({
     port: 5000,
     host: '0.0.0.0',
     hmr: {
-      host: `${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co`,
-      protocol: 'wss',
-      clientPort: 443
+      clientPort: 443,
+      protocol: 'wss'
+    },
+    headers: {
+      'Access-Control-Allow-Origin': '*'
     }
   },
   resolve: {
