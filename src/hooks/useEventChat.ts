@@ -226,16 +226,25 @@ export function useEventChat(eventId: string) {
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all changes
+          event: '*',
           schema: 'public',
           table: 'event_chat_messages',
           filter: `event_id=eq.${eventId}`,
         },
-        async (payload) => {
+        (payload) => {
           if (!payload.new) return;
 
-          // Fetch complete message data with sender info
-          const { data: messageData, error } = await supabase
+          // Immediately add message to UI
+          const tempMessage = {
+            ...payload.new,
+            sender: {
+              name: currentUser?.name || 'Unknown',
+              username: currentUser?.username,
+              avatar_url: currentUser?.avatar_url || '/default-avatar.png'
+            }
+          };
+          
+          setMessages(prev => [...prev, tempMessage]);
             .from('event_chat_messages')
             .select(`
               id,

@@ -371,16 +371,21 @@ export function useChat(chatId?: string) {
     const messageSubscription = supabase
       .channel(`chat:${chatId}`)
       .on('postgres_changes', {
-        event: '*', // Listen to all changes
+        event: '*',
         schema: 'public',
         table: 'chat_messages',
         filter: `chat_id=eq.${chatId}`
-      }, async payload => {
-        // Immediately add message to UI for better responsiveness
+      }, payload => {
         if (payload.eventType === 'INSERT') {
-        console.log('New message received via subscription:', payload.new);
-
-        // Immediately add a basic version of the message to the UI
+          console.log('New message received via subscription:', payload.new);
+          
+          // Immediately add message to UI
+          const tempMessage = {
+            ...payload.new,
+            sender: payload.new.sender_id === currentUser.id ? currentUser : null
+          };
+          
+          setMessages(prev => [...prev, tempMessage]);
         const tempMessage = {
           ...payload.new,
           sender: payload.new.sender_id === currentUser.id ? currentUser : null
