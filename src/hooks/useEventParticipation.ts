@@ -32,7 +32,7 @@ interface EventWithPool {
 export const useEventParticipation = () => {
   const [isProcessing, setIsProcessing] = useState(false);
   const toast = useToast();
-  
+
   const joinEvent = async (data: JoinEventData): Promise<{ success: boolean; participantId?: string }> => {
     setIsProcessing(true);
     try {
@@ -142,10 +142,10 @@ export const useEventParticipation = () => {
         .from('event_predictions_summary')
         .select('*')
         .eq('event_id', eventId)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      if (error && error.code !== 'PGRST116') throw error;
+      return data || { yes_count: 0, no_count: 0, total_participants: 0 };
     } catch (error) {
       console.error('Error fetching prediction counts:', error);
       return null;
