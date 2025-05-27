@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useEvent } from '../hooks/useEvent';
 import { useToast } from '../contexts/ToastContext';
 import EventCard from '../components/EventCard';
@@ -124,58 +124,99 @@ const Events = () => {
     selectedCategory === 'all' ? true : event.category.toLowerCase() === selectedCategory
   );
 
+  // --- Mobile scroll-based header/category animation ---
+  const [headerOffset, setHeaderOffset] = useState(0);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
+
+  useEffect(() => {
+    const isMobile = window.matchMedia('(max-width: 768px)').matches;
+    if (!isMobile) {
+      setHeaderOffset(0);
+      return;
+    }
+    const handleScroll = () => {
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          if (currentScrollY > lastScrollY.current) {
+            setHeaderOffset(-80); // Hide header/category
+          } else if (currentScrollY < lastScrollY.current) {
+            setHeaderOffset(0); // Show header/category
+          }
+          lastScrollY.current = currentScrollY;
+          ticking.current = false;
+        });
+        ticking.current = true;
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-light-bg dark:bg-[#1a1b2e]">
-      <Header showSearch />
-
-      {/* Category Bar */}
-      <div className="sticky top-16 bg-light-bg z-40 py-2.5">
-        <div className="container mx-auto px-4">
-          <div className="flex md:justify-center overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-white/20 gap-3">
-            <div className="flex gap-3 md:max-w-[800px]"> {/* Added wrapper div with max-width */}
-              {categories.map((category) => (
-                <button
-                  type="button"
-                  key={category.id}
-                  onClick={() => handleCategoryClick(category.id)}
-                  className="flex-shrink-0 flex flex-col items-center relative pt-1"
-                >
-                  <div className="relative">
-                    {/* Gradient outline container */}
-                    <div
-                      className={`w-16 h-16 rounded-full relative
-                        ${selectedCategory === category.id ? 'opacity-100' : 'opacity-100'}
-                        transition-all duration-300`}
-                    >
-                      {/* Gradient border */}
-                      <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${category.gradient}`} />
-
-                      {/* Inner circle with icon */}
+      {/* Animated header + category wrapper for mobile only */}
+      <div
+        style={typeof window !== 'undefined' && window.matchMedia('(max-width: 768px)').matches ? {
+          transform: `translateY(${headerOffset}px)`,
+          transition: 'transform 0.25s cubic-bezier(.4,0,.2,1)',
+          zIndex: 50,
+          position: 'sticky',
+          top: 0,
+          background: 'inherit',
+          pointerEvents: headerOffset === -80 ? 'none' : 'auto',
+          opacity: headerOffset === -80 ? 0 : 1,
+        } : {}}
+      >
+        <Header showSearch />
+        {/* Category Bar is now inside the animated wrapper */}
+        <div className="bg-light-bg z-40 py-2.5">
+          <div className="container mx-auto px-4">
+            <div className="flex md:justify-center overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-white/20 gap-3">
+              <div className="flex gap-3 md:max-w-[800px]">
+                {categories.map((category) => (
+                  <button
+                    type="button"
+                    key={category.id}
+                    onClick={() => handleCategoryClick(category.id)}
+                    className="flex-shrink-0 flex flex-col items-center relative pt-1"
+                  >
+                    <div className="relative">
+                      {/* Gradient outline container */}
                       <div
-                        className={`absolute inset-[2px] rounded-full
-                          flex items-center justify-center
-                          bg-light-bg
-                          ${selectedCategory === category.id ? 'scale-105' : 'scale-100'}
+                        className={`w-16 h-16 rounded-full relative
+                          ${selectedCategory === category.id ? 'opacity-100' : 'opacity-100'}
                           transition-all duration-300`}
                       >
-                        <span className="text-2xl">{category.icon}</span>
+                        {/* Gradient border */}
+                        <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${category.gradient}`} />
+                        {/* Inner circle with icon */}
+                        <div
+                          className={`absolute inset-[2px] rounded-full
+                            flex items-center justify-center
+                            bg-light-bg
+                            ${selectedCategory === category.id ? 'scale-105' : 'scale-100'}
+                            transition-all duration-300`}
+                        >
+                          <span className="text-2xl">{category.icon}</span>
+                        </div>
+                      </div>
+                      {/* Category Label Badge */}
+                      <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 z-10">
+                        <div
+                          className={`px-2 py-0.5 rounded-full text-[8px] font-sans font-medium whitespace-nowrap
+                            bg-white
+                            ${selectedCategory === category.id ? 'text-black' : 'text-black/60'}
+                            transition-all duration-300`}
+                        >
+                          {category.label}
+                        </div>
                       </div>
                     </div>
-
-                    {/* Category Label Badge */}
-                    <div className="absolute -bottom-1 left-1/2 transform -translate-x-1/2 z-10">
-                      <div
-                        className={`px-2 py-0.5 rounded-full text-[8px] font-sans font-medium whitespace-nowrap
-                          bg-white
-                          ${selectedCategory === category.id ? 'text-black' : 'text-black/60'}
-                          transition-all duration-300`}
-                      >
-                        {category.label}
-                      </div>
-                    </div>
-                  </div>
-                </button>
-              ))}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -184,14 +225,26 @@ const Events = () => {
       <div className="container mx-auto px-4 py-3">
         {/* Events Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
-          {filteredEvents.map(event => (
-            <EventCard
-              key={event.id}
-              event={event}
-              onChatClick={handleChatClick}
-              joinButtonClassName="bg-[#ccff00] text-black"
-            />
-          ))}
+          {filteredEvents.map(event => {
+            // Patch creator and participants for EventCard compatibility
+            const creator = {
+              id: event.creator.id,
+              username: event.creator.username,
+              name: (event.creator as any).name || event.creator.username || '',
+              avatar_url: (event.creator as any).avatar_url || '',
+              stats: (event.creator as any).stats || {},
+            };
+            const participants = (event.participants || []).map((p: any) => ({
+              avatar: p.avatar || undefined,
+            }));
+            return (
+              <EventCard
+                key={event.id}
+                event={{ ...event, creator, participants }}
+                onChatClick={handleChatClick}
+              />
+            );
+          })}
         </div>
       </div>
 

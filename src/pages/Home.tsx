@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Search, Filter, ArrowRight } from 'lucide-react';
 import EventCard from '../components/EventCard';
@@ -21,6 +21,9 @@ function Home() {
   
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [headerOffset, setHeaderOffset] = useState(0);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
 
   useEffect(() => {
     // Show splash screen when loading important data
@@ -57,16 +60,52 @@ function Home() {
     event.participants?.length > 5
   ) || [];
 
+  // Scroll handler for header/category hide/show
+  useEffect(() => {
+    const handleScroll = () => {
+      if (!ticking.current) {
+        window.requestAnimationFrame(() => {
+          const currentScrollY = window.scrollY;
+          if (currentScrollY > lastScrollY.current) {
+            setHeaderOffset(-80); // Hide header/category
+          } else if (currentScrollY < lastScrollY.current) {
+            setHeaderOffset(0); // Show header/category
+          }
+          lastScrollY.current = currentScrollY;
+          ticking.current = false;
+        });
+        ticking.current = true;
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-white">
-      <Header>
-        <div className="flex items-center gap-2">
-          <Logo className="w-8 h-8" />
+      {/* Animated header/category wrapper */}
+      <div
+        style={{
+          transform: `translateY(${headerOffset}px)`,
+          transition: 'transform 0.25s cubic-bezier(.4,0,.2,1)',
+          zIndex: 50,
+          position: 'sticky',
+          top: 0,
+          background: 'white',
+        }}
+      >
+        <Header />
+        {/* Category section here, e.g. horizontally scrollable categories */}
+        <div className="overflow-x-auto flex gap-2 px-4 py-2 border-b bg-white">
+          <CategoryButton icon="🔥" label="Trending" />
+          <CategoryButton icon="⚽" label="Sports" />
+          <CategoryButton icon="🎵" label="Music" />
+          <CategoryButton icon="🎮" label="Games" />
+          <CategoryButton icon="📰" label="News" />
         </div>
-      </Header>
+      </div>
       {/* Rest of your JSX */}
       <MobileFooterNav />
-      {showTour && <AppTour />}
     </div>
   );
 }
