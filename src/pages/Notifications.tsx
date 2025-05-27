@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { useNotification } from '../hooks/useNotification';
 import { useAuth } from '../contexts/AuthContext';
-import LoadingSpinner from '../components/LoadingSpinner';
 import { useToast } from '../contexts/ToastContext';
 import PageHeader from '../components/PageHeader';
 import MobileFooterNav from '../components/MobileFooterNav';
@@ -142,9 +141,22 @@ const Notifications = () => {
           {/* Notification List */}
           <div className="space-y-4">
             {loading ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <LoadingSpinner />
-                <p className="mt-4 text-gray-500 font-medium"></p>
+              <div className="flex flex-col gap-4 py-8">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div key={i} className="flex items-center bg-white rounded-2xl shadow-sm px-4 py-3 animate-pulse">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gray-200 mr-4" />
+                    <div className="flex-1 min-w-0">
+                      <div className="h-4 bg-gray-200 rounded w-1/3 mb-2" />
+                      <div className="h-3 bg-gray-100 rounded w-1/2 mb-1" />
+                      <div className="flex gap-2 mt-2">
+                        <div className="h-3 w-8 bg-gray-100 rounded" />
+                        <div className="h-3 w-8 bg-gray-100 rounded" />
+                        <div className="h-3 w-12 bg-gray-100 rounded" />
+                      </div>
+                    </div>
+                    <div className="w-20 h-8 bg-gray-200 rounded-full ml-4" />
+                  </div>
+                ))}
               </div>
             ) : filterNotifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16">

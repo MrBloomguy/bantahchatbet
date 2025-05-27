@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Wallet as WalletIcon, ArrowDownRight, ArrowUpRight, History, CreditCard, Filter, Trophy } from 'lucide-react';
+import { ArrowDownRight, ArrowUpRight, Trophy } from 'lucide-react';
 import PageHeader from '../components/PageHeader';
 import WalletCard from '../components/WalletCard';
 import EnhancedWalletHistory from '../components/EnhancedWalletHistory';

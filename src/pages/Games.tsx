@@ -28,6 +28,7 @@ import ChallengeModal from '../components/ChallengeModal';
 import ChallengeDetailsModal from '../components/ChallengeDetailsModal';
 import { ContactsList } from '../components/ContactsList';
 import ActiveContentModal from '../components/modals/ActiveContentModal';
+import ProfileCard from '../components/ProfileCard';
 
 // Hooks and contexts
 import { useAuth } from '../contexts/AuthContext';
@@ -79,7 +80,7 @@ interface Challenge {
 
 const Games: React.FC = () => {
   // Change the default tab from 'users' to 'active'
-  const [activeTab, setActiveTab] = useState<'users' | 'active' | 'scheduled' | 'ended'>('active');
+  const [activeTab, setActiveTab] = useState<'friends' | 'active' | 'scheduled' | 'ended'>('active');
   const [users, setUsers] = useState<User[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,6 +93,7 @@ const Games: React.FC = () => {
   const [showActiveModal, setShowActiveModal] = useState(false);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
   const [showChallengeDetailsModal, setShowChallengeDetailsModal] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const { currentUser } = useAuth();
   const toast = useToast();
   const navigate = useNavigate();
@@ -106,7 +108,7 @@ const Games: React.FC = () => {
   };
 
   useEffect(() => {
-    if (activeTab === 'users') {
+    if (activeTab === 'friends') {
       fetchUsers();
     } else {
       fetchChallenges();
@@ -232,6 +234,14 @@ const Games: React.FC = () => {
     }
   };
 
+  // Helper to map fetched challenge data to correct Challenge type
+  const mapChallenge = (challenge: any): Challenge => ({
+    ...challenge,
+    challenger: Array.isArray(challenge.challenger) ? challenge.challenger[0] : challenge.challenger,
+    challenged: Array.isArray(challenge.challenged) ? challenge.challenged[0] : challenge.challenged,
+    scheduled_at: challenge.scheduled_at === null ? '' : challenge.scheduled_at
+  });
+
   const fetchChallenges = async () => {
     try {
       setLoading(true);
@@ -279,7 +289,7 @@ const Games: React.FC = () => {
 
       const { data, error } = await query.order('created_at', { ascending: false });
       if (error) throw error;
-      setChallenges(data || []);
+      setChallenges((data || []).map(mapChallenge));
 
       // Count user's active challenges
       if (currentUser) {
@@ -435,7 +445,8 @@ const Games: React.FC = () => {
                 <img
                   src={user.avatar_url}
                   alt={user.name}
-                  className="w-10 h-10 rounded-full"
+                  className="w-10 h-10 rounded-full cursor-pointer"
+                  onClick={() => setSelectedUserId(user.id)}
                 />
                 <div
                   className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-[#242538]
@@ -599,12 +610,10 @@ const Games: React.FC = () => {
 
   const renderActiveContent = () => {
     switch (activeTab) {
-      case 'users':
+      case 'friends':
         return renderUsersList();
       case 'active':
-        return renderChallengesList();
       case 'scheduled':
-        return renderChallengesList();
       case 'ended':
         return renderChallengesList();
       default:
@@ -618,43 +627,92 @@ const Games: React.FC = () => {
       <div className="flex-1 flex flex-col items-center w-full">
       <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 py-4">
           {/* Compact Tabs Bar */}
-          <div className="flex justify-center gap-1 mb-6 bg-white rounded-xl shadow-sm p-1 overflow-x-auto">            {[
-              { id: 'active', label: 'Active', icon: <Gamepad2 className="w-4 h-4" /> },
-              { id: 'users', label: 'Users', icon: <Users className="w-4 h-4" /> },
-              { id: 'scheduled', label: 'Scheduled', icon: <Gamepad2 className="w-4 h-4" /> },
-              { id: 'ended', label: 'Ended', icon: <Trophy className="w-4 h-4" /> }
-            ].map((tab) => (
-              <button
-                type="button"
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as typeof activeTab)}
-                className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
-                  activeTab === tab.id
-                    ? 'bg-[#7440ff] text-white shadow'
-                    : 'bg-transparent text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                {tab.icon}
-                {tab.label}
-                {tab.id === 'active' && userChallengesCount > 0 && (
-                  <span className="ml-1 bg-[#CCFF00] text-black text-[10px] px-1.5 py-0.5 rounded-full">
-                    {userChallengesCount}
-                  </span>
-                )}
-              </button>
-            ))}
+          <div className="flex justify-center gap-1 mb-5 bg-white rounded-xl shadow-sm p-1 overflow-x-auto">            {[
+          { id: 'active', label: 'Active', icon: <Gamepad2 className="w-4 h-4" /> },
+          { id: 'friends', label: 'Friends', icon: <Users className="w-4 h-4" /> },
+          { id: 'scheduled', label: 'Scheduled', icon: <Gamepad2 className="w-4 h-4" /> },
+          { id: 'ended', label: 'Ended', icon: <Trophy className="w-4 h-4" /> }
+        ].map((tab) => (
+          <button
+            type="button"
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id as typeof activeTab)}
+            className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+              activeTab === tab.id
+                ? 'bg-[#7440ff] text-white shadow'
+                : 'bg-transparent text-gray-700 hover:bg-gray-100'
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+            {tab.id === 'active' && userChallengesCount > 0 && (
+              <span className="ml-1 bg-[#CCFF00] text-black text-[10px] px-1.5 py-0.5 rounded-full">
+                {userChallengesCount}
+              </span>
+            )}
+          </button>
+        ))}
             <div className="flex items-center gap-2 ml-auto">
 
             </div>
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#CCFF00]" />
-            </div>
+            <>
+              {activeTab === 'friends' ? (
+                // Skeletons for users list
+                <div className="flex flex-col gap-4 py-8">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <div key={i} className="flex items-center bg-white rounded-2xl shadow-sm px-4 py-3 animate-pulse">
+                      <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gray-200 mr-4" />
+                      <div className="flex-1 min-w-0">
+                        <div className="h-4 bg-gray-200 rounded w-1/3 mb-2" />
+                        <div className="h-3 bg-gray-100 rounded w-1/2 mb-1" />
+                        <div className="flex gap-2 mt-2">
+                          <div className="h-3 w-8 bg-gray-100 rounded" />
+                          <div className="h-3 w-8 bg-gray-100 rounded" />
+                          <div className="h-3 w-12 bg-gray-100 rounded" />
+                        </div>
+                      </div>
+                      <div className="w-20 h-8 bg-gray-200 rounded-full ml-4" />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                // Skeletons for challenges list
+                <div className="flex flex-col gap-4 py-8">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="bg-white rounded-2xl shadow-sm px-4 py-3 animate-pulse flex flex-col gap-2">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="h-4 bg-gray-200 rounded w-1/4" />
+                        <div className="h-4 bg-gray-100 rounded w-16" />
+                      </div>
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded-full bg-gray-200" />
+                          <div className="h-3 w-16 bg-gray-100 rounded" />
+                        </div>
+                        <div className="h-3 w-6 bg-gray-100 rounded" />
+                        <div className="flex items-center gap-2">
+                          <div className="h-3 w-16 bg-gray-100 rounded" />
+                          <div className="w-8 h-8 rounded-full bg-gray-200" />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-between text-xs">
+                        <div className="h-3 w-24 bg-gray-100 rounded" />
+                        <div className="flex gap-2">
+                          <div className="h-3 w-12 bg-gray-100 rounded" />
+                          <div className="h-3 w-12 bg-gray-100 rounded" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
           ) : (
             <>
-              {activeTab === 'users' && (
+              {activeTab === 'friends' && (
                 <>
                   {/* Search Bar */}
                   <div className="relative mb-4">
@@ -663,7 +721,7 @@ const Games: React.FC = () => {
                     </div>
                     <input
                       type="text"
-                      placeholder="Search users to challenge..."
+                      placeholder="Search friends to challenge..."
                       value={searchQuery}
                       onChange={handleSearchChange}
                       className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#7440FF] focus:border-transparent"
@@ -680,7 +738,12 @@ const Games: React.FC = () => {
                       {filteredUsers.map((user) => (
                         <div key={user.id} className="flex items-center bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 group">
                           <div className="flex-shrink-0 w-12 h-12 rounded-full bg-[#F6F7FB] flex items-center justify-center mr-4 relative">
-                            <img src={user.avatar_url} alt={user.name} className="w-10 h-10 rounded-full object-cover" />
+                            <img
+                              src={user.avatar_url}
+                              alt={user.name}
+                              className="w-10 h-10 rounded-full object-cover cursor-pointer"
+                              onClick={() => setSelectedUserId(user.id)}
+                            />
                             <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-white ${user.status === 'online' ? 'bg-[#CCFF00]' : 'bg-gray-400'}`}></span>
                           </div>
                           <div className="flex-1 min-w-0">
@@ -731,7 +794,7 @@ const Games: React.FC = () => {
                   )}
                 </>
               )}
-              {activeTab !== 'users' && (
+              {activeTab !== 'friends' && (
                 challenges.length > 0 ? (
                   <div className="flex flex-col gap-4">
                     {challenges.map((challenge) => (
@@ -843,10 +906,27 @@ const Games: React.FC = () => {
           )}
           {showChallengeDetailsModal && selectedChallenge && (
             <ChallengeDetailsModal
-              challenge={selectedChallenge}
+              challenge={{
+                ...selectedChallenge,
+                challenger_id: selectedChallenge.challenger.id,
+                challenged_id: selectedChallenge.challenged.id,
+                scheduled_at: selectedChallenge.scheduled_at || undefined
+              }}
               onClose={() => setShowChallengeDetailsModal(false)}
             />
           )}
+          {selectedUserId && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+       onClick={(e) => {
+         if (e.target === e.currentTarget) setSelectedUserId(null);
+       }}
+  >
+    <ProfileCard
+      userId={selectedUserId}
+      onClose={() => setSelectedUserId(null)}
+    />
+  </div>
+)}
         </div>
       </div>
       <MobileFooterNav />

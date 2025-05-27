@@ -90,8 +90,22 @@ const Leaderboard: React.FC = () => {
           {/* Leaderboard List */}
           <div className="w-full">
             {loading ? (
-              <div className="flex items-center justify-center py-16">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#FFCC00]" />
+              <div className="flex flex-col gap-4 py-8">
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="flex items-center bg-white rounded-2xl shadow-sm px-4 py-3 animate-pulse">
+                    <div className="flex-shrink-0 w-12 h-12 rounded-full bg-gray-200 mr-4" />
+                    <div className="flex-1 min-w-0">
+                      <div className="h-4 bg-gray-200 rounded w-1/3 mb-2" />
+                      <div className="h-3 bg-gray-100 rounded w-1/2 mb-1" />
+                      <div className="flex gap-2 mt-2">
+                        <div className="h-3 w-8 bg-gray-100 rounded" />
+                        <div className="h-3 w-8 bg-gray-100 rounded" />
+                        <div className="h-3 w-12 bg-gray-100 rounded" />
+                      </div>
+                    </div>
+                    <div className="w-20 h-8 bg-gray-200 rounded-full ml-4" />
+                  </div>
+                ))}
               </div>
             ) : filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (

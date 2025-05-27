@@ -24,7 +24,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({ title, showBackButton = true })
                 <ArrowLeft className="w-5 h-5" />
               </button>
             )}
-            <h1 className="ml-2 text-lg">{title}</h1>
+            <h1 className="ml-2 text-base font-semibold sm:text-lg">{title}</h1>
           </div>
           
           <HeaderActions />

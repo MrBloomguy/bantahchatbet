@@ -1,5 +1,4 @@
 import React from 'react';
-import { Tour as ShepherdTour } from 'react-shepherd';
 import { useState, useEffect } from 'react';
 import { useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import AdminRoute from './components/AdminRoute';
@@ -93,7 +92,6 @@ const App: React.FC = () => {
   };
 
   return (
-    <ShepherdTour steps={[]} tourOptions={tourOptions}>
     <ToastProvider>
       <SupabaseProvider>
         <PrivyAuthProvider>
@@ -378,7 +376,6 @@ const App: React.FC = () => {
         </PrivyAuthProvider>
       </SupabaseProvider>
     </ToastProvider>
-    </ShepherdTour>
   );
 };
 

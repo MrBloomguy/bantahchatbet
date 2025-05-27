@@ -105,32 +105,27 @@ const WalletRedesigned: React.FC = () => {
       <PageHeader title="Wallet" showBackButton />
 
       <div className="flex-1 flex flex-col items-center w-full">
-        <div className="w-full max-w-xl mx-auto px-2 sm:px-4 py-4">
-          {/* Main Wallet Card */}
-          <div className="bg-white rounded-3xl p-6 mb-6 border border-[#f0f1fa] shadow-sm">
+        <div className="w-full max-w-lg mx-auto px-2 sm:px-4 py-4">
+          {/* Modern Wallet Card */}
+          <div className="bg-gradient-to-br from-[#f8f8ff] to-[#f3f3fa] rounded-2xl p-5 mb-5 border border-[#ececf6] shadow-sm flex flex-col gap-4">
             {/* Balance Display */}
-            <div className="mb-6">
-              <div className="text-sm text-gray-500 mb-1">Total Balance</div>
-              <div className="flex items-baseline gap-2">
-                <div className="text-3xl font-bold text-gray-900">{formatNaira(balance)}</div>
-                <div className="text-sm text-gray-500">{formatUSD(usdEquivalent)} USD</div>
+            <div className="flex items-center justify-between gap-4">
+              <div>
+                <div className="text-xs text-gray-500 mb-1">Total Balance</div>
+                <div className="flex items-baseline gap-2">
+                  <div className="text-2xl font-bold text-gray-900 leading-tight">{formatNaira(balance)}</div>
+                  <div className="text-xs text-gray-400">{formatUSD(usdEquivalent)} USD</div>
+                </div>
               </div>
-
-              {/* Balance Breakdown */}
-              <div className="flex gap-4 mt-3">
-                <div className="flex-1 p-3 bg-gray-50 rounded-xl">
-                  <div className="text-xs text-gray-500 mb-1">Real Balance</div>
-                  <div className="text-lg font-semibold text-gray-900">{formatNaira(balance)}</div>
-                </div>
-                <div className="flex-1 p-3 bg-gray-50 rounded-xl">
-                  <div className="text-xs text-gray-500 mb-1">Bonus Balance</div>
-                  <div className="text-lg font-semibold text-gray-900">{formatNaira(bonusBalance)}</div>
-                </div>
+              <div className="flex flex-col gap-1 text-right">
+                <div className="text-[11px] text-gray-400">Real</div>
+                <div className="text-sm font-semibold text-gray-800">{formatNaira(balance)}</div>
+                <div className="text-[11px] text-gray-400 mt-1">Bonus</div>
+                <div className="text-sm font-semibold text-gray-800">{formatNaira(bonusBalance)}</div>
               </div>
             </div>
-
             {/* Quick Actions */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 gap-2 mt-2">
               <ActionButton
                 icon={ArrowDownRight}
                 label="Deposit"
@@ -148,14 +143,14 @@ const WalletRedesigned: React.FC = () => {
             </div>
           </div>
 
-          {/* Recent Transactions */}
-          <div className="bg-white rounded-2xl p-5 mb-6 border border-[#f0f1fa] shadow-sm">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-gray-900">Recent Transactions</h3>
+          {/* Recent Transactions - Compact Modern Card */}
+          <div className="bg-white rounded-xl p-4 mb-5 border border-[#ececf6] shadow-sm">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-base font-semibold text-gray-900">Recent Transactions</h3>
               <button
                 type="button"
                 onClick={() => navigate('/activity-history')}
-                className="text-sm text-[#7440FF] font-medium flex items-center gap-1"
+                className="text-xs text-[#7440FF] font-medium flex items-center gap-1 hover:underline"
               >
                 View All <ChevronRight className="w-4 h-4" />
               </button>
@@ -163,34 +158,10 @@ const WalletRedesigned: React.FC = () => {
             <EnhancedWalletHistory limit={5} showFilters={false} />
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-white rounded-2xl p-4 border border-[#f0f1fa] shadow-sm">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <Clock className="w-5 h-5 text-blue-600" />
-                </div>
-                <div className="text-sm text-gray-500">Pending</div>
-              </div>
-              <div className="text-xl font-bold text-gray-900">{formatNaira(0)}</div>
-            </div>
-            <div className="bg-white rounded-2xl p-4 border border-[#f0f1fa] shadow-sm">
-              <div className="flex items-center gap-3 mb-2">
-                <div className="p-2 bg-green-100 rounded-full">
-                  <DollarSign className="w-5 h-5 text-green-600" />
-                </div>
-                <div className="text-sm text-gray-500">This Month</div>
-              </div>
-              <div className="text-xl font-bold text-gray-900">{formatNaira(0)}</div>
-            </div>
-          </div>
-
-          {/* Payment/Withdrawal Modal */}
+          {/* Payment/Withdrawal Modal - Modernized */}
           {showPaymentModal && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-              <div
-                className="bg-white rounded-2xl max-w-xs w-full p-4 relative bg-cover bg-center bg-dialogue"
-              >
+            <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-xl max-w-xs w-full p-4 relative border border-[#ececf6] shadow-xl">
                 <button
                   type="button"
                   onClick={() => setShowPaymentModal(false)}
@@ -200,19 +171,15 @@ const WalletRedesigned: React.FC = () => {
                 >
                   <X className="w-4 h-4 text-gray-500" />
                 </button>
-
                 <div className="space-y-3">
                   <div>
-                    <h3 className="text-lg font-bold text-gray-900">
+                    <h3 className="text-base font-bold text-gray-900">
                       {transactionType === 'deposit' ? 'Add Funds' : 'Withdraw'}
                     </h3>
                     <p className="text-xs text-gray-500">Enter amount below</p>
                   </div>
-
-                  {/* Balance info is now shown in the CompactWithdrawalWidget */}
-
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">₦</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">₦</span>
                     <input
                       type="number"
                       value={amount}
@@ -222,7 +189,6 @@ const WalletRedesigned: React.FC = () => {
                       min="100"
                     />
                   </div>
-
                   <div className="grid grid-cols-3 gap-1">
                     {[1000, 2000, 5000, 10000, 20000, 50000].map((quickAmount) => (
                       <button
@@ -239,7 +205,6 @@ const WalletRedesigned: React.FC = () => {
                       </button>
                     ))}
                   </div>
-
                   <div>
                     {transactionType === 'deposit' ? (
                       <SimplePaystackWidget

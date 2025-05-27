@@ -232,66 +232,80 @@ export function useEventChat(eventId: string) {
           filter: `event_id=eq.${eventId}`,
         },
         (payload) => {
-          if (!payload.new) return;
+          // Defensive: Only proceed if payload.new is an object and has an id
+          if (!payload.new || typeof payload.new !== 'object' || !('id' in payload.new)) return;
 
-          // Immediately add message to UI
-          const tempMessage = {
-            ...payload.new,
+          // Immediately add message to UI (optimistic update)
+          const tempMessage: EventChatMessage = {
+            id: payload.new.id,
+            content: payload.new.content,
+            sender_id: payload.new.sender_id,
+            created_at: payload.new.created_at,
             sender: {
-              name: currentUser?.name || 'Unknown',
-              username: currentUser?.username,
-              avatar_url: currentUser?.avatar_url || '/default-avatar.png'
-            }
-          };
-          
-          setMessages(prev => [...prev, tempMessage]);
-            .from('event_chat_messages')
-            .select(`
-              id,
-              content,
-              sender_id,
-              created_at,
-              media_url,
-              media_type,
-              mentions,
-              reply_to,
-              users!inner (
-                id,
-                name,
-                username,
-                avatar_url
-              )
-            `)
-            .eq('id', payload.new.id)
-            .single();
-
-          if (error || !messageData) {
-            console.error('Error fetching message data:', error);
-            return;
-          }
-
-          const newMessage: EventChatMessage = {
-            id: messageData.id,
-            content: messageData.content,
-            sender_id: messageData.sender_id,
-            created_at: messageData.created_at,
-            sender: {
-              name: messageData.users?.name || 'Unknown',
-              username: messageData.users?.username || undefined,
-              avatar_url: messageData.users?.avatar_url || '/default-avatar.png',
+              name: currentUser?.user_metadata?.name || 'Unknown',
+              username: currentUser?.user_metadata?.username,
+              avatar_url: currentUser?.user_metadata?.avatar_url || '/default-avatar.png',
             },
-            media_type: messageData.media_type || undefined,
-            media_url: messageData.media_url || undefined,
-            mentions: messageData.mentions || undefined,
-            reply_to: messageData.reply_to || undefined,
+            media_type: payload.new.media_type || undefined,
+            media_url: payload.new.media_url || undefined,
+            mentions: payload.new.mentions || undefined,
+            reply_to: payload.new.reply_to || undefined,
           };
+          setMessages(prev => [...prev, tempMessage]);
 
-          setMessages((prevMessages) => {
-            if (prevMessages.some((msg) => msg.id === newMessage.id)) {
-              return prevMessages;
+          // Fetch the full message data from Supabase
+          (async () => {
+            const id = (payload.new as any).id;
+            if (!id) return;
+            const { data: messageData, error } = await supabase
+              .from('event_chat_messages')
+              .select(`
+                id,
+                content,
+                sender_id,
+                created_at,
+                media_url,
+                media_type,
+                mentions,
+                reply_to,
+                users!inner (
+                  id,
+                  name,
+                  username,
+                  avatar_url
+                )
+              `)
+              .eq('id', id)
+              .single();
+
+            if (error || !messageData) {
+              console.error('Error fetching message data:', error);
+              return;
             }
-            return [...prevMessages, newMessage];
-          });
+
+            const newMessage: EventChatMessage = {
+              id: messageData.id,
+              content: messageData.content,
+              sender_id: messageData.sender_id,
+              created_at: messageData.created_at,
+              sender: {
+                name: messageData.users?.[0]?.name || 'Unknown',
+                username: messageData.users?.[0]?.username || undefined,
+                avatar_url: messageData.users?.[0]?.avatar_url || '/default-avatar.png',
+              },
+              media_type: messageData.media_type || undefined,
+              media_url: messageData.media_url || undefined,
+              mentions: messageData.mentions || undefined,
+              reply_to: messageData.reply_to || undefined,
+            };
+
+            setMessages(prevMessages => {
+              if (prevMessages.some(msg => msg.id === newMessage.id)) {
+                return prevMessages;
+              }
+              return [...prevMessages, newMessage];
+            });
+          })();
         }
       )
       .subscribe((status) => {
