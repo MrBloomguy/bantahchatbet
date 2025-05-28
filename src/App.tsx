@@ -37,6 +37,7 @@ import AdminEventPools from './pages/AdminEventPools';
 import AdminBonusPoints from './pages/AdminBonusPoints';
 import AdminEventBoost from './pages/AdminEventBoost';
 import AdminSupportChat from './pages/AdminSupportChat';
+import AdminTestMoney from './pages/AdminTestMoney';
 
 // User Pages
 import SignIn from './pages/SignIn';
@@ -67,6 +68,7 @@ import DataDeletionCallback from './pages/DataDeletionCallback';
 import DataDeletionDocs from './pages/DataDeletionDocs';
 import Terms from './pages/Terms';
 import SupportChat from './pages/SupportChat';
+import Bantzz from './pages/Bantzz';
 
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -239,6 +241,11 @@ const App: React.FC = () => {
                               </AdminRoute>
                             }
                           />
+                          <Route path="/admin/test-money" element={
+                            <AdminRoute>
+                              <AdminTestMoney />
+                            </AdminRoute>
+                          } />
 
                           {/* Protected routes */}
                           <Route
@@ -358,6 +365,11 @@ const App: React.FC = () => {
                             </ProtectedRoute>
                           } />
                           <Route path="/toast-demo" element={<ToastDemo />} />
+                          <Route path="/bantzz" element={
+                            <ProtectedRoute>
+                              <Bantzz />
+                            </ProtectedRoute>
+                          } />
                         </Routes>
                         <PWAInstallPrompt />
                         <SimpleAuthDebugger />

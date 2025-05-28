@@ -18,7 +18,8 @@ const ProfileSettings: React.FC = () => {
     name: '',
     username: '',
     bio: '',
-    avatar_url: ''
+    avatar_url: '',
+    email: '' // Add email to form state
   });
   const [initialized, setInitialized] = useState(false);
 
@@ -28,7 +29,8 @@ const ProfileSettings: React.FC = () => {
         name: currentUser.name || '',
         username: currentUser.username || '',
         bio: currentUser.bio || '',
-        avatar_url: currentUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.id}`
+        avatar_url: currentUser.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${currentUser.id}`,
+        email: typeof currentUser.email === 'string' ? currentUser.email : (currentUser.email?.address || '')
       });
       setInitialized(true);
     }
@@ -85,6 +87,8 @@ const ProfileSettings: React.FC = () => {
           name: formData.name.trim(),
           username: formData.username.trim().toLowerCase(),
           bio: formData.bio.trim(),
+          avatar_url: formData.avatar_url,
+          email: formData.email.trim(), // Update email
           updated_at: new Date().toISOString()
         })
         .eq('id', userId);
@@ -95,7 +99,7 @@ const ProfileSettings: React.FC = () => {
       navigate(-1);
     } catch (error) {
       console.error('Error updating profile:', error);
-      toast.showError('Failed to update profile');
+      toast.error('Failed to update profile');
     } finally {
       setLoading(false);
     }
@@ -203,19 +207,20 @@ const ProfileSettings: React.FC = () => {
           </p>
         </div>
 
-        {/* Email (read-only) */}
+        {/* Email (editable) */}
         <div>
           <label className="block text-sm font-medium text-gray-600 mb-1">
             Email
           </label>
-          <div className="flex items-center gap-2 p-2.5 rounded-lg border border-gray-200 bg-gray-50 text-gray-500">
-            <Mail className="w-4 h-4 text-gray-400" />
-            <span>
-              {typeof currentUser.email === 'string'
-                ? currentUser.email
-                : currentUser.email?.address || 'No email set'}
-            </span>
-          </div>
+          <input
+            type="email"
+            value={formData.email}
+            onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            className="w-full p-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-[#CCFF00] focus:border-transparent text-gray-900 placeholder-gray-400"
+            placeholder="you@email.com"
+            disabled={loading}
+            required
+          />
         </div>
 
         {/* Password Change Link */}

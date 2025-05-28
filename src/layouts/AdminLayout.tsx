@@ -17,6 +17,7 @@ import {
   MessageSquare
 } from 'lucide-react';
 import AdminMobileNav from '../components/AdminMobileNav';
+import AdminTestMoney from '../pages/AdminTestMoney';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -42,12 +43,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'Stories', href: '/admin/stories', icon: Newspaper },
     { name: 'Broadcast', href: '/admin/broadcast', icon: Bell },
     { name: 'Users', href: '/admin/users', icon: Users },
-{ name: 'Support Chat', href: '/admin/support-chat', icon: MessageSquare },
+    { name: 'Support Chat', href: '/admin/support-chat', icon: MessageSquare },
     { name: 'Bonus Points', href: '/admin/bonus-points', icon: Award },
     { name: 'Reports', href: '/admin/reports', icon: AlertCircle },
     { name: 'Withdrawals', href: '/admin/withdrawals', icon: Wallet },
     { name: 'Platform Fees', href: '/admin/platform-fees', icon: Coins },
     { name: 'Audit Log', href: '/admin/audit-log', icon: ClipboardList },
+    { name: 'Send Test Money', href: '/admin/test-money', icon: Coins },
   ];
 
   return (

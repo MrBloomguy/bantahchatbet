@@ -36,40 +36,12 @@ export const SimplePaystackWidget: React.FC<SimplePaystackWidgetProps> = ({
 
   // Load Paystack script
   useEffect(() => {
-    // Check if already loaded
+    // Only check for PaystackPop, do not add the script again (already in index.html)
     if (window.PaystackPop) {
-      console.log('PaystackPop already available');
       setScriptLoaded(true);
-      return;
+    } else {
+      setError('Payment system could not be initialized. Please refresh the page.');
     }
-
-    // Create script element
-    const script = document.createElement('script');
-    script.src = 'https://js.paystack.co/v1/inline.js';
-    script.async = true;
-    
-    script.onload = () => {
-      console.log('Paystack script loaded');
-      if (window.PaystackPop) {
-        setScriptLoaded(true);
-      } else {
-        // If script loaded but PaystackPop not available, check again in 1 second
-        setTimeout(() => {
-          if (window.PaystackPop) {
-            setScriptLoaded(true);
-          } else {
-            setError('Payment system could not be initialized. Please refresh the page.');
-          }
-        }, 1000);
-      }
-    };
-    
-    script.onerror = () => {
-      console.error('Failed to load Paystack script');
-      setError('Failed to load payment system. Please refresh the page.');
-    };
-    
-    document.head.appendChild(script);
   }, []);
 
   const handlePayment = () => {
@@ -90,6 +62,14 @@ export const SimplePaystackWidget: React.FC<SimplePaystackWidgetProps> = ({
 
     if (amount < 100) {
       setError('Minimum deposit amount is ₦100.');
+      return;
+    }
+
+    // Validate email
+    const email = currentUser.email;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      setError('Your account email is missing or invalid. Please update your profile with a valid email address.');
       return;
     }
 
@@ -137,7 +117,7 @@ export const SimplePaystackWidget: React.FC<SimplePaystackWidgetProps> = ({
           // Initialize Paystack
           const handler = window.PaystackPop.setup({
             key: paystackKey,
-            email: currentUser.email,
+            email: email,
             amount: amount * 100, // Convert to kobo
             currency: 'NGN',
             ref: reference,

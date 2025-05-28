@@ -50,6 +50,8 @@ const Events = () => {
   const handleCategoryClick = (categoryId: string) => {
     if (categoryId === 'create') {
       navigate('/create');
+    } else if (categoryId === 'bantzz') {
+      navigate('/bantzz');
     } else if (categoryId === 'stories') {
       navigate('/stories');
     } else {
@@ -68,6 +70,13 @@ const Events = () => {
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#1A472E]',
       icon: <img src="/create.png" alt="Create Event" className="w-12 h-12" />,
+    },
+    {
+      id: 'bantzz',
+      label: 'Bantzz',
+      gradient: 'from-[#7440ff] to-[#CCFF00]',
+      bgColor: 'bg-[#f8fafc]',
+      icon: <img src="/sparkles.svg" alt="Bantzz" className="w-10 h-10" />,
     },
     {
       id: 'stories',
