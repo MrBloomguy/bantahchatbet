@@ -8,6 +8,7 @@ import Logo from '../components/Logo';
 import { supabase } from '../lib/supabase';
 import { usePrivyAuth } from '../contexts/PrivyAuthContext';
 import { usePrivy } from '@privy-io/react-auth';
+import { Eye, EyeOff } from 'lucide-react';
 
 const MAX_RETRIES = 3;
 const RETRY_DELAY = 1000;
@@ -29,6 +30,8 @@ const SignIn: React.FC = () => {
   const [resetEmail, setResetEmail] = useState('');
   const [timeSinceLastRequest, setTimeSinceLastRequest] = useState(0);
   const [currentRetryCount, setCurrentRetryCount] = useState(0);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const { login, ready } = usePrivy();
 
   useEffect(() => {
@@ -370,23 +373,45 @@ const SignIn: React.FC = () => {
                 required
                 className="w-full bg-white/10 text-white rounded-full px-3 py-2 text-xs backdrop-blur-md focus:outline-none focus:ring-1 focus:ring-[#CCFF00] border border-white/20 font-sans"
               />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                required
-                className="w-full bg-white/10 text-white rounded-full px-3 py-2 text-xs backdrop-blur-md focus:outline-none focus:ring-1 focus:ring-[#CCFF00] border border-white/20 font-sans"
-              />
-              {!isSignIn && (
+              <div className="relative">
                 <input
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  placeholder="Confirm Password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Password"
                   required
-                  className="w-full bg-white/10 text-white rounded-full px-3 py-2 text-xs backdrop-blur-md focus:outline-none focus:ring-1 focus:ring-[#CCFF00] border border-white/20 font-sans"
+                  className="w-full bg-black/10 text-white rounded-full px-3 py-2 text-xs backdrop-blur-md focus:outline-none focus:ring-1 focus:ring-[#CCFF00] border border-white/20 font-sans pr-10"
                 />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#CCFF00] focus:outline-none"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+              {!isSignIn && (
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm Password"
+                    required
+                    className="w-full bg-white/10 text-white rounded-full px-3 py-2 text-xs backdrop-blur-md focus:outline-none focus:ring-1 focus:ring-[#CCFF00] border border-white/20 font-sans pr-10"
+                  />
+                  <button
+                    type="button"
+                    tabIndex={-1}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#CCFF00] focus:outline-none"
+                    onClick={() => setShowConfirmPassword((v) => !v)}
+                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                  >
+                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
               )}
               <button
                 type="submit"
