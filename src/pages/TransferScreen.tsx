@@ -21,7 +21,7 @@ const TransferScreen: React.FC<TransferScreenProps> = ({ amount }) => {
           <button onClick={() => window.history.back()} className="p-2">
             <ArrowLeft className="w-6 h-6" />
           </button>
-          <h1 className="text-xl font-semibold flex-1 text-center">Transfer</h1>
+          <h1 className="text-xl font-semibold flex-1 text-center">Tip</h1>
         </div>
       </div>
 
@@ -80,7 +80,7 @@ const TransferScreen: React.FC<TransferScreenProps> = ({ amount }) => {
               onClick={() => transfer({ amount, recipientId: selectedUser.id })}
               className="w-full bg-purple-600 text-white py-3 rounded-lg font-medium"
             >
-              Transfer ₦{amount.toLocaleString()} to @{selectedUser.username}
+              Tip ₦{amount.toLocaleString()} to @{selectedUser.username}
             </button>
           </div>
         )}

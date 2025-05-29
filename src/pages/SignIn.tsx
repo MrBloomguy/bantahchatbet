@@ -32,6 +32,7 @@ const SignIn: React.FC = () => {
   const [currentRetryCount, setCurrentRetryCount] = useState(0);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resetError, setResetError] = useState<string | null>(null);
   const { login, ready } = usePrivy();
 
   useEffect(() => {
@@ -111,7 +112,13 @@ const SignIn: React.FC = () => {
     }
 
     setLoading(true);
+    setResetError(null);
     let retries = 0;
+    let didSucceed = false;
+    const timeout = setTimeout(() => {
+      setLoading(false);
+      setResetError('Request timed out. Please try again.');
+    }, 15000); // 15s failsafe
 
     while (retries < MAX_RETRIES) {
       try {
@@ -123,42 +130,37 @@ const SignIn: React.FC = () => {
         );
 
         if (error) {
-          // If it's not a retryable error, throw immediately
           if (!error.message?.includes('RetryableFetch')) {
             throw error;
           }
-
           retries++;
           setCurrentRetryCount(retries);
           if (retries === MAX_RETRIES) {
             throw new Error('Service temporarily unavailable. Please try again in a few minutes.');
           }
-
-          // Wait before retrying
           await sleep(RETRY_DELAY);
           continue;
         }
-
         // Success
         toast.showSuccess('Reset instructions sent! Please check your email');
         setShowForgotPassword(false);
         setResetEmail('');
         setTimeSinceLastRequest(Date.now());
+        didSucceed = true;
         break;
-
       } catch (error: any) {
         console.error('Reset password error:', error);
-
-        const errorMessage = error.message === '{}'
-          ? 'Connection error. Please try again'
+        const errorMessage = error.message === '{}' || error.name === 'AuthRetryableFetchError'
+          ? 'Network or server error. Please check your connection and try again later.'
           : error.message || 'Failed to send reset instructions';
-
+        setResetError(errorMessage);
         toast.showError(errorMessage);
         break;
       }
     }
-
+    clearTimeout(timeout);
     setLoading(false);
+    if (!didSucceed && !resetError) setResetError('Failed to send reset instructions. Please try again.');
   };
 
   const handleGoogleSignIn = async () => {
@@ -267,6 +269,10 @@ const SignIn: React.FC = () => {
                     ? `Wait ${cooldownSeconds}s`
                     : 'Send Reset Instructions'}
               </button>
+
+              {resetError && (
+                <p className="text-xs text-red-400 text-center font-sans mt-1">{resetError}</p>
+              )}
 
               {isInCooldown && (
                 <p className="text-[10px] text-white/60 text-center font-sans">

@@ -68,8 +68,8 @@ export function useLeaderboard() {
       // Get challenge participation counts
       const { data: challengeData, error: challengeError } = await supabase
         .from('challenges')
-        .select('challenger_id, challenged_id, status, amount') as {
-          data: { challenger_id: string; challenged_id: string; status: string; amount: number }[] | null;
+        .select('challenger_id, challenged_id, winner_id, status, amount') as {
+          data: { challenger_id: string; challenged_id: string; winner_id: string | null; status: string; amount: number }[] | null;
           error: any
         };
 
@@ -84,8 +84,8 @@ export function useLeaderboard() {
           return acc;
         }, {});
 
-      // Calculate challenge stats per user
-      const challengeStats = ((challengeData || []) as { challenger_id: string; challenged_id: string; status: string; amount: number }[])
+      // Calculate challenge stats per user (use real winner_id)
+      const challengeStats = ((challengeData || []) as { challenger_id: string; challenged_id: string; winner_id: string | null; status: string; amount: number }[])
         .reduce<Record<string, { participated: number; won: number; earnings: number }>>((acc, challenge) => {
           // Initialize stats for both users if they don't exist
           if (!acc[challenge.challenger_id]) {
@@ -99,23 +99,52 @@ export function useLeaderboard() {
           acc[challenge.challenger_id].participated += 1;
           acc[challenge.challenged_id].participated += 1;
 
-          // Count wins and earnings for completed challenges
-          if (challenge.status === 'completed') {
-            // Determine the winner (this is a simplified logic, adjust based on your actual data model)
-            // In a real implementation, you would use the actual winner field from the challenge
-            // For now, we'll randomly assign a winner for demonstration purposes
-            const winnerId = Math.random() > 0.5 ? challenge.challenger_id : challenge.challenged_id;
-            if (winnerId) {
-              acc[winnerId].won += 1;
-              acc[winnerId].earnings += challenge.amount;
-            }
+          // Count wins and earnings for completed challenges with a real winner
+          if (challenge.status === 'completed' && challenge.winner_id) {
+            acc[challenge.winner_id] = acc[challenge.winner_id] || { participated: 0, won: 0, earnings: 0 };
+            acc[challenge.winner_id].won += 1;
+            acc[challenge.winner_id].earnings += challenge.amount * 2 * 0.95; // winner gets both wagers minus 5% platform fee
           }
 
           return acc;
         }, {});
 
+      // Calculate event winnings per user
+      // We'll need to fetch event info for each participant who won
+      let eventWinnings: Record<string, number> = {};
+      if (eventParticipationData && eventParticipationData.length > 0) {
+        // Get all event IDs and user IDs where status is 'won'
+        const { data: winningEvents, error: winningEventsError } = await supabase
+          .from('event_participants')
+          .select('user_id, event_id, status')
+          .eq('status', 'won');
+        if (!winningEventsError && winningEvents) {
+          // Get event wager amounts for these events
+          const eventIds = [...new Set(winningEvents.map(e => e.event_id))];
+          if (eventIds.length > 0) {
+            const { data: eventData, error: eventDataError } = await supabase
+              .from('events')
+              .select('id, wager_amount')
+              .in('id', eventIds);
+            if (!eventDataError && eventData) {
+              // Map eventId to wager_amount
+              const eventWagerMap: Record<string, number> = {};
+              eventData.forEach(e => {
+                eventWagerMap[e.id] = e.wager_amount || 0;
+              });
+              // For each winning event, add 2x wager_amount to the winner (minus 3% platform fee)
+              winningEvents.forEach(e => {
+                const amount = eventWagerMap[e.event_id] || 0;
+                if (!eventWinnings[e.user_id]) eventWinnings[e.user_id] = 0;
+                eventWinnings[e.user_id] += amount * 2 * 0.97;
+              });
+            }
+          }
+        }
+      }
+
       // Process and format user data with type assertion
-      const processedUsers: LeaderboardUser[] = (usersData || [])
+      const processedUsers = (usersData || [])
         .map(user => {
           // Skip users without basic profile information
           if (!user.name && !user.username) {
@@ -129,8 +158,10 @@ export function useLeaderboard() {
           // Calculate total events won (from user_stats and challenges)
           const eventsWon = (user.user_stats?.events_won || 0) + (challengeStatsForUser.won || 0);
 
-          // Calculate total earnings (from user_stats and challenges)
-          const totalEarnings = (user.user_stats?.total_earnings || 0) + (challengeStatsForUser.earnings || 0);
+          // Calculate total earnings (from user_stats and challenges and event winnings)
+          const totalEarnings = (user.user_stats?.total_earnings || 0)
+            + (challengeStatsForUser.earnings || 0)
+            + (eventWinnings[user.id] || 0);
 
           // Calculate reputation points
           const reputationPoints = (user.reputation_score || 0) + (challengeStatsForUser.won * 10);
@@ -146,7 +177,8 @@ export function useLeaderboard() {
             points: Math.floor(reputationPoints),
             rank: 0
           };
-        });
+        })
+        .filter((user): user is LeaderboardUser => user !== null);
 
       // Filter out null values and ensure we have valid users
       const validUsers = processedUsers.filter(user => user !== null) as LeaderboardUser[];

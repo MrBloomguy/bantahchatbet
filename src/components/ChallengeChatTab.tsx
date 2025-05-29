@@ -5,13 +5,14 @@ import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from './LoadingSpinner';
 import EnhancedChallengeChat from './EnhancedChallengeChat';
+import ChallengeDetailsModal from './ChallengeDetailsModal';
 import { Trophy, Search, Clock, ArrowLeft } from 'lucide-react';
 import { isScheduledDatePast } from '../utils/handlePastScheduledChallenges';
 
 interface Challenge {
   id: string;
   title: string;
-  status: string;
+  status: string | 'accepted' | 'completed' | 'declined' | 'missed' | 'pending' | 'expired'; // Fix Challenge type for modal compatibility
   amount: number; // The database only has 'amount', not 'wager_amount'
   challenger_id: string;
   challenged_id: string;
@@ -24,6 +25,10 @@ interface Challenge {
     avatar_url: string;
   };
   created_at: string;
+  scheduled_at?: string; // Add this if your DB supports it
+  game_type?: string;
+  platform?: string;
+  expires_at?: string;
 }
 
 interface ChallengeChatTabProps {
@@ -41,6 +46,8 @@ const ChallengeChatTab: React.FC<ChallengeChatTabProps> = ({ embedded = false })
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChallengeId, setSelectedChallengeId] = useState<string | null>(null);
   const [showMobileChat, setShowMobileChat] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [modalChallenge, setModalChallenge] = useState<Challenge | null>(null);
 
   // Parse query parameters to get chatId
   useEffect(() => {
@@ -70,19 +77,6 @@ const ChallengeChatTab: React.FC<ChallengeChatTabProps> = ({ embedded = false })
         } catch (error) {
           console.warn('Error handling past scheduled challenges:', error);
           // Continue with fetching challenges even if this fails
-        }
-
-        // Check if the table has the necessary columns
-        const { data: tableInfo, error: tableError } = await supabase
-          .from('challenges')
-          .select('id')
-          .limit(1);
-
-        if (tableError) {
-          console.error('Error checking challenges table:', tableError);
-          toast.showError('Failed to check challenges table structure');
-          setLoading(false);
-          return;
         }
 
         const { data, error } = await supabase
@@ -131,39 +125,27 @@ const ChallengeChatTab: React.FC<ChallengeChatTabProps> = ({ embedded = false })
   };
 
   const handleChallengeClick = (challengeId: string) => {
-    setSelectedChallengeId(challengeId);
-    setShowMobileChat(true);
-
-    // Update URL without navigating
-    const currentPath = location.pathname;
-    const isOnChallengesPage = currentPath === '/challenges';
-
-    if (isOnChallengesPage) {
-      navigate(`/challenges?chatId=${challengeId}`, { replace: true });
+    const challenge = filteredChallenges.find(c => c.id === challengeId);
+    if (!challenge) return;
+    // Only allow navigation if the challenge is yours
+    if (challenge.challenger_id === currentUser?.id || challenge.challenged_id === currentUser?.id) {
+      setSelectedChallengeId(challengeId);
+      setShowMobileChat(true);
+      // Only navigate if not already on /challenges
+      if (!location.pathname.includes('/challenges')) {
+        navigate(`/challenges?chatId=${challengeId}`, { replace: true });
+      }
+      // If on /games, do NOT navigate, just update state for in-place chat
     } else {
-      const searchParams = new URLSearchParams(location.search);
-      searchParams.set('tab', 'challenges');
-      searchParams.set('chatId', challengeId);
-      navigate(`/messages?${searchParams.toString()}`, { replace: true });
+      setModalChallenge(challenge);
+      setShowModal(true);
     }
   };
 
   const handleBackToList = () => {
     setShowMobileChat(false);
     setSelectedChallengeId(null);
-
-    // Update URL without navigating
-    const currentPath = location.pathname;
-    const isOnChallengesPage = currentPath === '/challenges';
-
-    if (isOnChallengesPage) {
-      navigate('/challenges', { replace: true });
-    } else {
-      const searchParams = new URLSearchParams(location.search);
-      searchParams.set('tab', 'challenges');
-      searchParams.delete('chatId');
-      navigate(`/messages?${searchParams.toString()}`, { replace: true });
-    }
+    navigate('/challenges', { replace: true });
   };
 
   const getOpponentName = (challenge: Challenge) => {
@@ -200,6 +182,27 @@ const ChallengeChatTab: React.FC<ChallengeChatTabProps> = ({ embedded = false })
         return 'bg-gray-500/20 text-gray-400';
     }
   };
+
+  // Remove duplicates: only include user's own challenges once
+  const userChallengeIds = new Set();
+  const sortedChallenges = [
+    ...filteredChallenges.filter(c => {
+      const isMine = c.challenger_id === currentUser?.id || c.challenged_id === currentUser?.id;
+      if (isMine && !userChallengeIds.has(c.id)) {
+        userChallengeIds.add(c.id);
+        return true;
+      }
+      return false;
+    }),
+    ...filteredChallenges.filter(c => {
+      const isMine = c.challenger_id === currentUser?.id || c.challenged_id === currentUser?.id;
+      if (!isMine && !userChallengeIds.has(c.id)) {
+        userChallengeIds.add(c.id);
+        return true;
+      }
+      return false;
+    })
+  ];
 
   return (
     <div className={`flex flex-col h-full ${embedded ? 'overflow-hidden' : ''}`}>
@@ -266,9 +269,9 @@ const ChallengeChatTab: React.FC<ChallengeChatTabProps> = ({ embedded = false })
                 </div>
               ))}
             </div>
-          ) : filteredChallenges.length > 0 ? (
+          ) : sortedChallenges.length > 0 ? (
             <div className="space-y-2 pt-1 pb-4">
-              {filteredChallenges.map(challenge => {
+              {sortedChallenges.map(challenge => {
                 const isActive = challenge.id === selectedChallengeId;
                 return (
                   <div
@@ -380,6 +383,14 @@ const ChallengeChatTab: React.FC<ChallengeChatTabProps> = ({ embedded = false })
           </div>
         )}
       </div>
+
+      {/* Modal for non-owned challenges */}
+      {showModal && modalChallenge && (
+        <ChallengeDetailsModal
+          challenge={modalChallenge}
+          onClose={() => setShowModal(false)}
+        />
+      )}
       </div>
     </div>
   );
