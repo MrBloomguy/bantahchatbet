@@ -150,7 +150,7 @@ const MyEvents = () => {
 
   return (
     <div className="min-h-screen bg-[#F6F7FB] flex flex-col">
-      <PageHeader title="My Events" />
+      <PageHeader title="History" />
       <div className="flex-1 flex flex-col items-center w-full">
         <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 py-4">
           {/* Compact Tabs Bar */}

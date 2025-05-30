@@ -53,14 +53,11 @@ const DesktopNav: React.FC<DesktopNavProps> = ({ onMenuToggle }) => {
     {
       id: 'profile',
       path: '/profile',
-      icon: currentUser?.avatar_url ? (
+      icon: currentUser && (currentUser as any).avatar_url ? (
         <img
-          src={currentUser.avatar_url}
+          src={(currentUser as any).avatar_url}
           alt="Profile"
           className="w-9 h-9 rounded-full object-cover border-2 border-transparent"
-          style={{
-            borderColor: location.pathname === '/profile' ? '#CCFF00' : 'transparent',
-          }}
         />
       ) : (
         <img src="/avatar.svg" alt="Profile Icon" className="w-9 h-9" />
@@ -159,11 +156,7 @@ const DesktopNav: React.FC<DesktopNavProps> = ({ onMenuToggle }) => {
                 }
               </div>
               {isMenuOpen && (
-                <span className={`font-medium text-sm ${
-                  isActive ? 'text-[#CCFF00]' : 'text-black/80'
-                }`}>
-                  {item.label}
-                </span>
+                <span className={`font-medium text-sm ${isActive ? 'text-[#CCFF00]' : 'text-black/80'}`}>{item.label}</span>
               )}
             </button>
           );

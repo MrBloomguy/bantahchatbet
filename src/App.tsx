@@ -1,5 +1,5 @@
 import React from 'react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useLocation, Routes, Route, Navigate } from 'react-router-dom';
 import AdminRoute from './components/AdminRoute';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -18,6 +18,9 @@ import { NotificationProvider } from './contexts/NotificationContext';
 import LevelUpDialog from './components/LevelUpDialog';
 import PointsNotification from './components/PointsNotification';
 import SimpleAuthDebugger from './components/SimpleAuthDebugger';
+import DailyPointsClaimModal from './components/DailyPointsClaimModal';
+import { useLeaderboard } from './hooks/useLeaderboard';
+import { useAuth } from './contexts/AuthContext';
 
 // Admin Pages
 import AdminLogin from './pages/AdminLogin';
@@ -65,7 +68,6 @@ import ProfileCardPopupDemo from './pages/ProfileCardPopupDemo';
 import DataDeletionRequest from './pages/DataDeletionRequest';
 import TikTokAuthCallback from './components/TikTokAuthCallback';
 import DataDeletionCallback from './pages/DataDeletionCallback';
-import DataDeletionDocs from './pages/DataDeletionDocs';
 import Terms from './pages/Terms';
 import SupportChat from './pages/SupportChat';
 import Bantzz from './pages/Bantzz';
@@ -75,23 +77,52 @@ import PWAInstallPrompt from './components/PWAInstallPrompt';
 import EventChatWrapper from './components/EventChatWrapper';
 import ToastDemo from './components/ToastDemo';
 
+const DailyClaimModalGlobal: React.FC = () => {
+  const { currentUser } = useAuth();
+  const { claimDailyPoints, lastClaimedDate } = useLeaderboard();
+  const [showClaimModal, setShowClaimModal] = React.useState(false);
+  const [hasShownClaimModal, setHasShownClaimModal] = React.useState(false);
+  const [claimLoading, setClaimLoading] = React.useState(false);
+  const [claimResult, setClaimResult] = React.useState<null | { success: boolean; message: string }>(null);
+
+  React.useEffect(() => {
+    if (currentUser && !hasShownClaimModal) {
+      const today = new Date().toISOString().slice(0, 10);
+      if (!lastClaimedDate || lastClaimedDate.slice(0, 10) !== today) {
+        setShowClaimModal(true);
+        setHasShownClaimModal(true);
+      }
+    }
+  }, [currentUser, lastClaimedDate, hasShownClaimModal]);
+
+  // Fix: Ensure handleClaim returns the correct type
+  const handleClaim = async (): Promise<{ success: boolean; message: string }> => {
+    setClaimLoading(true);
+    const result = await claimDailyPoints();
+    setClaimResult(result);
+    setClaimLoading(false);
+    return result;
+  };
+
+  if (!currentUser) return null;
+  return (
+    <DailyPointsClaimModal
+      open={showClaimModal}
+      onClose={() => setShowClaimModal(false)}
+      onClaim={handleClaim}
+      lastClaimedDate={lastClaimedDate}
+      loading={claimLoading}
+      claimResult={claimResult}
+    />
+  );
+};
+
 const App: React.FC = () => {
   const location = useLocation();
   const isAuthPage = ['/signin', '/admin/login'].includes(location.pathname);
   const isAdminPage = location.pathname.startsWith('/admin');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const isEventsPage = location.pathname === '/events';
-
-  const tourOptions = {
-    defaultStepOptions: {
-      cancelIcon: {
-        enabled: true
-      },
-      classes: 'shepherd-theme-custom',
-      scrollTo: true
-    },
-    useModalOverlay: true
-  };
 
   return (
     <ToastProvider>
@@ -106,8 +137,10 @@ const App: React.FC = () => {
                     <NotificationProvider>
                       <PointsProvider>
                     <div className={`min-h-screen ${isAdminPage ? 'bg-[#1a1b2e]' : 'bg-gray-50'}`}>
+                      {/* Show daily claim modal globally for all authenticated users */}
+                      <DailyClaimModalGlobal />
                       {!isAuthPage && !isAdminPage && <DesktopNav onMenuToggle={setIsSidebarOpen} />}
-                      <main className={`${
+                      <main className={`$${
                         !isAdminPage && !isAuthPage ?
                           isEventsPage ?
                             isSidebarOpen ? 'lg:ml-[200px]' : 'lg:ml-[70px]'

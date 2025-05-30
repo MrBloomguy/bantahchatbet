@@ -103,7 +103,7 @@ const MobileFooterNav: React.FC = () => {
       id: 'myevents',
       path: '/myevents',
       icon: <img src="/listsvg.svg" alt="My Events Icon" className="w-8 h-8" />,
-      label: 'My Events',
+      label: 'History',
     },
     {
       id: 'profile',
@@ -125,36 +125,37 @@ const MobileFooterNav: React.FC = () => {
   return (
     <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-light-bg safe-bottom h-[60px]">
       <div className="flex items-center justify-around px-1 h-full">
-        {navItems.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => navigate(item.path)}
-            className="flex flex-col items-center justify-between h-full pt-2 pb-1"
-          >
-            <div className="relative">
-              {item.badge && (
-                <span className="absolute -top-1 -right-2 bg-[#FF2E2EFF] text-white text-[10px] font-medium rounded-md px-1 py-0.5 min-w-[15px] h-[15px] flex items-center justify-center">
-                  {item.badge}
-                </span>
-              )}
-              <div
-                className={`${
-                  currentPath === item.path ? 'text-[#CCFF00]' : 'text-white/100'
-                }`}
-              >
-                {item.icon}
-              </div>
-            </div>
-            <span
-              className={`text-xs mt-1 font-poppins font-light ${
-                currentPath === item.path ? 'text-[#000000FF]' : 'text-black/80'
-              }`}
+        {navItems.map((item) => {
+          const isActive = currentPath === item.path;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              onClick={() => navigate(item.path)}
+              className="flex flex-col items-center justify-between h-full pt-2 pb-1"
             >
-              {item.label}
-            </span>
-          </button>
-        ))}
+              <div className="relative">
+                {item.badge && (
+                  <span className="absolute -top-1 -right-2 bg-[#FF2E2EFF] text-white text-[10px] font-medium rounded-md px-1 py-0.5 min-w-[15px] h-[15px] flex items-center justify-center">
+                    {item.badge}
+                  </span>
+                )}
+                <div
+                  className={`${
+                    isActive ? 'text-[#7440ff] font-semibold bg-[#7440ff]/10 rounded-lg p-1' : 'text-black/80'
+                  }`}
+                >
+                  {item.icon}
+                </div>
+              </div>
+              <span
+                className={`text-xs mt-1 font-poppins font-light ${isActive ? 'text-[#7440ff] font-semibold' : 'text-black/80'}`}
+              >
+                {item.label}
+              </span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
