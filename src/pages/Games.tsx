@@ -15,7 +15,8 @@ import {
   CheckCircle,
   XCircle,
   AlertCircle,
-  User
+  User,
+  MapPin
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -724,10 +725,13 @@ const Games: React.FC = () => {
                       placeholder="Search friends to challenge..."
                       value={searchQuery}
                       onChange={handleSearchChange}
-                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#7440FF] focus:border-transparent"
+                      className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#7440FF] focus:border-transparent"
                     />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      <MapPin className="h-5 w-5 text-gray-400 cursor-pointer hover:text-[#7440FF] transition-colors" aria-label="Find friends by location" onClick={() => navigate('/bantah-map')} />
+                    </div>
                     {searching && (
-                      <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                      <div className="absolute inset-y-0 right-8 flex items-center">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-[#7440FF]" />
                       </div>
                     )}

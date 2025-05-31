@@ -6,7 +6,7 @@ import { useToast } from '../contexts/ToastContext';
 import LoadingSpinner from './LoadingSpinner';
 import EnhancedChallengeChat from './EnhancedChallengeChat';
 import ChallengeDetailsModal from './ChallengeDetailsModal';
-import { Trophy, Search, Clock, ArrowLeft } from 'lucide-react';
+import { Trophy, Search, Clock, ArrowLeft, MapPin } from 'lucide-react';
 import { isScheduledDatePast } from '../utils/handlePastScheduledChallenges';
 
 interface Challenge {
@@ -224,8 +224,11 @@ const ChallengeChatTab: React.FC<ChallengeChatTabProps> = ({ embedded = false })
                 placeholder="Search challenges..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                className="w-full pl-12 pr-4 py-2 rounded-full bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="w-full pl-12 pr-12 py-2 rounded-full bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
               />
+              <span className="absolute inset-y-0 right-0 flex items-center pr-4">
+                <MapPin className="h-5 w-5 text-gray-400 cursor-pointer hover:text-purple-500 transition-colors" title="Find friends by location" />
+              </span>
             </div>
           </div>
         )}
@@ -241,8 +244,11 @@ const ChallengeChatTab: React.FC<ChallengeChatTabProps> = ({ embedded = false })
                 placeholder="Search challenges..."
                 value={searchQuery}
                 onChange={handleSearchChange}
-                className="w-full pl-12 pr-4 py-2 rounded-full bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
+                className="w-full pl-12 pr-12 py-2 rounded-full bg-gray-100 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm"
               />
+              <span className="absolute inset-y-0 right-0 flex items-center pr-4">
+                <MapPin className="h-5 w-5 text-gray-400 cursor-pointer hover:text-purple-500 transition-colors" title="Find friends by location" />
+              </span>
             </div>
           </div>
         )}
