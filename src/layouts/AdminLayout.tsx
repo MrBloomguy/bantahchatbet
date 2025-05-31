@@ -14,7 +14,8 @@ import {
   Users,
   Gamepad2,
   Award,
-  MessageSquare
+  MessageSquare,
+  Sparkles
 } from 'lucide-react';
 import AdminMobileNav from '../components/AdminMobileNav';
 import AdminTestMoney from '../pages/AdminTestMoney';
@@ -50,6 +51,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     { name: 'Platform Fees', href: '/admin/platform-fees', icon: Coins },
     { name: 'Audit Log', href: '/admin/audit-log', icon: ClipboardList },
     { name: 'Send Test Money', href: '/admin/test-money', icon: Coins },
+    { name: 'Bantzz AI Agent', href: '/admin/bantzz', icon: Sparkles },
   ];
 
   return (

@@ -41,6 +41,7 @@ import AdminBonusPoints from './pages/AdminBonusPoints';
 import AdminEventBoost from './pages/AdminEventBoost';
 import AdminSupportChat from './pages/AdminSupportChat';
 import AdminTestMoney from './pages/AdminTestMoney';
+import AdminBantzz from './pages/AdminBantzz';
 
 // User Pages
 import SignIn from './pages/SignIn';
@@ -277,6 +278,11 @@ const App: React.FC = () => {
                           <Route path="/admin/test-money" element={
                             <AdminRoute>
                               <AdminTestMoney />
+                            </AdminRoute>
+                          } />
+                          <Route path="/admin/bantzz" element={
+                            <AdminRoute>
+                              <AdminBantzz />
                             </AdminRoute>
                           } />
 

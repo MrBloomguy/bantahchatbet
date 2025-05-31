@@ -104,16 +104,36 @@ const Bantzz: React.FC = () => {
     setInput('');
     setIsProcessing(true);
 
-    setTimeout(() => {
-      const aiResponse: Message = {
-        role: 'assistant',
-        content: `Acknowledged: "${messageContent}". This is a sample AI response. The backend integration is coming soon! I'll be able to help you with betting strategies, game analysis, and social betting tips.`,
-        timestamp: new Date().toISOString(),
-        avatar_url: '/bantahlogo.png',
-      };
-      setMessages(prev => [...prev, aiResponse]);
+    try {
+      const res = await fetch('/api/bantzz', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: messageContent, user: currentUser?.id })
+      });
+      if (!res.ok) throw new Error('AI backend error');
+      const data = await res.json();
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: data.answer,
+          timestamp: new Date().toISOString(),
+          avatar_url: '/bantahlogo.png',
+        }
+      ]);
+    } catch (err: any) {
+      setMessages(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: 'Sorry, there was a problem connecting to the AI agent.',
+          timestamp: new Date().toISOString(),
+          avatar_url: '/bantahlogo.png',
+        }
+      ]);
+    } finally {
       setIsProcessing(false);
-    }, 1500);
+    }
   };
 
   const formatTime = (timestamp: string) => {
