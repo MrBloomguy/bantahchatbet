@@ -76,7 +76,23 @@ const Events = () => {
       label: 'Bantzz',
       gradient: 'from-[#7440ff] to-[#CCFF00]',
       bgColor: 'bg-[#f8fafc]',
-      icon: <img src="/sparkles.svg" alt="Bantzz" className="w-10 h-10" />,
+      icon: (
+        <span className="relative flex items-center justify-center">
+          <span className="bantzz-animated-ring absolute inset-0 z-0" />
+          <svg width="40" height="40" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 relative z-10">
+            <circle cx="18" cy="18" r="18" fill="#fff"/>
+            <ellipse cx="18" cy="22" rx="8" ry="4" fill="#7440ff"/>
+            <ellipse cx="13" cy="16" rx="2.5" ry="3.5" fill="#000"/>
+            <ellipse cx="23" cy="16" rx="2.5" ry="1.2" fill="#000"/>
+            <ellipse cx="13" cy="16" rx="1" ry="1.5" fill="#fff"/>
+            <ellipse cx="23" cy="16" rx="0.7" ry="0.4" fill="#fff"/>
+            <path d="M12 26 Q18 30 24 26" stroke="#000" strokeWidth="1.5" fill="none"/>
+            <ellipse id="wink" cx="23" cy="16" rx="2.5" ry="1.2" fill="#000">
+              <animate attributeName="ry" values="1.2;0.2;1.2" keyTimes="0;0.5;1" dur="2s" repeatCount="indefinite" />
+            </ellipse>
+          </svg>
+        </span>
+      ),
     },
     {
       id: 'stories',
@@ -263,3 +279,29 @@ const Events = () => {
 };
 
 export default Events;
+
+/* Add this to your global CSS (e.g., src/index.css or tailwind globals):
+.bantzz-animated-ring {
+  border-radius: 9999px;
+  border: 3px solid transparent;
+  background: conic-gradient(
+    #ff2e2e 0deg 90deg,
+    #ffb800 90deg 180deg,
+    #7440ff 180deg 270deg,
+    #ff2e2e 270deg 360deg
+  );
+  animation: bantzz-ring-spin 2s linear infinite;
+  pointer-events: none;
+  width: 44px;
+  height: 44px;
+  top: -4px;
+  left: -4px;
+  position: absolute;
+  z-index: 0;
+  opacity: 0.7;
+}
+@keyframes bantzz-ring-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+*/

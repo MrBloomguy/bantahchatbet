@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Logo from './Logo';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
+import BantzzMascotWink from '../assets/BantzzMascotWink.svg';
 
 interface DesktopNavProps {
   onMenuToggle?: (isOpen: boolean) => void;
