@@ -182,11 +182,11 @@ const Leaderboard: React.FC = () => {
                     </div>
                   </div>
 
-                  {/* Earnings with Fire Icon - Using total winnings */}
+                  {/* Earnings with Fire Icon - Using wallet balance */}
                   <div className="flex items-center gap-1 text-right">
                     <Flame className="w-3.5 h-3.5 text-red-500" />
                     <span className="text-sm font-medium text-gray-700">
-                      {formatAmount(user.total_winnings)}
+                      {formatAmount(user.wallet_amount || 0)}
                     </span>
                   </div>
                 </div>

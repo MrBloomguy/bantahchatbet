@@ -12,6 +12,7 @@ export interface LeaderboardUser {
   total_winnings: number;
   points: number;
   rank: number;
+  wallet_amount?: number; // Add wallet_amount for leaderboard display
 }
 
 export interface UserData {
@@ -107,6 +108,21 @@ export function useLeaderboard() {
         `) as { data: UserData[] | null; error: any };
 
       if (usersError) throw usersError;
+
+      // Fetch all wallets for users in leaderboard
+      const userIds = (usersData || []).map(u => u.id);
+      let walletMap: Record<string, number> = {};
+      if (userIds.length > 0) {
+        const { data: wallets, error: walletsError } = await supabase
+          .from('wallets')
+          .select('user_id, real_balance')
+          .in('user_id', userIds);
+        if (!walletsError && wallets) {
+          wallets.forEach((w: { user_id: string; real_balance: number }) => {
+            walletMap[w.user_id] = w.real_balance;
+          });
+        }
+      }
 
       // Get event participation counts
       const { data: eventParticipationData, error: eventParticipationError } = await supabase
@@ -218,6 +234,9 @@ export function useLeaderboard() {
           // Calculate reputation points
           const reputationPoints = (user.reputation_score || 0) + (challengeStatsForUser.won * 10);
 
+          // Get wallet amount for this user
+          const wallet_amount = walletMap[user.id] ?? 0;
+
           return {
             id: user.id,
             name: user.name || 'Anonymous User',
@@ -227,7 +246,8 @@ export function useLeaderboard() {
             events_won: eventsWon,
             total_winnings: totalEarnings,
             points: Math.floor(reputationPoints),
-            rank: 0
+            rank: 0,
+            wallet_amount // Add wallet_amount to leaderboard user
           };
         })
         .filter((user): user is LeaderboardUser => user !== null);
