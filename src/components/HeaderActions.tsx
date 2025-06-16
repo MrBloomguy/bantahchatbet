@@ -30,7 +30,7 @@ const HeaderActions = () => {
 
   return (
     <div className="flex items-center gap-3">
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
 
         <button
           onClick={() => navigate('/leaderboard')}
@@ -43,14 +43,14 @@ const HeaderActions = () => {
           onClick={() => navigate('/messages')}
           className="p-2 rounded-full hover:bg-gray-100 transition-colors"
         >
-          <img src="/mes.svg" alt="Messages" className="w-6 h-6" />
+          <img src="/mes.svg" alt="Messages" className="w-5 h-5" />
         </button>
 
         <button
           onClick={() => navigate('/notifications')}
           className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
         >
-          <img src="/notify22.svg" alt="Notifications" className="w-6 h-6" />
+          <img src="/notify22.svg" alt="Notifications" className="w-5 h-5" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
               {unreadCount}
@@ -62,7 +62,7 @@ const HeaderActions = () => {
       {wallet ? (
         <button
           onClick={() => handleNavigate('/wallet')}
-          className="flex items-center gap-1 px-3 py-1.5 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"
+          className="flex items-center gap-1 px-2.5 py-0.5 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"
           aria-label="Wallet"
         >
           <span className="text-sm font-bold">

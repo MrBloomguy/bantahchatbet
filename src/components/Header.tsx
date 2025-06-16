@@ -78,7 +78,7 @@ const Header: React.FC<HeaderProps> = ({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Left Section */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
             {/* Back button if requested */}
             {showBackButton && (
               <button onClick={() => navigate(-1)} className="text-gray-700 mr-2">
@@ -146,7 +146,7 @@ const Header: React.FC<HeaderProps> = ({
                   <img
                     src="/mes.svg"
                     alt="mes"
-                    className="h-6 w-6 opacity-100 hover:opacity-100 transition-opacity"
+                    className="h-5 w-5 opacity-100 hover:opacity-100 transition-opacity"
                   />
                   {totalMessageNotifications > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
@@ -157,24 +157,22 @@ const Header: React.FC<HeaderProps> = ({
 
                 {/* Notifications */}
                 <button
-                  type="button"
-                  onClick={() => handleNavigate('/notifications')}
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
-                  aria-label="Notifications"
-                >
-                  <img
-                    src="/notify22.svg"
-                    alt="Notifications"
-                    className="h-7 w-7"
-                  />
-                  {unreadCount > 0 && <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">{formatNotificationCount(unreadCount)}</span>}
-                </button>
+          onClick={() => navigate('/notifications')}
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
+        >
+          <img src="/notify22.svg" alt="Notifications" className="w-5 h-5" />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+              {unreadCount}
+            </span>
+          )}
+        </button>
 
                 {/* Wallet */}
                 <button
                   type="button"
                   onClick={() => handleNavigate('/wallet')}
-                  className="flex items-center gap-1 px-3 py-1.5 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"
+                  className="flex items-center gap-1 px-2 py-0.5 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"
                   aria-label="Wallet"
                 >
                   <span className="text-sm font-bold">
