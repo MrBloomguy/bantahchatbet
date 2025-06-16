@@ -2,6 +2,6 @@
   X-Frame-Options: DENY
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Content-Security-Policy: default-src 'self' https://*.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://js.paystack.co https://connect.facebook.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; manifest-src 'self' https://*.app.github.dev https://*.cloudworkstations.dev https://github.dev; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.quicknode.com wss://*.app.github.dev wss://localhost:* wss://github.dev https://js.paystack.co; worker-src 'self' blob:;
+  Content-Security-Policy: default-src 'self' https://*.supabase.co; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org https://js.paystack.co https://connect.facebook.net https://cdn.botpress.cloud; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https:; manifest-src 'self' https://*.app.github.dev https://*.cloudworkstations.dev https://github.dev; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.quicknode.com wss://*.app.github.dev wss://localhost:* wss://github.dev https://js.paystack.co https://messaging.botpress.cloud; worker-src 'self' blob:;
   Content-Security-Policy: style-src-elem 'self' 'unsafe-inline' https://fonts.googleapis.com;
 */

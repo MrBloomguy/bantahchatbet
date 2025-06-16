@@ -1,21 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
-import Webchat from '@botpress/webchat';
-import { Fab, getClient, Configuration } from '@botpress/webchat';
 import {
   Send,
   ImagePlus,
-  Search,
-  History,
-  Folder,
-  Compass,
   Sparkles,
-  Menu,
-  X,
-  ChevronDown,
-  User as UserIcon,
-  ChevronRight,
-  MessageCircle,
-  Users
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
@@ -23,7 +10,15 @@ import BantzzChatHeader from '../components/BantzzChatHeader';
 
 const clientId = "6fa87ea3-580a-4b69-8dfe-dfc02324a8c4";
 
-const configuration: Configuration = {
+const openBotpressWebchat = () => {
+  if (window.botpressWebChat) {
+    window.botpressWebChat.sendEvent({
+      type: 'show'
+    });
+  }
+};
+
+const configuration = {
   color: '#000',
 };
 
@@ -65,10 +60,6 @@ const Bantzz: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  const client = getClient({
-    clientId,
-  });
-
   const toggleWebchat = () => {
     setIsWebchatOpen((prevState) => !prevState);
   };
@@ -297,20 +288,13 @@ const Bantzz: React.FC = () => {
         </div>
 
         {/* Botpress Webchat */}
-        <Fab onClick={toggleWebchat} />
-        <div
-          style={{
-            display: isWebchatOpen ? 'block' : 'none',
-            position: 'fixed',
-            bottom: '80px',
-            right: '20px',
-            width: '350px',
-            height: '500px',
-            zIndex: 1000,
-          }}
+        <button
+          onClick={openBotpressWebchat}
+          className="fixed bottom-4 right-4 p-3 bg-purple-600 text-white rounded-full shadow-md hover:bg-purple-700 transition-all duration-200 ease-in-out z-50"
+          aria-label="Open chat"
         >
-          <Webchat />
-        </div>
+          <Sparkles className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Custom CSS for scrollbar and bounce animation */}
