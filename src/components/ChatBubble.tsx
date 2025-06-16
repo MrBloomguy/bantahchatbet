@@ -114,8 +114,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           <div
             className={`relative group px-2 py-[4px] rounded-2xl ${
               isSender 
-                ? 'bg-[#7440ff] text-white rounded-tr-sm' 
-                : 'bg-[#7440ff] text-white rounded-tl-sm'
+                ? 'bg-white/40 text-black rounded-tr-sm' 
+                : 'bg-white/40 text-black rounded-tl-sm'
             }`}
           >
             {mediaType && mediaUrl ? (

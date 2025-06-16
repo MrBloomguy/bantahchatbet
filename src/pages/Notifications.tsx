@@ -128,7 +128,7 @@ const Notifications = () => {
                 onClick={() => setFilter(filterOption.id)}
                 className={`px-3 py-1 rounded-md text-sm font-medium transition-colors whitespace-nowrap ${
                   filter === filterOption.id
-                    ? 'bg-[#7440ff] text-white shadow'
+                    ? 'bg-[#7440ff] text-white'
                     : 'bg-transparent text-white-700 hover:bg-gray-100'
                 }`}
                 style={{ minWidth: 0 }}
@@ -173,7 +173,7 @@ const Notifications = () => {
                 {filterNotifications.map(notification => (
                   <div
                     key={notification.id}
-                    className={`flex items-center bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 relative group ${!notification.read_at ? 'ring-2 ring-[#CCFF00]/40' : ''}`}
+                    className={`flex items-center bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/10 relative group ${!notification.read_at ? 'ring-1 ring-[#7440ff]/7' : ''}`}
                   >
                     {console.log('Notification Debug:', notification)}
                     {/* Icon/Avatar */}
@@ -181,7 +181,7 @@ const Notifications = () => {
                       {notification.metadata?.banner_url ? (
                         <img src={notification.metadata.banner_url} alt="Banner" className="w-10 h-10 object-cover rounded-full" />
                       ) : (
-                        <Bell className="w-6 h-6 text-[#7440ff]" />
+                         <img src="/notify22.svg" alt="Notifications" className="w-5 h-5" />
                       )}
                     </div>
                     {/* Content */}
@@ -195,7 +195,7 @@ const Notifications = () => {
                       {(notification.type === 'challenge_received' || notification.notification_type === 'challenge_received') && notification.metadata?.challenge_id && !notification.read_at && (
                         <div className="flex gap-2 mt-2">
                           <button
-                            className="px-3 py-1 rounded-full bg-[#7440ff] text-white text-xs font-semibold shadow hover:bg-[#b3ff00] transition"
+                            className="px-3 py-1 rounded-full bg-[#7440ff] text-white text-xs font-semibold shadow hover:bg-[#7440ff] transition"
                             onClick={async () => {
                               try {
                                 // Check if the challenge is already accepted or declined
@@ -283,7 +283,7 @@ const Notifications = () => {
                       {!notification.read_at && !(notification.notification_type?.startsWith('challenge_') || notification.type?.startsWith('challenge_')) && (
                         <button
                           onClick={() => handleMarkAsRead(notification.id)}
-                          className="text-xs px-3 py-1 rounded-full bg-[#7440ff] text-white font-medium shadow hover:bg-[#b3ff00] transition"
+                          className="text-xs px-3 py-1 rounded-full bg-[#7440ff] text-white font-medium shadow hover:bg-[#7440ff] transition"
                         >
                           Mark as read
                         </button>

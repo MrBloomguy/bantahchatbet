@@ -546,10 +546,39 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     loadPredictionData();
   }, [currentUser?.id, eventId]);
 
+  // Close menu dropdown when clicking outside
+  React.useEffect(() => {
+    if (!showMenuDropdown) return;
+    const handleClick = (e: MouseEvent) => {
+      const dropdown = document.getElementById('event-chat-menu-dropdown');
+      if (dropdown && !dropdown.contains(e.target as Node)) {
+        setShowMenuDropdown(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [showMenuDropdown]);
+
   if (loadingEvent || !event) {
     return (
-      <div className="flex flex-col h-screen bg-white items-center justify-center">
-        <Loader className="animate-spin text-purple-500" size={32} />
+      <div className="flex flex-col h-screen bg-white items-center justify-center p-6">
+        {/* Skeleton loader for chat room */}
+        <div className="w-full max-w-md mx-auto">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
+            <div className="flex-1 h-4 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="h-4 w-1/2 bg-gray-200 rounded mb-4 animate-pulse" />
+          <div className="space-y-3 mb-8">
+            <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse" />
+            <div className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
+          </div>
+          <div className="flex gap-2">
+            <div className="h-10 w-10 bg-gray-200 rounded-full animate-pulse" />
+            <div className="flex-1 h-10 bg-gray-200 rounded animate-pulse" />
+          </div>
+        </div>
       </div>
     );
   }
@@ -606,7 +635,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
 
             {/* Dropdown Menu */}
             {showMenuDropdown && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+              <div id="event-chat-menu-dropdown" className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
                 <button
                   onClick={() => handleMenuOptionClick('Search')}
                   className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
