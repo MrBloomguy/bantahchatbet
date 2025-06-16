@@ -22,6 +22,10 @@ const Profile: React.FC = () => {
       path: '/wallet'
     },
     {
+      label: 'Gift',
+      path: '/gift'
+    },
+    {
       label: 'My Events',
       path: '/myevents'
     },
@@ -142,6 +146,17 @@ const Profile: React.FC = () => {
                 <div className="flex flex-col items-center">
                   <UserLevelBadge points={currentUser?.points || 0} size="sm" />
                   <span className="text-xs text-gray-500 mt-0.5">Level</span>
+                </div>
+
+                {/* Gift Icon */}
+                <div className="flex flex-col items-center">
+                  <div className="flex items-center gap-1 px-2 py-1 bg-pink-100 text-pink-700 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor" stroke="none">
+                      <path d="M20 7h-1.81A3.001 3.001 0 0 0 12 4a3.001 3.001 0 0 0-6.19 3H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm-8-2a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm8 4v2h-2V9h2zM4 9h2v2H4V9zm2 11v-7h12v7H6zm14-9a1 1 0 0 1-1 1h-1v-2h2v1zm-16 0V9h2v2H4a1 1 0 0 1-1-1zm2 9a1 1 0 0 1-1-1v-7h2v8H6zm14 0h-2v-8h2v7a1 1 0 0 1-1 1z" />
+                    </svg>
+                    <span className="font-medium text-sm">Gift</span>
+                  </div>
+                  <span className="text-xs text-gray-500 mt-0.5">Gift</span>
                 </div>
 
                 {/* Points */}
