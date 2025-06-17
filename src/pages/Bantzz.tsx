@@ -7,20 +7,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import BantzzChatHeader from '../components/BantzzChatHeader';
-
-const clientId = "6fa87ea3-580a-4b69-8dfe-dfc02324a8c4";
-
-const openBotpressWebchat = () => {
-  if (window.botpressWebChat) {
-    window.botpressWebChat.sendEvent({
-      type: 'show'
-    });
-  }
-};
-
-const configuration = {
-  color: '#000',
-};
+import { BotpressClient } from '../api/botpress';
 
 interface Message {
   role: 'assistant' | 'user';
@@ -28,6 +15,7 @@ interface Message {
   timestamp: string;
   avatar_url?: string | null;
   image_url?: string;
+  error?: boolean;
 }
 
 interface RecentChat {
@@ -54,26 +42,66 @@ const Bantzz: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isWebchatOpen, setIsWebchatOpen] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
-  const toggleWebchat = () => {
-    setIsWebchatOpen((prevState) => !prevState);
-  };
+  const [botpress, setBotpress] = useState<BotpressClient | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!activeChatId && messages.length === 0) {
-      setMessages([{
-        role: 'assistant',
-        content: `Hi! I am Bantzz, your AI chat assistant. I can help you with betting strategies, game analysis, and making informed decisions in social betting. How can I assist you today?`,
-        timestamp: new Date().toISOString(),
-        avatar_url: '/bantahlogo.png'
-      }]);
+    const initializeBotpress = async () => {
+      try {
+        // Initialize Botpress client with user ID
+        const client = new BotpressClient(currentUser?.id || 'anonymous');
+        await client.initialize();
+        setBotpress(client);
+
+        // Create a new conversation
+        const conversation = await client.createConversation();
+        setConversationId(conversation.id);
+
+        // Set up event listener for bot responses
+        const cleanup = client.listenToConversation(conversation.id, (message) => {
+          if (message.user_id !== currentUser?.id) {
+            setMessages(prev => [...prev, {
+              role: 'assistant',
+              content: message.payload.text || '',
+              timestamp: message.created_at,
+              avatar_url: '/bantahlogo.png'
+            }]);
+            setIsProcessing(false);
+          }
+        });
+
+        // Add welcome message
+        setMessages([{
+          role: 'assistant',
+          content: `Hi! I am Bantzz, your AI chat assistant. I can help you with betting strategies, game analysis, and making informed decisions in social betting. How can I assist you today?`,
+          timestamp: new Date().toISOString(),
+          avatar_url: '/bantahlogo.png'
+        }]);
+
+        return cleanup;
+      } catch (error) {
+        console.error('Failed to initialize Botpress:', error);
+        setMessages([{
+          role: 'assistant',
+          content: 'Sorry, there was a problem connecting to the chat service.',
+          timestamp: new Date().toISOString(),
+          avatar_url: '/bantahlogo.png',
+          error: true
+        }]);
+      }
+    };
+
+    if (currentUser?.id) {
+      initializeBotpress();
     }
-  }, [activeChatId, messages.length]);
+
+    return () => {
+      // Cleanup will be handled by the function returned from initializeBotpress
+    };
+  }, [currentUser?.id]);
 
   useEffect(() => {
     scrollToBottom();
@@ -95,11 +123,7 @@ const Bantzz: React.FC = () => {
   const handleSend = async (e?: React.FormEvent, question?: string) => {
     e?.preventDefault();
     const messageContent = question || input.trim();
-    if (!messageContent || isProcessing) return;
-
-    if (messages.length === 1 && messages[0].content.includes('Hi! I am Bantzz')) {
-      setMessages([]);
-    }
+    if (!messageContent || isProcessing || !botpress || !conversationId) return;
 
     const userMessage: Message = {
       role: 'user',
@@ -113,33 +137,20 @@ const Bantzz: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      const res = await fetch('/api/bantzz', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: messageContent, user: currentUser?.id })
-      });
-      if (!res.ok) throw new Error('AI backend error');
-      const data = await res.json();
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: data.answer,
-          timestamp: new Date().toISOString(),
-          avatar_url: '/bantahlogo.png',
-        }
-      ]);
+      await botpress.sendMessage(conversationId, messageContent);
+      // The bot's response will be handled by the event listener
     } catch (err: any) {
+      console.error('Error sending message:', err);
       setMessages(prev => [
         ...prev,
         {
           role: 'assistant',
-          content: 'Sorry, there was a problem connecting to the AI agent.',
+          content: 'Sorry, there was a problem sending your message.',
           timestamp: new Date().toISOString(),
           avatar_url: '/bantahlogo.png',
+          error: true
         }
       ]);
-    } finally {
       setIsProcessing(false);
     }
   };
@@ -160,26 +171,46 @@ const Bantzz: React.FC = () => {
         <div className="flex-1 flex">
           {/* Sidebar */}
           <div className={`fixed lg:relative inset-y-0 left-0 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 transition-transform duration-200 ease-in-out w-64 lg:w-72 bg-white border-r border-gray-100 z-20`}>
-            {/* ... existing sidebar content ... */}
+            {/* Recent conversations could go here */}
+            <div className="p-4">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">Recent Chats</h2>
+              <div className="space-y-3">
+                {RECENT_CHATS.map((chat) => (
+                  <button
+                    key={chat.id}
+                    className="w-full flex items-start gap-3 p-2 hover:bg-gray-50 rounded-lg transition-colors"
+                    onClick={() => {/* Handle chat selection */}}
+                  >
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-medium text-gray-900 truncate">{chat.title}</p>
+                      <p className="text-xs text-gray-500">{chat.lastUpdated}</p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col">
-            {/* Chat / Welcome Area */}
+            {/* Chat Area */}
             <div className="flex-1 flex flex-col">
               <div className="flex-1 overflow-y-auto custom-scrollbar p-4 lg:p-6">
                 {showWelcomeScreen ? (
                   <div className="flex flex-col items-center text-center max-w-xl mx-auto py-6 lg:py-10">
-                    <h2 className="text-2xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-3">Hello {currentUser?.email?.split('@')[0] || 'Marcus'}</h2>
-                    <p className="text-lg md:text-2xl text-gray-600 mb-5 md:mb-8">How can I help you today?</p>
-                    {/* Suggested Questions Grid - Responsive and Compact */}
+                    <h2 className="text-2xl md:text-4xl font-bold text-gray-800 mb-2 md:mb-3">
+                      Hello {currentUser?.email?.split('@')[0] || 'there'}
+                    </h2>
+                    <p className="text-lg md:text-2xl text-gray-600 mb-5 md:mb-8">
+                      How can I help you today?
+                    </p>
+                    {/* Suggested Questions Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
                       {SUGGESTED_QUESTIONS.map((item, idx) => (
                         <button
                           key={idx}
                           className="flex flex-col items-center p-5 bg-white rounded-2xl shadow-md border border-gray-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-200 group focus:outline-none"
                           onClick={() => handleSend(undefined, item.title)}
-                          style={{ minHeight: 180 }}
                         >
                           <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-purple-100 to-purple-200 mb-3 group-hover:from-purple-200 group-hover:to-purple-300">
                             {item.icon}
@@ -203,8 +234,10 @@ const Bantzz: React.FC = () => {
                           <div
                             className={`px-3 py-2 rounded-lg break-words text-wrap shadow-sm ${
                               msg.role === 'user'
-                                ? 'bg-purple-600 text-white rounded-br-md' // More subtle corner cut
-                                : 'bg-gray-100 text-gray-900 rounded-bl-md' // More subtle corner cut
+                                ? 'bg-purple-600 text-white rounded-br-md'
+                                : msg.error
+                                ? 'bg-red-50 text-red-600 rounded-bl-md'
+                                : 'bg-gray-100 text-gray-900 rounded-bl-md'
                             }`}
                           >
                             {msg.content}
@@ -245,7 +278,8 @@ const Bantzz: React.FC = () => {
                 )}
               </div>
             </div>
-            {/* Input Area (Bottom of Main Content) */}
+
+            {/* Input Area */}
             <div className="p-3 lg:p-4 pb-4 lg:pb-5 border-t border-gray-100 bg-white sticky bottom-0 z-10">
               <form onSubmit={handleSend} className="flex items-end gap-2 max-w-lg mx-auto bg-gray-50 border border-gray-100 rounded-xl p-1.5">
                 <button
@@ -263,7 +297,7 @@ const Bantzz: React.FC = () => {
                     placeholder={showWelcomeScreen ? "Ask something..." : "Type your message..."}
                     value={input}
                     onChange={e => setInput(e.target.value)}
-                    disabled={isProcessing}
+                    disabled={isProcessing || !botpress || !conversationId}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && !e.shiftKey) {
                         e.preventDefault();
@@ -273,11 +307,10 @@ const Bantzz: React.FC = () => {
                     autoFocus
                   />
                 </div>
-                {/* Send button */}
                 <button
                   type="submit"
-                  className={`p-1.5 ${isProcessing ? 'text-gray-400' : 'text-purple-600 hover:bg-purple-50'} rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-purple-200`}
-                  disabled={isProcessing}
+                  className={`p-1.5 ${isProcessing || !botpress || !conversationId ? 'text-gray-400' : 'text-purple-600 hover:bg-purple-50'} rounded-md transition-colors focus:outline-none focus:ring-2 focus:ring-purple-200`}
+                  disabled={isProcessing || !botpress || !conversationId}
                   aria-label="Send message"
                 >
                   <Send className="w-4.5 h-4.5" />
@@ -286,21 +319,12 @@ const Bantzz: React.FC = () => {
             </div>
           </div>
         </div>
-
-        {/* Botpress Webchat */}
-        <button
-          onClick={openBotpressWebchat}
-          className="fixed bottom-4 right-4 p-3 bg-purple-600 text-white rounded-full shadow-md hover:bg-purple-700 transition-all duration-200 ease-in-out z-50"
-          aria-label="Open chat"
-        >
-          <Sparkles className="w-5 h-5" />
-        </button>
       </div>
 
-      {/* Custom CSS for scrollbar and bounce animation */}
+      {/* Custom CSS for scrollbar and animations */}
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 5px; /* Slightly thinner scrollbar */
+          width: 5px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
           background: transparent;
@@ -326,9 +350,8 @@ const Bantzz: React.FC = () => {
         .delay-150 {
           animation-delay: 0.150s;
         }
-        /* Custom sizes for icons (e.g., w-4.5, h-4.5) if not provided by lucide-react default sizes */
-        .w-4\.5 { width: 1.125rem; /* 18px */ }
-        .h-4\.5 { height: 1.125rem; /* 18px */ }
+        .w-4\\.5 { width: 1.125rem; }
+        .h-4\\.5 { height: 1.125rem; }
       `}</style>
     </>
   );
