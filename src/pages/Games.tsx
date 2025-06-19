@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 
 // Local components
 import MobileFooterNav from '../components/MobileFooterNav';
-import Header from '../components/Header';
+import PageHeader from '../components/PageHeader';
 import { ChallengeList } from '../components/ChallengeList';
 import ChallengeModal from '../components/ChallengeModal';
 import ChallengeDetailsModal from '../components/ChallengeDetailsModal';
@@ -624,7 +624,7 @@ const Games: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F6F7FB] flex flex-col pb-[70px]">
-      <Header title="Challenge" showBackButton={true} showMenu={false} />
+      <PageHeader title="Challenge" showBackButton={true} />
       <div className="flex-1 flex flex-col items-center w-full">
       <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 py-4">
           {/* Compact Tabs Bar */}

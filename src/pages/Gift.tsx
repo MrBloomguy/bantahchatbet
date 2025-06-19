@@ -105,7 +105,7 @@ const GiftShop: React.FC = () => {
         // Overall page background: Reverted to light theme from your initial code
         <div className="min-h-screen bg-[#F6F7FB] text-gray-900 flex flex-col pb-[70px]">
             {/* PageHeader - untouched as per instructions */}
-            <PageHeader title="Gift Store" showBackButton={true} />
+            <PageHeader title="Shop" showBackButton={true} />
 
             {/* Main content area, light theme */}
             <div className="flex-1 flex flex-col w-full overflow-y-auto px-4 py-3">
