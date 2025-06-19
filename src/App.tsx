@@ -359,11 +359,7 @@ const App: React.FC = () => {
                               <Leaderboard />
                             </ProtectedRoute>
                           } />
-                          <Route path="/event/:eventId/chat" element={
-                            <ProtectedRoute>
-                              <EventChatWrapper />
-                            </ProtectedRoute>
-                          } />
+                          <Route path="/event/:eventId/chat" element={<EventChatWrapper />} />
                           <Route path="/settings/profile" element={
                             <ProtectedRoute>
                               <ProfileSettings />

@@ -110,6 +110,8 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const [bannerOpen, setBannerOpen] = useState(true);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [gifs, setGifs] = useState<Gif[]>([]);
+  const [profileCardUserId, setProfileCardUserId] = useState<string | null>(null);
+  const [messageReactions, setMessageReactions] = useState<Record<string, any[]>>({});
 
   // Add handleMention function
   const handleMention = async (input: string) => {
@@ -164,7 +166,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   // Modified handleSubmit to include mentions and replies
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && currentUser) {
+    if (!currentUser) {
+      toast.showError('You must be logged in to send messages.');
+      return;
+    }
+    if (message.trim()) {
       // Extract mentions from message
       const mentionRegex = /@(\w+)/g;
       const mentions = [];
@@ -176,22 +182,15 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           .select('id, username')
           .eq('username', username)
           .single();
-        
         if (data) {
           mentions.push({ id: data.id, username: data.username });
         }
       }
-
       // Send the message with the structured content
       const success = await sendMessage(message.trim(), undefined, {
         mentions,
-        reply_to: replyingTo ? {
-          id: replyingTo.id,
-          content: replyingTo.content,
-          sender_username: replyingTo.sender?.username
-        } : undefined
+        reply_to: replyingTo ? replyingTo.id : undefined
       });
-
       if (!success) {
         toast.showError('Failed to send message');
       } else {
@@ -310,7 +309,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
       await sendMessage('', undefined, {
         mentions: [],
         reply_to: undefined,
-        media: { url: gifUrl, type: 'gif' }, // Corrected property
+        media: { url: gifUrl, type: 'gif' } // Corrected property
       });
       setShowGifPicker(false);
     } catch (error) {
@@ -397,14 +396,15 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     }
   };
 
-  // Update the share functionality to share the event link
+  // Update the share functionality to share the event chatroom link
   const handleShareEvent = () => {
+    const eventChatUrl = `${window.location.origin}/event/${eventId}/chat`;
     const shareContent = {
       title: event?.title || 'Event',
       text: event?.description
-        ? `Check out this event: "${event?.title}" - ${event?.description}`
-        : `Check out this event: "${event?.title}" happening now!`,
-      url: window.location.href,
+        ? `Check out this event: "${event?.title}" - ${event?.description}\n${eventChatUrl}`
+        : `Check out this event: "${event?.title}" happening now!\n${eventChatUrl}`,
+      url: eventChatUrl,
     };
 
     if (navigator.share) {
@@ -412,18 +412,18 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         .catch((error) => {
           console.error('Error sharing:', error);
           // Fallback to clipboard if Web Share API fails
-          copyToClipboard();
+          copyToClipboard(eventChatUrl);
         });
     } else {
-      copyToClipboard();
+      copyToClipboard(eventChatUrl);
     }
   };
 
-  const copyToClipboard = () => {
-    const shareText = `${event?.title}\n${window.location.href}`;
+  const copyToClipboard = (eventChatUrl: string) => {
+    const shareText = `${event?.title}\n${eventChatUrl}`;
     navigator.clipboard.writeText(shareText)
-      .then(() => toast.showSuccess('Event link copied to clipboard!'))
-      .catch((error) => toast.showError('Failed to copy event link'));
+      .then(() => toast.showSuccess('Event chat link copied to clipboard!'))
+      .catch(() => toast.showError('Failed to copy event chat link.'));
   };
 
   useEffect(() => {
@@ -558,6 +558,26 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showMenuDropdown]);
+
+  useEffect(() => {
+    const fetchReactions = async () => {
+      if (!messages.length) return;
+      const ids = messages.map((m) => m.id);
+      const { data, error } = await supabase
+        .from('event_chat_message_reactions')
+        .select('*')
+        .in('message_id', ids);
+      if (!error && data) {
+        const grouped: Record<string, any[]> = {};
+        data.forEach((r) => {
+          if (!grouped[r.message_id]) grouped[r.message_id] = [];
+          grouped[r.message_id].push(r);
+        });
+        setMessageReactions(grouped);
+      }
+    };
+    fetchReactions();
+  }, [messages]);
 
   if (loadingEvent || !event) {
     return (
@@ -763,6 +783,18 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           ) : (
             messages.map((msg: ChatMessage) => {
               const isCurrentUserSender = msg.sender_id === currentUser?.id;
+              // Find the replied-to message if reply_to exists
+              let replyToData = undefined;
+              if (msg.reply_to) {
+                const repliedMsg = messages.find((m) => m.id === msg.reply_to);
+                if (repliedMsg) {
+                  replyToData = {
+                    id: repliedMsg.id,
+                    content: repliedMsg.content,
+                    sender: { username: repliedMsg.sender?.username || '' }
+                  };
+                }
+              }
               return (
                 <div key={msg.id}>
                   <ChatBubble
@@ -778,12 +810,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
                     mediaType={msg.media_type}
                     mediaUrl={msg.media_url}
                     onReply={() => handleReply(msg)}
-                    replyTo={msg.reply_to ? {
-                      id: msg.reply_to.id,
-                      content: msg.reply_to.content,
-                      sender: { username: msg.reply_to.sender_username || '' }
-                    } : undefined}
+                    replyTo={replyToData}
                     mentions={msg.mentions}
+                    onAvatarClick={() => setProfileCardUserId(msg.sender_id)}
+                    messageId={msg.id}
+                    reactions={messageReactions[msg.id] || []}
                   />
                 </div>
               );
@@ -795,6 +826,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
 
       {/* Fixed Input Area */}
       <div className="flex-shrink-0 bg-gray-50 border-t border-gray-200 p-3">
+        {!currentUser && (
+          <div className="mb-2 p-2 bg-yellow-100 rounded-lg text-center text-yellow-800 text-sm">
+            Please sign in to send messages or react in this chatroom.
+          </div>
+        )}
         {replyingTo && (
           <div className="mb-2 p-2 bg-gray-100 rounded-lg flex justify-between items-center">
             <div className="text-sm text-gray-600">
@@ -808,17 +844,18 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             </button>
           </div>
         )}
-        
         <form onSubmit={handleSubmit} className="flex items-center space-x-2">
-          {/* Remove the smiley icon and make the right side dedicated to GIFs using Giphy */}
           <div className="relative flex items-center w-full">
-            {/* Image Upload Icon on the Left */}
             <input
               type="file"
               accept="image/*"
               id="image-upload"
               className="hidden"
               onChange={async (e) => {
+                if (!currentUser) {
+                  toast.showError('You must be logged in to upload images.');
+                  return;
+                }
                 const file = e.target.files?.[0];
                 if (file) {
                   try {
@@ -833,22 +870,19 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             <label htmlFor="image-upload" className="absolute left-4 text-gray-500 hover:text-gray-700 cursor-pointer">
               <span className="text-lg font-bold">+</span>
             </label>
-
-            {/* Message Input */}
             <input
               type="text"
               value={message}
               onChange={handleMessageChange}
               placeholder="Type a message..."
               className="w-full bg-gray-50 border border-gray-300 rounded-full px-12 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              disabled={!currentUser}
             />
           </div>
-
-          {/* Send Button */}
           <button
             type="submit"
             className="ml-3 bg-purple-500 text-white rounded-full p-3 hover:bg-purple-600 disabled:opacity-50"
-            disabled={!message.trim() || isLoading}
+            disabled={!message.trim() || isLoading || !currentUser}
           >
             <Send size={20} />
           </button>
@@ -888,30 +922,9 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
       </div>
 
       {/* Profile Card Modal */}
-      {selectedProfile && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 w-full max-w-md">
-            <button
-              onClick={() => setSelectedProfile(null)}
-              className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 text-gray-600"
-            >
-              <X size={20} />
-            </button>
-            <ProfileCard
-              profile={{
-                id: selectedProfile.username || '',
-                name: selectedProfile.name || selectedProfile.username || '',
-                username: selectedProfile.username || selectedProfile.name || '',
-                avatar_url: selectedProfile.avatar_url,
-                bio: '',
-                followers_count: 0,
-                following_count: 0,
-                points: userPoints[selectedProfile.username || ''] || 0,
-                is_following: false
-              }}
-              onClose={() => setSelectedProfile(null)}
-            />
-          </div>
+      {profileCardUserId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <ProfileCard userId={profileCardUserId} onClose={() => setProfileCardUserId(null)} />
         </div>
       )}
     </div>
