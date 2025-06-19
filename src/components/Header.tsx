@@ -97,7 +97,7 @@ const Header: React.FC<HeaderProps> = ({
             )}
             {/* Title always visible if provided and not on /events */}
             {title && (
-              <span className="font-semibold text-base sm:text-lg text-gray-900 ml-2">{title}</span>
+              <span className={`font-semibold text-base sm:text-lg text-gray-900 ${showBackButton ? 'ml-1' : 'ml-2'}`}>{title}</span>
             )}
           </div>
 

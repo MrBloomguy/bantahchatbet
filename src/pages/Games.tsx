@@ -628,17 +628,17 @@ const Games: React.FC = () => {
       <div className="flex-1 flex flex-col items-center w-full">
       <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 py-4">
           {/* Compact Tabs Bar */}
-          <div className="flex justify-center gap-1 mb-5 bg-white rounded-xl shadow-sm p-1 overflow-x-auto">            {[
-          { id: 'active', label: 'Active', icon: <Gamepad2 className="w-4 h-4" /> },
-          { id: 'friends', label: 'Friends', icon: <Users className="w-4 h-4" /> },
-          { id: 'scheduled', label: 'Scheduled', icon: <Gamepad2 className="w-4 h-4" /> },
-          { id: 'ended', label: 'Ended', icon: <Trophy className="w-4 h-4" /> }
+          <div className="flex justify-center gap-0.5 mb-4 bg-white rounded-xl shadow-sm p-1 overflow-x-auto">            {[
+          { id: 'active', label: 'Active', icon: <Gamepad2 className="w-3 h-3" /> },
+          { id: 'friends', label: 'Friends', icon: <Users className="w-3 h-3" /> },
+          { id: 'scheduled', label: 'Upcoming', icon: <Gamepad2 className="w-3 h-3" /> },
+          { id: 'ended', label: 'Ended', icon: <Trophy className="w-3 h-3" /> }
         ].map((tab) => (
           <button
             type="button"
             key={tab.id}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1 px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
               activeTab === tab.id
                 ? 'bg-[#7440ff] text-white shadow'
                 : 'bg-transparent text-gray-700 hover:bg-gray-100'
@@ -647,7 +647,7 @@ const Games: React.FC = () => {
             {tab.icon}
             {tab.label}
             {tab.id === 'active' && userChallengesCount > 0 && (
-              <span className="ml-1 bg-[#CCFF00] text-black text-[10px] px-1.5 py-0.5 rounded-full">
+              <span className="ml-1 bg-[#CCFF00] text-black text-[9px] px-1.5 py-0.5 rounded-full">
                 {userChallengesCount}
               </span>
             )}

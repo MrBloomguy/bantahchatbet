@@ -61,7 +61,7 @@ const Leaderboard: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white flex flex-col pb-[72px]">
-      <PageHeader title="Leaderboard" />
+      <PageHeader title="Rank" />
 
       <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 py-4">
         <div className="flex-1 flex flex-col items-center w-full">
