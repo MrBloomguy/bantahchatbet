@@ -43,9 +43,10 @@ interface Event {
 interface EventCardProps {
   event: Event;
   onChatClick: (event: Event) => void;
+  className?: string;
 }
 
-const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
+const EventCard: React.FC<EventCardProps> = ({ event, onChatClick, className }) => {
   const { currentUser } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
@@ -185,7 +186,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick }) => {
 
   return (
     <>
-      <div className="bg-black rounded-3xl overflow-hidden relative">
+      <div className={`bg-black rounded-3xl overflow-hidden relative ${className || ''}`}>
         <div className="relative w-full aspect-video">
           <img
             src={event.banner_url || DEFAULT_BANNER}

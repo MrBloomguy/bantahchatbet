@@ -69,7 +69,7 @@ const Events = () => {
       label: 'Create Event',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#1A472E]',
-      icon: <img src="/create.png" alt="Create Event" className="w-12 h-12" />,
+      icon: <img src="/create.png" alt="Create Event" className="w-10 h-10" />,
     },
     {
       id: 'bantzz',
@@ -196,21 +196,21 @@ const Events = () => {
       >
         <Header showSearch />
         {/* Category Bar is now inside the animated wrapper */}
-        <div className="bg-light-bg z-40 py-2.5">
-          <div className="container mx-auto px-4">
-            <div className="flex md:justify-center overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-white/20 gap-3">
-              <div className="flex gap-3 md:max-w-[800px]">
+        <div className="bg-light-bg z-40 py-1">
+          <div className="container mx-auto px-0">
+            <div className="flex overflow-x-auto pl-4 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-white/20 gap-2 scroll-snap-x mandatory">
+              <div className="flex gap-2 md:max-w-[800px]">
                 {categories.map((category) => (
                   <button
                     type="button"
                     key={category.id}
                     onClick={() => handleCategoryClick(category.id)}
-                    className="flex-shrink-0 flex flex-col items-center relative pt-1"
+                    className="flex-shrink-0 flex flex-col items-center relative pt-1 scroll-snap-align-start"
                   >
-                    <div className="relative">
+                    <div className="relative flex items-center justify-center">
                       {/* Gradient outline container */}
                       <div
-                        className={`w-16 h-16 rounded-full relative
+                        className={`w-12 h-12 rounded-full relative
                           ${selectedCategory === category.id ? 'opacity-100' : 'opacity-100'}
                           transition-all duration-300`}
                       >
@@ -218,13 +218,13 @@ const Events = () => {
                         <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${category.gradient}`} />
                         {/* Inner circle with icon */}
                         <div
-                          className={`absolute inset-[2px] rounded-full
+                          className={`absolute inset-[1px] rounded-full
                             flex items-center justify-center
                             bg-light-bg
                             ${selectedCategory === category.id ? 'scale-105' : 'scale-100'}
                             transition-all duration-300`}
                         >
-                          <span className="text-2xl">{category.icon}</span>
+                          <span className="text-xl flex items-center justify-center">{category.icon}</span>
                         </div>
                       </div>
                       {/* Category Label Badge */}
@@ -247,9 +247,9 @@ const Events = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-3">
+      <div className="w-full px-1 py-3">
         {/* Events Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 mx-auto md:max-w-none md:mx-0">
           {filteredEvents.map(event => {
             // Patch creator and participants for EventCard compatibility
             const creator = {
