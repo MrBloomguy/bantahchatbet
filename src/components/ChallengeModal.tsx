@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { X, Trophy, Calendar, Clock, AlertCircle, Info } from 'lucide-react';
+import { X, Calendar, AlertCircle, DollarSign, Star, Gift, Award } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
 import LoadingSpinner from './LoadingSpinner';
+import UserLevelBadge from './UserLevelBadge';
 
 type GameType = 'FIFA' | 'NBA2K' | 'OTHER';
 type Platform = 'PS5' | 'XBOX' | 'PC';
@@ -14,6 +15,9 @@ interface ChallengeModalProps {
   challengedName: string;
   challengedUsername: string;
   challengedAvatar: string;
+  challengedPoints: number;
+  challengedGifts: number;
+  challengedLevel: number;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -24,29 +28,29 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
   challengedName,
   challengedUsername,
   challengedAvatar,
+  challengedPoints,
+  challengedGifts,
+  challengedLevel,
   onClose,
-  onSuccess
+  onSuccess,
 }) => {
   const [loading, setLoading] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
   const [challengeData, setChallengeData] = useState({
-    title: '',
     amount: 100,
+    gameType: '' as GameType,
+    platform: '' as Platform,
     scheduledDate: '',
     scheduledTime: '',
+    evidence: 'SCREENSHOT' as 'SCREENSHOT' | 'VIDEO',
     expirationHours: 24,
-    rules: '',
-    evidence: 'SCREENSHOT' as 'SCREENSHOT' | 'VIDEO' | 'BOTH',
-    gameType: '' as GameType,
-    platform: '' as Platform
   });
+  const [customGame, setCustomGame] = useState('');
 
   const { wallet } = useWallet();
   const toast = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       setLoading(true);
 
@@ -55,18 +59,21 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
         return;
       }
 
-      // If there's a scheduled date/time, set it
       let status = 'pending';
       let scheduledAt = null;
 
       if (challengeData.scheduledDate && challengeData.scheduledTime) {
-        scheduledAt = new Date(`${challengeData.scheduledDate}T${challengeData.scheduledTime}`).toISOString();
-        status = 'pending'; // Scheduled challenges start as pending
+        scheduledAt = new Date(
+          `${challengeData.scheduledDate}T${challengeData.scheduledTime}`
+        ).toISOString();
       }
 
-      // Calculate expiration time
       const expirationTime = new Date();
-      expirationTime.setHours(expirationTime.getHours() + challengeData.expirationHours);
+      expirationTime.setHours(
+        expirationTime.getHours() + challengeData.expirationHours
+      );
+
+      const title = `${challengeData.gameType} Challenge vs ${challengedName}`;
 
       const { data: challenge, error } = await supabase
         .from('challenges')
@@ -74,42 +81,39 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
           challenger_id: challengerId,
           challenged_id: challengedId,
           amount: challengeData.amount,
-          title: challengeData.title,
+          title,
           game_type: challengeData.gameType,
           platform: challengeData.platform,
           scheduled_at: scheduledAt,
           expires_at: expirationTime.toISOString(),
-          rules: challengeData.rules,
           required_evidence: challengeData.evidence,
-          status: status
+          status: status,
         })
         .select()
         .single();
 
       if (error) throw error;
 
-      // Fetch challenger's username
       const { data: challengerData, error: challengerError } = await supabase
         .from('users')
         .select('username')
         .eq('id', challengerId)
         .single();
 
-      if (challengerError) {
-        console.error('Error fetching challenger username:', challengerError);
-        throw challengerError;
-      }
+      if (challengerError) throw challengerError;
 
-      // Insert notification
-      const { error: notificationError } = await supabase
-        .from('notifications')
-        .insert({
-          user_id: challengedId,
-          type: 'challenge_received',
-          title: 'New Challenge Received',
-          content: `@${challengerData.username} has challenged you to a ${challengeData.gameType} match.`,
-          metadata: { challenge_id: challenge.id, challenger_id: challengerId, game_type: challengeData.gameType, amount: challengeData.amount }
-        });
+      await supabase.from('notifications').insert({
+        user_id: challengedId,
+        type: 'challenge_received',
+        title: 'New Challenge Received',
+        content: `@${challengerData.username} has challenged you to a ${challengeData.gameType} match.`,
+        metadata: {
+          challenge_id: challenge.id,
+          challenger_id: challengerId,
+          game_type: challengeData.gameType,
+          amount: challengeData.amount,
+        },
+      });
 
       onSuccess?.();
       toast.showSuccess('Challenge created successfully!');
@@ -123,216 +127,205 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl w-full max-w-md shadow-xl overflow-hidden bg-cover bg-center" style={{ backgroundImage: 'url(/public/dialogue-bakcground.svg)' }}>
-        {/* Header */}
-        <div className="p-2 border-b flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Trophy className="w-4 h-4 text-[#CCFF00]" />
-            <div className="flex items-center gap-2">
-              <img
-                src={challengedAvatar || `https://api.dicebear.com/7.x/avataaars/svg?seed=${challengedId}`}
-                alt={challengedName}
-                className="w-6 h-6 rounded-full"
-              />
-              <h2 className="text-base font-semibold">Challenge {challengedName}</h2>
-            </div>
-            <div className="relative">
-              <button
-                type="button"
-                className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-                onClick={() => setShowTooltip(!showTooltip)}
-                aria-label="Challenge information"
-              >
-                <Info className="w-3 h-3 text-gray-500" />
-              </button>
-              {showTooltip && (
-                <div className="absolute z-50 top-full left-0 mt-1 w-56 p-2 bg-white rounded-lg shadow-lg border text-xs">
-                  <h4 className="font-semibold mb-1">How Challenges Work:</h4>
-                  <ul className="space-y-0.5 list-disc pl-3 text-[11px]">
-                    <li>Set amount, date, time, and rules</li>
-                    <li>Opponent must accept before expiration</li>
-                    <li>Both submit evidence of outcome</li>
-                    <li>Winner receives challenge amount</li>
-                    <li>No winner = amounts refunded</li>
-                  </ul>
-                </div>
-              )}
-            </div>
-          </div>
+      <div className="bg-white rounded-[2rem] w-full max-w-[320px] shadow-xl border overflow-hidden flex flex-col items-center p-0">
+        {/* Header: Avatar, Name, Username, Close */}
+        <div className="w-full flex flex-col items-center pt-6 pb-2 px-4 relative">
           <button
-            type="button"
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-full transition-colors"
-            aria-label="Close challenge modal"
+            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
+          <img
+            src={
+              challengedAvatar ||
+              `https://api.dicebear.com/7.x/avataaars/svg?seed=${challengedId}`
+            }
+            alt={challengedName}
+            className="w-10 h-10 rounded-full ring-2 ring-purple-100 shadow mb-1"
+          />
+          <h2 className="text-base font-semibold text-gray-800 mt-1">
+            {challengedName}
+          </h2>
+          <p className="text-xs text-gray-400 mb-1">
+            @{challengedUsername}
+          </p>
+          {/* Badges row */}
+          <div className="flex items-center gap-2 mb-2">
+            <span className="flex items-center gap-0.5 text-[11px] text-yellow-500" title="Points">
+              <Star className="w-4 h-4 fill-yellow-400 text-yellow-500" strokeWidth={0} />
+              {challengedPoints}
+            </span>
+            <span className="flex items-center gap-0.5 text-[11px] text-pink-500" title="Gifts">
+              <Gift className="w-4 h-4 text-pink-500" strokeWidth={2} />
+              {challengedGifts}
+            </span>
+            <span className="flex items-center gap-0.5 text-[11px] text-blue-500" title="Level">
+              <UserLevelBadge points={challengedPoints} size="xs" showLabel={false} />
+              {challengedLevel}
+            </span>
+          </div>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-3 space-y-2">
-          {/* Title and Amount */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="col-span-2">
-              <input
-                type="text"
-                value={challengeData.title}
-                onChange={e => setChallengeData(prev => ({ ...prev, title: e.target.value }))}
-                className="w-full px-3 py-1.5 border rounded-lg text-sm"
-                placeholder="Challenge title"
-                required
-                aria-label="Challenge title"
-              />
+        {/* Amount */}
+        <form onSubmit={handleSubmit} className="w-full flex flex-col gap-2 px-3 pb-3">
+          {/* Amount */}
+          <div className="relative flex flex-col items-center">
+            <label className="absolute left-2 -top-4 text-[10px] text-gray-400 font-medium">Amount</label>
+            <div className="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+              <span className="h-4 w-4 text-[#7440ff] font-small text-md">₦</span>
             </div>
-
-            <div className="col-span-2">
-              <div className="relative">
-                <input
-                  type="number"
-                  value={challengeData.amount}
-                  onChange={e => setChallengeData(prev => ({ ...prev, amount: parseInt(e.target.value) }))}
-                  className="w-full px-3 py-1.5 border rounded-lg text-sm"
-                  min="100"
-                  placeholder="Amount (₦)"
-                  required
-                  aria-label="Wager amount"
-                />
-                {wallet && (
-                  <p className="absolute right-2 top-1/2 -translate-y-1/2 text-xs">
-                    {wallet.real_balance < challengeData.amount ? (
-                      <span className="text-red-500 flex items-center gap-1">
-                        <AlertCircle className="w-3 h-3" /> Insufficient
-                      </span>
-                    ) : (
-                      <span className="text-green-600">₦{wallet.real_balance.toLocaleString()}</span>
-                    )}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Game Details */}
-          <div className="grid grid-cols-2 gap-2">
-            <select
-              id="gameType"
-              value={challengeData.gameType}
-              onChange={e => setChallengeData(prev => ({ ...prev, gameType: e.target.value as GameType }))}
-              className="px-3 py-1.5 border rounded-lg text-sm"
+            <input
+              type="number"
+              value={challengeData.amount}
+              onChange={e => setChallengeData(prev => ({ ...prev, amount: parseInt(e.target.value) }))}
+              className="w-28 pl-7 pr-7 py-1.5 border border-gray-200 rounded-lg text-base font-semibold text-gray-700 focus:ring-1  text-center"
+              min="100"
+              placeholder="₦"
               required
-              aria-label="Game Type"
-            >
-              <option value="">Game Type</option>
-              <option value="FIFA">FIFA</option>
-              <option value="NBA2K">NBA 2K</option>
-              <option value="OTHER">Other</option>
-            </select>
-
-            <select
-              id="platform"
-              value={challengeData.platform}
-              onChange={e => setChallengeData(prev => ({ ...prev, platform: e.target.value as Platform }))}
-              className="px-3 py-1.5 border rounded-lg text-sm"
-              required
-              aria-label="Platform"
-            >
-              <option value="">Platform</option>
-              <option value="PS5">PS5</option>
-              <option value="XBOX">Xbox</option>
-              <option value="PC">PC</option>
-            </select>
-          </div>
-
-          {/* Schedule */}
-          <div className="grid grid-cols-2 gap-2">
-            <div className="flex items-center gap-1 border rounded-lg px-2">
-              <Calendar className="w-3.5 h-3.5 text-gray-400" />
-              <input
-                id="scheduledDate"
-                type="date"
-                value={challengeData.scheduledDate}
-                onChange={e => setChallengeData(prev => ({ ...prev, scheduledDate: e.target.value }))}
-                className="w-full py-1.5 text-sm focus:outline-none"
-                min={new Date().toISOString().split('T')[0]}
-                title="Schedule date"
-                aria-label="Schedule date"
-              />
-            </div>
-
-            <div className="flex items-center gap-1 border rounded-lg px-2">
-              <Clock className="w-3.5 h-3.5 text-gray-400" />
-              <input
-                id="scheduledTime"
-                type="time"
-                value={challengeData.scheduledTime}
-                onChange={e => setChallengeData(prev => ({ ...prev, scheduledTime: e.target.value }))}
-                className="w-full py-1.5 text-sm focus:outline-none"
-                title="Schedule time"
-                aria-label="Schedule time"
-              />
-            </div>
-          </div>
-
-          {/* Expiration and Evidence */}
-          <div className="grid grid-cols-2 gap-2">
-            <select
-              id="expirationHours"
-              value={challengeData.expirationHours}
-              onChange={e => setChallengeData(prev => ({ ...prev, expirationHours: parseInt(e.target.value) }))}
-              className="px-3 py-1.5 border rounded-lg text-sm"
-              required
-              aria-label="Expiration time"
-            >
-              <option value="1">Expires in 1 hour</option>
-              <option value="3">Expires in 3 hours</option>
-              <option value="6">Expires in 6 hours</option>
-              <option value="12">Expires in 12 hours</option>
-              <option value="24">Expires in 24 hours</option>
-              <option value="48">Expires in 48 hours</option>
-            </select>
-
-            <select
-              id="evidence"
-              value={challengeData.evidence}
-              onChange={e => setChallengeData(prev => ({ ...prev, evidence: e.target.value as 'SCREENSHOT' | 'VIDEO' | 'BOTH' }))}
-              className="px-3 py-1.5 border rounded-lg text-sm"
-              required
-              aria-label="Evidence required"
-            >
-              <option value="SCREENSHOT">Screenshot Required</option>
-              <option value="VIDEO">Video Required</option>
-              <option value="BOTH">Both Screenshot & Video</option>
-            </select>
-          </div>
-
-          {/* Rules */}
-          <div className="col-span-2">
-            <textarea
-              value={challengeData.rules}
-              onChange={e => setChallengeData(prev => ({ ...prev, rules: e.target.value }))}
-              className="w-full px-3 py-1.5 border rounded-lg text-sm"
-              rows={2}
-              placeholder="Challenge rules (optional)"
-              aria-label="Challenge rules"
+              style={{ maxWidth: 110 }}
             />
+            {/* Tiny wallet balance in top-right of field */}
+            {wallet && (
+              <span className="absolute right-2 top-0 text-[10px] text-gray-600 font-medium select-none">
+                ₦{wallet.real_balance.toLocaleString()}
+              </span>
+            )}
+            {wallet && wallet.real_balance < challengeData.amount && (
+              <span className="absolute right-2 bottom-0 text-[10px] text-red-500 flex items-center gap-1">
+                <AlertCircle className="w-3 h-3" /> Insufficient
+              </span>
+            )}
           </div>
 
-          {/* Action Buttons */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          {/* Game Type Pills */}
+          <div className="flex gap-1 justify-center">
+            <span className="text-[10px] text-gray-400 font-medium self-center">Event</span>
+            {["Sports", "Music", "Games", "Other"].map(type => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => {
+                  setChallengeData(prev => ({ ...prev, gameType: type as GameType }));
+                  if (type !== 'OTHER') setCustomGame('');
+                }}
+                className={`px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                  challengeData.gameType === type
+                    ? "bg-[#7440ff] text-white"
+                    : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-purple-50"
+                }`}
+              >
+                {type}
+              </button>
+            ))}
+          </div>
+          {challengeData.gameType === 'OTHER' && (
+            <input
+              type="text"
+              value={customGame}
+              onChange={e => setCustomGame(e.target.value)}
+              placeholder="Enter game name"
+              className="w-full px-2 py-1 border border-gray-200 rounded-lg text-xs mt-1 focus:ring-2 focus:ring-purple-500"
+              maxLength={32}
+              required
+            />
+          )}
+
+          {/* Platform Pills */}
+          <div className="flex gap-1 justify-center">
+            <span className="text-[10px] text-gray-400 font-medium self-center">Platform</span>
+            {["Party", "Outdoor", "Other"].map(platform => (
+              <button
+                key={platform}
+                type="button"
+                onClick={() => setChallengeData(prev => ({ ...prev, platform: platform as Platform }))}
+                className={`px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                  challengeData.platform === platform
+                    ? "bg-[#7440ff] text-white"
+                    : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-purple-50"
+                }`}
+              >
+                {platform}
+              </button>
+            ))}
+          </div>
+
+          {/* Evidence Pills */}
+          <div className="flex gap-1 justify-center">
+            <span className="text-[10px] text-gray-400 font-medium self-center">Proof</span>
+            {["Screenshot", "Video"].map(evidence => (
+              <button
+                key={evidence}
+                type="button"
+                onClick={() => setChallengeData(prev => ({ ...prev, evidence: evidence as any }))}
+                className={`px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                  challengeData.evidence === evidence
+                    ? "bg-[#7440ff] text-white"
+                    : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-purple-50"
+                }`}
+              >
+                {evidence === "SCREENSHOT" ? "Screenshot" : "Video"}
+              </button>
+            ))}
+          </div>
+
+          {/* Schedule (progressive) */}
+          <div className="flex flex-col items-center gap-1">
             <button
               type="button"
-              onClick={onClose}
-              className="btn-secondary text-sm"
+              onClick={() => setChallengeData(prev => ({
+                ...prev,
+                scheduledDate: prev.scheduledDate ? '' : new Date().toISOString().split('T')[0],
+                scheduledTime: prev.scheduledTime ? '' : '12:00',
+              }))}
+              className={`flex items-center gap-1 px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                challengeData.scheduledDate
+                  ? 'bg-purple-600 text-white border-purple-600'
+                  : 'bg-gray-100 text-gray-700 border-gray-200 hover:bg-purple-50'
+              }`}
             >
-              Cancel
+              <Calendar className="w-3 h-3" />
+              {challengeData.scheduledDate ? 'Scheduled' : 'Schedule'}
             </button>
-            <button
-              type="submit"
-              disabled={loading || !challengeData.amount || !challengeData.gameType || !challengeData.platform}
-              className="btn-primary text-sm flex items-center justify-center"
-            >
-              {loading ? <LoadingSpinner size="sm" /> : 'Send Challenge'}
-            </button>
+            {challengeData.scheduledDate && (
+              <div className="flex gap-1 w-full justify-center">
+                <input
+                  type="date"
+                  value={challengeData.scheduledDate}
+                  onChange={e => setChallengeData(prev => ({ ...prev, scheduledDate: e.target.value }))}
+                  className="px-2 py-1 border border-gray-200 rounded-lg text-[11px]"
+                />
+                <input
+                  type="time"
+                  value={challengeData.scheduledTime}
+                  onChange={e => setChallengeData(prev => ({ ...prev, scheduledTime: e.target.value }))}
+                  className="px-2 py-1 border border-gray-200 rounded-lg text-[11px]"
+                />
+              </div>
+            )}
           </div>
+
+          {/* Submit */}
+          <button
+            type="submit"
+            disabled={
+              loading ||
+              !challengeData.amount ||
+              !challengeData.gameType ||
+              !challengeData.platform ||
+              (challengeData.gameType === 'OTHER' && !customGame.trim())
+            }
+            className="w-full bg-[#BEFF07] text-black font-semibold py-2 rounded-xl mt-1 transition text-sm"
+          >
+            {loading ? (
+              <div className="flex justify-center items-center gap-2">
+                <LoadingSpinner size="sm" />
+                Requesting...
+              </div>
+            ) : (
+              'Challenge'
+            )}
+          </button>
         </form>
       </div>
     </div>
