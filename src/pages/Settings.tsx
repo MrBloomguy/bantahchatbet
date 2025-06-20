@@ -10,10 +10,9 @@ const Settings: React.FC = () => {
   const { settings, toggleSetting } = useSettings();
 
   return (
-    <div className="min-h-screen bg-[#F6F7FB] flex flex-col pb-[70px] items-center"> {/* Center content */}
-      <div className="w-full max-w-md"> {/* Limit width */}
+    <div className="min-h-screen bg-[#F6F7FB] flex flex-col pb-[70px]">
+      <div className="w-full max-w-xl mx-auto">
         <PageHeader title="Settings" />
-
         <div className="p-4 space-y-4">
           {/* Notifications Section (Grouped Card) */}
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4">
@@ -166,7 +165,6 @@ const Settings: React.FC = () => {
             </div>
           </div>
         </div>
-
         <div className="text-center text-xs text-gray-500 dark:text-gray-400 mt-4">
           App ver 1.0.1
         </div>

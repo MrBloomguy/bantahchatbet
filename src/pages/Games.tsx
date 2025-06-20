@@ -804,18 +804,21 @@ const Games: React.FC = () => {
                       <div
                         key={challenge.id}
                         onClick={() => {
-                          // For active challenges, go directly to the challenge chat
-                          if (challenge.challenger.id === currentUser?.id || challenge.challenged.id === currentUser?.id) {
-                            navigate(`/challenge-chat/${challenge.id}`);
-                          } else if (activeTab === 'scheduled') {
-                            // For scheduled challenges, show the details modal
+                          // Always open modal for scheduled/upcoming challenges
+                          if (activeTab === 'scheduled') {
                             setSelectedChallenge(challenge);
                             setShowChallengeDetailsModal(true);
+                          } else if (challenge.challenger.id === currentUser?.id || challenge.challenged.id === currentUser?.id) {
+                            // For active challenges, go directly to the challenge chat
+                            navigate(`/challenge-chat/${challenge.id}`);
                           } else {
-                            navigate(`/messages?tab=challenges&chatId=${challenge.id}`);
+                            // Show details modal for non-participants
+                            setSelectedChallenge(challenge);
+                            setShowChallengeDetailsModal(true);
                           }
                         }}
-                        className="bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 cursor-pointer group flex flex-col gap-2">
+                        className="bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 cursor-pointer group flex flex-col gap-2"
+                      >
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="text-gray-900 font-semibold truncate">{challenge.title || 'Untitled Challenge'}</h3>
                           <span className="flex items-center">

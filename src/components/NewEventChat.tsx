@@ -113,6 +113,14 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const [profileCardUserId, setProfileCardUserId] = useState<string | null>(null);
   const [messageReactions, setMessageReactions] = useState<Record<string, any[]>>({});
 
+  // Group Info Modal state
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
+
+  // Search Dropdown state
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchResults, setSearchResults] = useState<{messages: ChatMessage[]; users: {id: string; username: string; name?: string}[]}>({messages: [], users: []});
+
   // Add handleMention function
   const handleMention = async (input: string) => {
     const mentionMatch = input.match(/@(\w*)$/);
@@ -329,17 +337,15 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     setShowMenuDropdown(false);
     switch (option) {
       case 'Search':
-        // Trigger search functionality
-        console.log('Search clicked');
-        // Implement search logic here
+        setShowSearchDropdown(true);
         break;
       case 'Share':
         // Trigger share functionality
         console.log('Share clicked');
         navigator.share({
           title: event?.title || 'Event',
-          text: `Check out this event: ${event?.title}`,
-          url: window.location.href,
+          text: `Join this event chatroom: ${window.location.origin}/event/${eventId}`,
+          url: window.location.origin + '/event/' + eventId,
         }).catch((error) => console.error('Error sharing:', error));
         break;
       case 'Report':
@@ -348,62 +354,23 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         // Implement report logic here
         toast.showInfo('Report submitted successfully');
         break;
+      case 'Toggle Banner':
+        setBannerOpen((prev) => !prev);
+        break;
+      case 'View Group Info':
+        setShowGroupInfo(true);
+        break;
       default:
         break;
     }
   };
 
-  // Add search functionality to the menu and make the menu active
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredMenuOptions, setFilteredMenuOptions] = useState<string[]>(['View Info', 'Mute Notifications', 'Leave Group']);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    const options = ['View Info', 'Mute Notifications', 'Leave Group'];
-    setFilteredMenuOptions(
-      options.filter((option) => option.toLowerCase().includes(query.toLowerCase()))
-    );
-  };
-
-  // Update the menu to remove the search bar and ensure search functionality is for messages and users
-  const handleSearchMessagesAndUsers = async (query: string) => {
-    if (!query.trim()) return;
-
-    try {
-      // Example: Search messages
-      const { data: messages, error: messageError } = await supabase
-        .from('event_chat_messages')
-        .select('*')
-        .ilike('content', `%${query}%`)
-        .eq('event_id', eventId);
-
-      if (messageError) throw messageError;
-
-      console.log('Search results for messages:', messages);
-
-      // Example: Search users
-      const { data: users, error: userError } = await supabase
-        .from('users')
-        .select('id, username, name')
-        .ilike('username', `%${query}%`);
-
-      if (userError) throw userError;
-
-      console.log('Search results for users:', users);
-    } catch (error) {
-      console.error('Error searching messages or users:', error);
-    }
-  };
-
-  // Update the share functionality to share the event chatroom link
+  // Share event: just share the event chatroom link, no OG image, no description
   const handleShareEvent = () => {
-    const eventChatUrl = `${window.location.origin}/event/${eventId}/chat`;
+    const eventChatUrl = `${window.location.origin}/event/${eventId}`;
     const shareContent = {
       title: event?.title || 'Event',
-      text: event?.description
-        ? `Check out this event: "${event?.title}" - ${event?.description}\n${eventChatUrl}`
-        : `Check out this event: "${event?.title}" happening now!\n${eventChatUrl}`,
+      text: `Join this event chatroom: ${eventChatUrl}`,
       url: eventChatUrl,
     };
 
@@ -419,11 +386,34 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     }
   };
 
-  const copyToClipboard = (eventChatUrl: string) => {
-    const shareText = `${event?.title}\n${eventChatUrl}`;
-    navigator.clipboard.writeText(shareText)
-      .then(() => toast.showSuccess('Event chat link copied to clipboard!'))
-      .catch(() => toast.showError('Failed to copy event chat link.'));
+  // Helper to copy text to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
+      .then(() => toast.showSuccess('Event link copied to clipboard!'))
+      .catch(() => toast.showError('Failed to copy event link.'));
+  };
+
+  // Search handler
+  const handleSearch = async () => {
+    if (!searchInput.trim()) return;
+    try {
+      // Search messages
+      const { data: messages, error: messageError } = await supabase
+        .from('event_chat_messages')
+        .select('*')
+        .ilike('content', `%${searchInput}%`)
+        .eq('event_id', eventId);
+      if (messageError) throw messageError;
+      // Search users
+      const { data: users, error: userError } = await supabase
+        .from('users')
+        .select('id, username, name')
+        .ilike('username', `%${searchInput}%`);
+      if (userError) throw userError;
+      setSearchResults({ messages: messages || [], users: users || [] });
+    } catch (error) {
+      toast.showError('Search failed');
+    }
   };
 
   useEffect(() => {
@@ -663,6 +653,18 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
                   Search
                 </button>
                 <button
+                  onClick={() => handleMenuOptionClick('Toggle Banner')}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  {bannerOpen ? 'Hide Banner' : 'Show Banner'}
+                </button>
+                <button
+                  onClick={() => handleMenuOptionClick('View Group Info')}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  View Group Info
+                </button>
+                <button
                   onClick={handleShareEvent}
                   className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
                 >
@@ -679,98 +681,93 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           </div>
         </div>
 
-        {/* Compact Banner with Drawer */}
-        <div className="relative mx-3">
-          <div
-            className={`transition-all duration-300 ${bannerOpen ? 'max-h-[80px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} overflow-hidden`}
-          >
+        {/* Compact Banner - reduced height, no drawer */}
+        {bannerOpen && (
+          <div className="relative w-[98vw] max-w-[700px] mx-auto">
             <div
-              className="relative border-b border-gray-200 py-2 px-4 shadow-sm flex items-center justify-between min-h-[64px] rounded-xl overflow-hidden"
-              style={{
-                backgroundImage: event.banner_url ? `url(${event.banner_url})` : undefined,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-              }}
+              className="transition-all duration-300 max-h-[56px] opacity-100 overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gray-900/60 pointer-events-none" />
-              <div className="relative flex items-center gap-6 text-sm text-white z-10">
-                <span className="flex items-center gap-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="inline-block h-3 w-3 mr-1 align-text-top text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
+              <div
+                className="relative border-b border-gray-200 py-1 px-4 shadow-sm flex items-center justify-between min-h-[44px] rounded-xl overflow-hidden"
+                style={{
+                  backgroundImage: event.banner_url ? `url(${event.banner_url})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                }}
+              >
+                <div className="absolute inset-0 bg-gray-900/60 pointer-events-none" />
+                <div className="relative flex items-center gap-6 text-sm text-white z-10">
+                  <span className="flex items-center gap-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="inline-block h-3 w-3 mr-1 align-text-top text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs">{countdown}</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    {/* Member icon - thicker */}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0zm6 13v-2a4 4 0 00-3-3.87M6 20v-2a4 4 0 013-3.87" />
+                    </svg>
+                    <span className="text-xs">{formatShortNumber(event?.participant_count || 0)}</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    {/* Naira symbol icon - thicker */}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <text x="2" y="17" fontSize="16" fontFamily="Arial" fill="currentColor">₦</text>
+                    </svg>
+                    <span className="text-xs">{formatShortNumber(event.pool_total_amount || 0)}</span>
+                  </span>
+                </div>
+                <div className="relative flex items-center gap-2 z-10">
+                  <button
+                    onClick={() => handlePrediction(true)}
+                    disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
+                    className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
+                      prediction === true
+                        ? 'bg-green-700 text-white cursor-not-allowed'
+                        : prediction !== null
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                    }`}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-xs">{countdown}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <img src="/avatar-count.svg" alt="Members" className="w-4 h-4" />
-                  <span className="text-xs">{event?.participant_count || 0}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <img src="/bet_icon.png" alt="Pool" className="w-4 h-4" />
-                  <span className="text-xs">₦{event.pool_total_amount?.toLocaleString() || 0}</span>
-                </span>
-              </div>
-              <div className="relative flex items-center gap-2 z-10">
-                <button
-                  onClick={() => handlePrediction(true)}
-                  disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
-                  className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
-                    prediction === true
-                      ? 'bg-green-700 text-white cursor-not-allowed'
-                      : prediction !== null
-                      ? 'bg-gray-400 text-white cursor-not-allowed'
-                      : 'bg-green-500 text-white hover:bg-green-600'
-                  }`}
-                >
-                  YES
-                  {predictionCounts.yes_count > 0 && (
-                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-green-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
-                      {predictionCounts.yes_count}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => handlePrediction(false)}
-                  disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
-                  className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
-                    prediction === false
-                      ? 'bg-red-700 text-white cursor-not-allowed'
-                      : prediction !== null
-                      ? 'bg-gray-400 text-white cursor-not-allowed'
-                      : 'bg-red-500 text-white hover:bg-red-600'
-                  }`}
-                >
-                  NO
-                  {predictionCounts.no_count > 0 && (
-                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-red-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
-                      {predictionCounts.no_count}
-                    </span>
-                  )}
-                </button>
+                    YES
+                    {predictionCounts.yes_count > 0 && (
+                      <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-green-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
+                        {predictionCounts.yes_count}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handlePrediction(false)}
+                    disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
+                    className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
+                      prediction === false
+                        ? 'bg-red-700 text-white cursor-not-allowed'
+                        : prediction !== null
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-red-500 text-white hover:bg-red-600'
+                    }`}
+                  >
+                    NO
+                    {predictionCounts.no_count > 0 && (
+                      <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-red-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
+                        {predictionCounts.no_count}
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          {/* Drawer Button - far left, aligned with header bottom */}
-          <div className="absolute -left-4 top-0 z-20">
-            <button
-              onClick={() => setBannerOpen((prev) => !prev)}
-              className="bg-white shadow p-1 border border-gray-200 hover:bg-gray-100 transition-all rounded"
-              aria-label="Toggle Banner Drawer"
-              style={{ borderRadius: '4px' }}
-            >
-              <svg className={`w-6 h-6 text-gray-500 transition-transform ${bannerOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Scrollable Messages Area */}
@@ -786,12 +783,12 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
               // Find the replied-to message if reply_to exists
               let replyToData = undefined;
               if (msg.reply_to) {
-                const repliedMsg = messages.find((m) => m.id === msg.reply_to);
+                const repliedMsg = messages.find((m) => m.id === (msg.reply_to as any)?.id);
                 if (repliedMsg) {
                   replyToData = {
                     id: repliedMsg.id,
                     content: repliedMsg.content,
-                    sender: { username: repliedMsg.sender?.username || '' }
+                    sender: { username: repliedMsg.sender?.username || '' },
                   };
                 }
               }
@@ -927,8 +924,102 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           <ProfileCard userId={profileCardUserId} onClose={() => setProfileCardUserId(null)} />
         </div>
       )}
+
+      {/* Group Info Modal */}
+      {showGroupInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              onClick={() => setShowGroupInfo(false)}
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-lg font-bold mb-2">Group Info</h2>
+            <div className="flex items-center gap-3 mb-4">
+              <UserAvatar src={event?.creator?.avatar_url || '/bantahlogo.png'} alt={event?.creator?.username || ''} size="md" />
+              <div>
+                <div className="font-semibold text-gray-800">{event?.title}</div>
+                <div className="text-xs text-gray-500">by @{event?.creator?.username}</div>
+              </div>
+            </div>
+            <div className="mb-2 text-sm text-gray-700">Participants: <b>{event?.participant_count}</b></div>
+            <div className="mb-2 text-sm text-gray-700">Total Pool: <b>₦{formatShortNumber(event?.pool_total_amount || 0)}</b></div>
+            <div className="mb-2 text-sm text-gray-700">Ends: <b>{event?.end_time ? new Date(event.end_time).toLocaleString() : '-'}</b></div>
+            {/* Add more group info as needed */}
+          </div>
+        </div>
+      )}
+
+      {/* Search Dropdown */}
+      {showSearchDropdown && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-xs mt-24 p-4 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              onClick={() => setShowSearchDropdown(false)}
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-lg font-bold mb-2">Search</h2>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Search messages or users..."
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
+                autoFocus
+              />
+              <button
+                className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+                onClick={handleSearch}
+              >
+                Search
+              </button>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-700 mb-1">Messages</div>
+              {searchResults.messages.length === 0 ? (
+                <div className="text-xs text-gray-400 mb-2">No messages found.</div>
+              ) : (
+                <ul className="mb-3 max-h-32 overflow-y-auto">
+                  {searchResults.messages.map(msg => (
+                    <li key={msg.id} className="mb-2 p-2 bg-gray-100 rounded">
+                      <div className="text-xs text-gray-700">{msg.content}</div>
+                      <div className="text-[10px] text-gray-400">{msg.sender?.username} • {new Date(msg.created_at).toLocaleString()}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="font-semibold text-gray-700 mb-1">Users</div>
+              {searchResults.users.length === 0 ? (
+                <div className="text-xs text-gray-400">No users found.</div>
+              ) : (
+                <ul className="max-h-32 overflow-y-auto">
+                  {searchResults.users.map(user => (
+                    <li key={user.id} className="mb-2 p-2 bg-gray-100 rounded">
+                      <div className="text-xs text-gray-700">@{user.username} {user.name && <span className='text-gray-400'>({user.name})</span>}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+
+// Utility to format numbers as 50k/1.2M
+function formatShortNumber(num: number): string {
+  if (num >= 1_000_000) return (num / 1_000_000).toFixed(num % 1_000_000 === 0 ? 0 : 1) + 'M';
+  if (num >= 1_000) return (num / 1_000).toFixed(num % 1_000 === 0 ? 0 : 1) + 'k';
+  return num.toString();
+}
 
 export default NewEventChat;

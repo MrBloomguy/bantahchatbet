@@ -21,6 +21,7 @@ import SimpleAuthDebugger from './components/SimpleAuthDebugger';
 import DailyPointsClaimModal from './components/DailyPointsClaimModal';
 import { useLeaderboard } from './hooks/useLeaderboard';
 import { useAuth } from './contexts/AuthContext';
+import PublicProfilePage from './pages/profile/[username]';
 
 // Admin Pages
 import AdminLogin from './pages/AdminLogin';
@@ -411,6 +412,12 @@ const App: React.FC = () => {
                               <Gift />
                             </ProtectedRoute>
                           } />
+                          <Route path="/user/:username" element={
+                            <ProtectedRoute>
+                              <PublicProfilePage />
+                            </ProtectedRoute>
+                          } />
+                          <Route path="/profile/:username" element={<PublicProfilePage />} />
                         </Routes>
                         <PWAInstallPrompt />
                         <SimpleAuthDebugger />

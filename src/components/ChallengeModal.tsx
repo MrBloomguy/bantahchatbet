@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Calendar, AlertCircle, DollarSign, Star, Gift, Award } from 'lucide-react';
+import { X, Calendar, AlertCircle, DollarSign, Star, Gift, Award, Share2 } from 'lucide-react';
 import { useWallet } from '../contexts/WalletContext';
 import { useToast } from '../contexts/ToastContext';
 import { supabase } from '../lib/supabase';
@@ -45,6 +45,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
     expirationHours: 24,
   });
   const [customGame, setCustomGame] = useState('');
+  const [createdChallenge, setCreatedChallenge] = useState<any>(null);
 
   const { wallet } = useWallet();
   const toast = useToast();
@@ -93,6 +94,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
         .single();
 
       if (error) throw error;
+      setCreatedChallenge(challenge); // Store the created challenge for sharing
 
       const { data: challengerData, error: challengerError } = await supabase
         .from('users')
@@ -128,14 +130,52 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-[2rem] w-full max-w-[320px] shadow-xl border overflow-hidden flex flex-col items-center p-0">
-        {/* Header: Avatar, Name, Username, Close */}
+        {/* Header: Avatar, Name, Username, Share, Close */}
         <div className="w-full flex flex-col items-center pt-6 pb-2 px-4 relative">
-          <button
-            onClick={onClose}
-            className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          {/* Share and Close buttons - tightly aligned top-left */}
+          <div className="absolute top-3 left-3 z-20">
+            {createdChallenge ? (
+              <button
+                type="button"
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  const url = `${window.location.origin}/challenge/${createdChallenge.id}`;
+                  let message = '';
+                  switch (createdChallenge.status) {
+                    case 'pending':
+                      message = `I've invited you to a challenge!\nView and accept: ${url}`;
+                      break;
+                    case 'accepted':
+                      message = `A challenge is on! See details: ${url}`;
+                      break;
+                    case 'completed':
+                      message = `Check out the results of our challenge: ${url}`;
+                      break;
+                    default:
+                      message = `Check out this challenge: ${url}`;
+                  }
+                  await navigator.clipboard.writeText(message);
+                  toast.showSuccess('Challenge link copied!');
+                }}
+                className="text-gray-400 hover:text-gray-600 p-1 rounded-full bg-white/80"
+                aria-label="Share challenge"
+                title="Share challenge"
+              >
+                <Share2 className="w-5 h-5" />
+              </button>
+            ) : null}
+          </div>
+          <div className="absolute top-3 right-3 z-20">
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600 p-1 rounded-full bg-white/80"
+              aria-label="Close challenge modal"
+              title="Close"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
           <img
             src={
               challengedAvatar ||
