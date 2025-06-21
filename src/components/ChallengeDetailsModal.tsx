@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Trophy, Calendar, Clock, MapPin, AlertCircle } from 'lucide-react';
+import { X, Trophy, Calendar, Clock, MapPin, AlertCircle, Share2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { supabase } from '../lib/supabase';
 import { useToast } from '../contexts/ToastContext';
@@ -141,14 +141,35 @@ const ChallengeDetailsModal: React.FC<ChallengeDetailsModalProps> = ({
               }
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="text-gray-500 hover:text-gray-700 transition-colors"
-            aria-label="Close details"
-          >
-            <X className="w-4 h-4" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={async (e) => {
+                e.stopPropagation();
+                const url = `${window.location.origin}/og/challenge/${challenge.id}`;
+                const ogImage = challenge.challenger.avatar_url && challenge.challenger.avatar_url.startsWith('http')
+                  ? challenge.challenger.avatar_url
+                  : `${window.location.origin}/default-avatar.png`;
+                const scheduled = challenge.scheduled_at ? ` on ${formatDate(challenge.scheduled_at)}` : '';
+                const message = `${challenge.challenger.name} challenged ${challenge.challenged.name} to a ${challenge.game_type} match for ₦${challenge.amount.toLocaleString()}${scheduled}!\nView challenge: ${url}\nImage: ${ogImage}`;
+                await navigator.clipboard.writeText(message);
+                toast.showSuccess('Challenge OG share link copied!');
+              }}
+              className="text-gray-400 hover:text-gray-600 p-1 rounded-full bg-white/80"
+              aria-label="Share challenge"
+              title="Share challenge"
+            >
+              <Share2 className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="text-gray-500 hover:text-gray-700 transition-colors"
+              aria-label="Close details"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Content */}

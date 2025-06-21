@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Send, Loader, X } from 'lucide-react';
+import { ArrowLeft, Send, Loader, X, UserPlus, UserCheck } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -11,6 +11,7 @@ import { useEventChat } from '../hooks/useEventChat';
 import ProfileCard from './ProfileCard';
 import { supabase } from '../lib/supabase';
 import ChatBubble from './ChatBubble';
+import { useProfile } from '../hooks/useProfile';
 
 // Update the Gif interface to match Tenor's API response
 interface Gif {
@@ -89,6 +90,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const { messages, sendMessage, isLoading } = useEventChat(eventId);
   const { joinEvent, getUserPrediction, getPredictionCounts } = useEventParticipation();
   const { updatePoolAmount } = useEventPool();
+  const { followUser, unfollowUser } = useProfile();
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
@@ -110,6 +112,18 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const [bannerOpen, setBannerOpen] = useState(true);
   const [showGifPicker, setShowGifPicker] = useState(false);
   const [gifs, setGifs] = useState<Gif[]>([]);
+  const [profileCardUserId, setProfileCardUserId] = useState<string | null>(null);
+  const [messageReactions, setMessageReactions] = useState<Record<string, any[]>>({});
+  const [isFollowing, setIsFollowing] = useState<boolean | null>(null);
+  const [followLoading, setFollowLoading] = useState(false);
+
+  // Group Info Modal state
+  const [showGroupInfo, setShowGroupInfo] = useState(false);
+
+  // Search Dropdown state
+  const [showSearchDropdown, setShowSearchDropdown] = useState(false);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchResults, setSearchResults] = useState<{messages: ChatMessage[]; users: {id: string; username: string; name?: string}[]}>({messages: [], users: []});
 
   // Add handleMention function
   const handleMention = async (input: string) => {
@@ -164,7 +178,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   // Modified handleSubmit to include mentions and replies
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (message.trim() && currentUser) {
+    if (!currentUser) {
+      toast.showError('You must be logged in to send messages.');
+      return;
+    }
+    if (message.trim()) {
       // Extract mentions from message
       const mentionRegex = /@(\w+)/g;
       const mentions = [];
@@ -176,22 +194,15 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           .select('id, username')
           .eq('username', username)
           .single();
-        
         if (data) {
           mentions.push({ id: data.id, username: data.username });
         }
       }
-
       // Send the message with the structured content
       const success = await sendMessage(message.trim(), undefined, {
         mentions,
-        reply_to: replyingTo ? {
-          id: replyingTo.id,
-          content: replyingTo.content,
-          sender_username: replyingTo.sender?.username
-        } : undefined
+        reply_to: replyingTo ? replyingTo.id : undefined
       });
-
       if (!success) {
         toast.showError('Failed to send message');
       } else {
@@ -310,7 +321,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
       await sendMessage('', undefined, {
         mentions: [],
         reply_to: undefined,
-        media: { url: gifUrl, type: 'gif' }, // Corrected property
+        media: { url: gifUrl, type: 'gif' } // Corrected property
       });
       setShowGifPicker(false);
     } catch (error) {
@@ -330,17 +341,15 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     setShowMenuDropdown(false);
     switch (option) {
       case 'Search':
-        // Trigger search functionality
-        console.log('Search clicked');
-        // Implement search logic here
+        setShowSearchDropdown(true);
         break;
       case 'Share':
         // Trigger share functionality
         console.log('Share clicked');
         navigator.share({
           title: event?.title || 'Event',
-          text: `Check out this event: ${event?.title}`,
-          url: window.location.href,
+          text: `Join this event chatroom: ${window.location.origin}/event/${eventId}`,
+          url: window.location.origin + '/event/' + eventId,
         }).catch((error) => console.error('Error sharing:', error));
         break;
       case 'Report':
@@ -349,62 +358,24 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         // Implement report logic here
         toast.showInfo('Report submitted successfully');
         break;
+      case 'Toggle Banner':
+        setBannerOpen((prev) => !prev);
+        break;
+      case 'View Group Info':
+        setShowGroupInfo(true);
+        break;
       default:
         break;
     }
   };
 
-  // Add search functionality to the menu and make the menu active
-  const [searchQuery, setSearchQuery] = useState('');
-  const [filteredMenuOptions, setFilteredMenuOptions] = useState<string[]>(['View Info', 'Mute Notifications', 'Leave Group']);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const query = e.target.value;
-    setSearchQuery(query);
-    const options = ['View Info', 'Mute Notifications', 'Leave Group'];
-    setFilteredMenuOptions(
-      options.filter((option) => option.toLowerCase().includes(query.toLowerCase()))
-    );
-  };
-
-  // Update the menu to remove the search bar and ensure search functionality is for messages and users
-  const handleSearchMessagesAndUsers = async (query: string) => {
-    if (!query.trim()) return;
-
-    try {
-      // Example: Search messages
-      const { data: messages, error: messageError } = await supabase
-        .from('event_chat_messages')
-        .select('*')
-        .ilike('content', `%${query}%`)
-        .eq('event_id', eventId);
-
-      if (messageError) throw messageError;
-
-      console.log('Search results for messages:', messages);
-
-      // Example: Search users
-      const { data: users, error: userError } = await supabase
-        .from('users')
-        .select('id, username, name')
-        .ilike('username', `%${query}%`);
-
-      if (userError) throw userError;
-
-      console.log('Search results for users:', users);
-    } catch (error) {
-      console.error('Error searching messages or users:', error);
-    }
-  };
-
-  // Update the share functionality to share the event link
+  // Share event: just share the event chatroom link, no OG image, no description
   const handleShareEvent = () => {
+    const eventChatUrl = `${window.location.origin}/event/${eventId}`;
     const shareContent = {
       title: event?.title || 'Event',
-      text: event?.description
-        ? `Check out this event: "${event?.title}" - ${event?.description}`
-        : `Check out this event: "${event?.title}" happening now!`,
-      url: window.location.href,
+      text: `Join this event chatroom: ${eventChatUrl}`,
+      url: eventChatUrl,
     };
 
     if (navigator.share) {
@@ -412,18 +383,41 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         .catch((error) => {
           console.error('Error sharing:', error);
           // Fallback to clipboard if Web Share API fails
-          copyToClipboard();
+          copyToClipboard(eventChatUrl);
         });
     } else {
-      copyToClipboard();
+      copyToClipboard(eventChatUrl);
     }
   };
 
-  const copyToClipboard = () => {
-    const shareText = `${event?.title}\n${window.location.href}`;
-    navigator.clipboard.writeText(shareText)
+  // Helper to copy text to clipboard
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text)
       .then(() => toast.showSuccess('Event link copied to clipboard!'))
-      .catch((error) => toast.showError('Failed to copy event link'));
+      .catch(() => toast.showError('Failed to copy event link.'));
+  };
+
+  // Search handler
+  const handleSearch = async () => {
+    if (!searchInput.trim()) return;
+    try {
+      // Search messages
+      const { data: messages, error: messageError } = await supabase
+        .from('event_chat_messages')
+        .select('*')
+        .ilike('content', `%${searchInput}%`)
+        .eq('event_id', eventId);
+      if (messageError) throw messageError;
+      // Search users
+      const { data: users, error: userError } = await supabase
+        .from('users')
+        .select('id, username, name')
+        .ilike('username', `%${searchInput}%`);
+      if (userError) throw userError;
+      setSearchResults({ messages: messages || [], users: users || [] });
+    } catch (error) {
+      toast.showError('Search failed');
+    }
   };
 
   useEffect(() => {
@@ -559,6 +553,55 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showMenuDropdown]);
 
+  useEffect(() => {
+    const fetchReactions = async () => {
+      if (!messages.length) return;
+      const ids = messages.map((m) => m.id);
+      const { data, error } = await supabase
+        .from('event_chat_message_reactions')
+        .select('*')
+        .in('message_id', ids);
+      if (!error && data) {
+        const grouped: Record<string, any[]> = {};
+        data.forEach((r) => {
+          if (!grouped[r.message_id]) grouped[r.message_id] = [];
+          grouped[r.message_id].push(r);
+        });
+        setMessageReactions(grouped);
+      }
+    };
+    fetchReactions();
+  }, [messages]);
+
+  // Fetch initial follow state for event creator
+  useEffect(() => {
+    if (!event?.creator?.id || !currentUser?.id) return;
+    if (event.creator.id === currentUser.id) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from('followers')
+        .select('id')
+        .eq('follower_id', currentUser.id)
+        .eq('following_id', event.creator.id)
+        .maybeSingle();
+      setIsFollowing(!!data);
+    })();
+  }, [event?.creator?.id, currentUser?.id]);
+
+  const handleFollowBadgeClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!event?.creator?.id || !currentUser?.id) return;
+    setFollowLoading(true);
+    if (isFollowing) {
+      const success = await unfollowUser(event.creator.id);
+      if (success) setIsFollowing(false);
+    } else {
+      const success = await followUser(event.creator.id);
+      if (success) setIsFollowing(true);
+    }
+    setFollowLoading(false);
+  };
+
   if (loadingEvent || !event) {
     return (
       <div className="flex flex-col h-screen bg-white items-center justify-center p-6">
@@ -643,6 +686,18 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
                   Search
                 </button>
                 <button
+                  onClick={() => handleMenuOptionClick('Toggle Banner')}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  {bannerOpen ? 'Hide Banner' : 'Show Banner'}
+                </button>
+                <button
+                  onClick={() => handleMenuOptionClick('View Group Info')}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  View Group Info
+                </button>
+                <button
                   onClick={handleShareEvent}
                   className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
                 >
@@ -659,98 +714,93 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           </div>
         </div>
 
-        {/* Compact Banner with Drawer */}
-        <div className="relative mx-3">
-          <div
-            className={`transition-all duration-300 ${bannerOpen ? 'max-h-[80px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} overflow-hidden`}
-          >
+        {/* Compact Banner - reduced height, no drawer */}
+        {bannerOpen && (
+          <div className="relative w-[98vw] max-w-[700px] mx-auto">
             <div
-              className="relative border-b border-gray-200 py-2 px-4 shadow-sm flex items-center justify-between min-h-[64px] rounded-xl overflow-hidden"
-              style={{
-                backgroundImage: event.banner_url ? `url(${event.banner_url})` : undefined,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-                backgroundRepeat: 'no-repeat',
-              }}
+              className="transition-all duration-300 max-h-[56px] opacity-100 overflow-hidden"
             >
-              <div className="absolute inset-0 bg-gray-900/60 pointer-events-none" />
-              <div className="relative flex items-center gap-6 text-sm text-white z-10">
-                <span className="flex items-center gap-1">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="inline-block h-3 w-3 mr-1 align-text-top text-white"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={1.5}
+              <div
+                className="relative border-b border-gray-200 py-1 px-4 shadow-sm flex items-center justify-between min-h-[44px] rounded-lg overflow-hidden"
+                style={{
+                  backgroundImage: event.banner_url ? `url(${event.banner_url})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                }}
+              >
+                <div className="absolute inset-0 bg-gray-900/60 pointer-events-none" />
+                <div className="relative flex items-center gap-6 text-sm text-white z-10">
+                  <span className="flex items-center gap-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="inline-block h-3 w-3 mr-1 align-text-top text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs">{countdown}</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    {/* Member icon - thicker */}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0zm6 13v-2a4 4 0 00-3-3.87M6 20v-2a4 4 0 013-3.87" />
+                    </svg>
+                    <span className="text-xs">{formatShortNumber(event?.participant_count || 0)}</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    {/* Naira symbol icon - thicker */}
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <text x="2" y="17" fontSize="16" fontFamily="Arial" fill="currentColor">₦</text>
+                    </svg>
+                    <span className="text-xs">{formatShortNumber(event.pool_total_amount || 0)}</span>
+                  </span>
+                </div>
+                <div className="relative flex items-center gap-2 z-10">
+                  <button
+                    onClick={() => handlePrediction(true)}
+                    disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
+                    className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
+                      prediction === true
+                        ? 'bg-green-700 text-white cursor-not-allowed'
+                        : prediction !== null
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                    }`}
                   >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span className="text-xs">{countdown}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <img src="/avatar-count.svg" alt="Members" className="w-4 h-4" />
-                  <span className="text-xs">{event?.participant_count || 0}</span>
-                </span>
-                <span className="flex items-center gap-1">
-                  <img src="/bet_icon.png" alt="Pool" className="w-4 h-4" />
-                  <span className="text-xs">₦{event.pool_total_amount?.toLocaleString() || 0}</span>
-                </span>
-              </div>
-              <div className="relative flex items-center gap-2 z-10">
-                <button
-                  onClick={() => handlePrediction(true)}
-                  disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
-                  className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
-                    prediction === true
-                      ? 'bg-green-700 text-white cursor-not-allowed'
-                      : prediction !== null
-                      ? 'bg-gray-400 text-white cursor-not-allowed'
-                      : 'bg-green-500 text-white hover:bg-green-600'
-                  }`}
-                >
-                  YES
-                  {predictionCounts.yes_count > 0 && (
-                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-green-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
-                      {predictionCounts.yes_count}
-                    </span>
-                  )}
-                </button>
-                <button
-                  onClick={() => handlePrediction(false)}
-                  disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
-                  className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
-                    prediction === false
-                      ? 'bg-red-700 text-white cursor-not-allowed'
-                      : prediction !== null
-                      ? 'bg-gray-400 text-white cursor-not-allowed'
-                      : 'bg-red-500 text-white hover:bg-red-600'
-                  }`}
-                >
-                  NO
-                  {predictionCounts.no_count > 0 && (
-                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-red-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
-                      {predictionCounts.no_count}
-                    </span>
-                  )}
-                </button>
+                    YES
+                    {predictionCounts.yes_count > 0 && (
+                      <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-green-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
+                        {predictionCounts.yes_count}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handlePrediction(false)}
+                    disabled={isProcessing || prediction !== null || countdown === 'Event ended'}
+                    className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
+                      prediction === false
+                        ? 'bg-red-700 text-white cursor-not-allowed'
+                        : prediction !== null
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-red-500 text-white hover:bg-red-600'
+                    }`}
+                  >
+                    NO
+                    {predictionCounts.no_count > 0 && (
+                      <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-red-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
+                        {predictionCounts.no_count}
+                      </span>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-          {/* Drawer Button - far left, aligned with header bottom */}
-          <div className="absolute -left-4 top-0 z-20">
-            <button
-              onClick={() => setBannerOpen((prev) => !prev)}
-              className="bg-white shadow p-1 border border-gray-200 hover:bg-gray-100 transition-all rounded"
-              aria-label="Toggle Banner Drawer"
-              style={{ borderRadius: '4px' }}
-            >
-              <svg className={`w-6 h-6 text-gray-500 transition-transform ${bannerOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* Scrollable Messages Area */}
@@ -763,6 +813,18 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
           ) : (
             messages.map((msg: ChatMessage) => {
               const isCurrentUserSender = msg.sender_id === currentUser?.id;
+              // Find the replied-to message if reply_to exists
+              let replyToData = undefined;
+              if (msg.reply_to) {
+                const repliedMsg = messages.find((m) => m.id === (msg.reply_to as any)?.id);
+                if (repliedMsg) {
+                  replyToData = {
+                    id: repliedMsg.id,
+                    content: repliedMsg.content,
+                    sender: { username: repliedMsg.sender?.username || '' },
+                  };
+                }
+              }
               return (
                 <div key={msg.id}>
                   <ChatBubble
@@ -778,12 +840,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
                     mediaType={msg.media_type}
                     mediaUrl={msg.media_url}
                     onReply={() => handleReply(msg)}
-                    replyTo={msg.reply_to ? {
-                      id: msg.reply_to.id,
-                      content: msg.reply_to.content,
-                      sender: { username: msg.reply_to.sender_username || '' }
-                    } : undefined}
+                    replyTo={replyToData}
                     mentions={msg.mentions}
+                    onAvatarClick={() => setProfileCardUserId(msg.sender_id)}
+                    messageId={msg.id}
+                    reactions={messageReactions[msg.id] || []}
                   />
                 </div>
               );
@@ -795,6 +856,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
 
       {/* Fixed Input Area */}
       <div className="flex-shrink-0 bg-gray-50 border-t border-gray-200 p-3">
+        {!currentUser && (
+          <div className="mb-2 p-2 bg-yellow-100 rounded-lg text-center text-yellow-800 text-sm">
+            Please sign in to send messages or react in this chatroom.
+          </div>
+        )}
         {replyingTo && (
           <div className="mb-2 p-2 bg-gray-100 rounded-lg flex justify-between items-center">
             <div className="text-sm text-gray-600">
@@ -808,17 +874,18 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             </button>
           </div>
         )}
-        
         <form onSubmit={handleSubmit} className="flex items-center space-x-2">
-          {/* Remove the smiley icon and make the right side dedicated to GIFs using Giphy */}
           <div className="relative flex items-center w-full">
-            {/* Image Upload Icon on the Left */}
             <input
               type="file"
               accept="image/*"
               id="image-upload"
               className="hidden"
               onChange={async (e) => {
+                if (!currentUser) {
+                  toast.showError('You must be logged in to upload images.');
+                  return;
+                }
                 const file = e.target.files?.[0];
                 if (file) {
                   try {
@@ -833,22 +900,19 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             <label htmlFor="image-upload" className="absolute left-4 text-gray-500 hover:text-gray-700 cursor-pointer">
               <span className="text-lg font-bold">+</span>
             </label>
-
-            {/* Message Input */}
             <input
               type="text"
               value={message}
               onChange={handleMessageChange}
               placeholder="Type a message..."
               className="w-full bg-gray-50 border border-gray-300 rounded-full px-12 py-2 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+              disabled={!currentUser}
             />
           </div>
-
-          {/* Send Button */}
           <button
             type="submit"
             className="ml-3 bg-purple-500 text-white rounded-full p-3 hover:bg-purple-600 disabled:opacity-50"
-            disabled={!message.trim() || isLoading}
+            disabled={!message.trim() || isLoading || !currentUser}
           >
             <Send size={20} />
           </button>
@@ -888,34 +952,107 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
       </div>
 
       {/* Profile Card Modal */}
-      {selectedProfile && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-4 w-full max-w-md">
+      {profileCardUserId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <ProfileCard userId={profileCardUserId} onClose={() => setProfileCardUserId(null)} />
+        </div>
+      )}
+
+      {/* Group Info Modal */}
+      {showGroupInfo && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg max-w-md w-full p-6 relative">
             <button
-              onClick={() => setSelectedProfile(null)}
-              className="absolute top-2 right-2 p-2 rounded-full hover:bg-gray-100 text-gray-600"
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              onClick={() => setShowGroupInfo(false)}
+              aria-label="Close"
             >
               <X size={20} />
             </button>
-            <ProfileCard
-              profile={{
-                id: selectedProfile.username || '',
-                name: selectedProfile.name || selectedProfile.username || '',
-                username: selectedProfile.username || selectedProfile.name || '',
-                avatar_url: selectedProfile.avatar_url,
-                bio: '',
-                followers_count: 0,
-                following_count: 0,
-                points: userPoints[selectedProfile.username || ''] || 0,
-                is_following: false
-              }}
-              onClose={() => setSelectedProfile(null)}
-            />
+            <h2 className="text-lg font-bold mb-2">Group Info</h2>
+            <div className="flex items-center gap-3 mb-4">
+              <UserAvatar src={event?.creator?.avatar_url || '/bantahlogo.png'} alt={event?.creator?.username || ''} size="md" />
+              <div>
+                <div className="font-semibold text-gray-800">{event?.title}</div>
+                <div className="text-xs text-gray-500">by @{event?.creator?.username}</div>
+              </div>
+            </div>
+            <div className="mb-2 text-sm text-gray-700">Participants: <b>{event?.participant_count}</b></div>
+            <div className="mb-2 text-sm text-gray-700">Total Pool: <b>₦{formatShortNumber(event?.pool_total_amount || 0)}</b></div>
+            <div className="mb-2 text-sm text-gray-700">Ends: <b>{event?.end_time ? new Date(event.end_time).toLocaleString() : '-'}</b></div>
+            {/* Add more group info as needed */}
+          </div>
+        </div>
+      )}
+
+      {/* Search Dropdown */}
+      {showSearchDropdown && (
+        <div className="fixed inset-0 z-50 flex items-start justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg w-full max-w-xs mt-24 p-4 relative">
+            <button
+              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
+              onClick={() => setShowSearchDropdown(false)}
+              aria-label="Close"
+            >
+              <X size={20} />
+            </button>
+            <h2 className="text-lg font-bold mb-2">Search</h2>
+            <div className="flex gap-2 mb-3">
+              <input
+                type="text"
+                className="flex-1 border border-gray-300 rounded px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
+                placeholder="Search messages or users..."
+                value={searchInput}
+                onChange={e => setSearchInput(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') handleSearch(); }}
+                autoFocus
+              />
+              <button
+                className="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600"
+                onClick={handleSearch}
+              >
+                Search
+              </button>
+            </div>
+            <div>
+              <div className="font-semibold text-gray-700 mb-1">Messages</div>
+              {searchResults.messages.length === 0 ? (
+                <div className="text-xs text-gray-400 mb-2">No messages found.</div>
+              ) : (
+                <ul className="mb-3 max-h-32 overflow-y-auto">
+                  {searchResults.messages.map(msg => (
+                    <li key={msg.id} className="mb-2 p-2 bg-gray-100 rounded">
+                      <div className="text-xs text-gray-700">{msg.content}</div>
+                      <div className="text-[10px] text-gray-400">{msg.sender?.username} • {new Date(msg.created_at).toLocaleString()}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="font-semibold text-gray-700 mb-1">Users</div>
+              {searchResults.users.length === 0 ? (
+                <div className="text-xs text-gray-400">No users found.</div>
+              ) : (
+                <ul className="max-h-32 overflow-y-auto">
+                  {searchResults.users.map(user => (
+                    <li key={user.id} className="mb-2 p-2 bg-gray-100 rounded">
+                      <div className="text-xs text-gray-700">@{user.username} {user.name && <span className='text-gray-400'>({user.name})</span>}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           </div>
         </div>
       )}
     </div>
   );
 };
+
+// Utility to format numbers as 50k/1.2M
+function formatShortNumber(num: number): string {
+  if (num >= 1_000_000) return (num / 1_000_000).toFixed(num % 1_000_000 === 0 ? 0 : 1) + 'M';
+  if (num >= 1_000) return (num / 1_000).toFixed(num % 1_000 === 0 ? 0 : 1) + 'k';
+  return num.toString();
+}
 
 export default NewEventChat;

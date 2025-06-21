@@ -80,14 +80,14 @@ const MobileFooterNav: React.FC = () => {
     {
       id: 'events',
       path: '/events',
-      icon: <img src="/eventssvg.svg" alt="Events Icon" className="w-7 h-7" />,
+      icon: <img src="/eventssvg.svg" alt="Events Icon" className="w-6 h-6" />,
       label: 'Events',
       badge: eventCount > 0 ? formatNotificationCount(eventCount) : undefined,
     },
     {
       id: 'games',
       path: '/games',
-      icon: <img src="/gamessvg.svg" alt="Games Icon" className="w-8 h-8" />,
+      icon: <img src="/gamessvg.svg" alt="Games Icon" className="w-6 h-6" />,
       label: 'Challenge',
       badge: challengeCount > 0 ? formatNotificationCount(challengeCount) : undefined,
     },
@@ -95,14 +95,14 @@ const MobileFooterNav: React.FC = () => {
     {
       id: 'create',
       path: '/create',
-      icon: <img src="/create.png" alt="Create Icon" className="w-10 h-10" />,
+      icon: <img src="/create.png" alt="Create Icon" className="w-8 h-8" />,
       label: '',
       isMain: true,
     },
     {
       id: 'myevents',
       path: '/myevents',
-      icon: <img src="/listsvg.svg" alt="My Events Icon" className="w-8 h-8" />,
+      icon: <img src="/listsvg.svg" alt="My Events Icon" className="w-6 h-6" />,
       label: 'History',
     },
     {
@@ -112,10 +112,10 @@ const MobileFooterNav: React.FC = () => {
         <img
           src={currentUser.avatar_url}
           alt="Profile"
-          className={`w-8 h-8 rounded-full object-cover border-2 ${currentPath === '/profile' ? 'border-[#CCFF00]' : 'border-transparent'}`}
+          className={`w-6 h-6 rounded-full object-cover border-2 ${currentPath === '/profile' ? 'border-[#CCFF00]' : 'border-transparent'}`}
         />
       ) : (
-        <img src="/avatar.svg" alt="Profile Icon" className="w-8 h-8" />
+        <img src="/avatar.svg" alt="Profile Icon" className="w-6 h-6" />
       ),
       label: 'Profile',
       badge: totalMessageNotifications > 0 ? formatNotificationCount(totalMessageNotifications) : undefined,
@@ -123,8 +123,8 @@ const MobileFooterNav: React.FC = () => {
   ];
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-light-bg safe-bottom h-[60px]">
-      <div className="flex items-center justify-around px-1 h-full">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-light-bg safe-bottom h-[44px] flex items-center">
+      <div className="flex items-center justify-around px-1 w-full h-full">
         {navItems.map((item) => {
           const isActive = currentPath === item.path;
           return (
@@ -132,24 +132,32 @@ const MobileFooterNav: React.FC = () => {
               key={item.id}
               type="button"
               onClick={() => navigate(item.path)}
-              className="flex flex-col items-center justify-between h-full pt-2 pb-1"
+              className="flex flex-col items-center justify-center h-full p-0 m-0"
+              style={{ minWidth: 0 }}
             >
-              <div className="relative">
+              <div className="relative flex flex-col items-center justify-center h-full">
                 {item.badge && (
                   <span className="absolute -top-1 -right-2 bg-[#FF2E2EFF] text-white text-[10px] font-medium rounded-md px-1 py-0.5 min-w-[15px] h-[15px] flex items-center justify-center">
                     {item.badge}
                   </span>
                 )}
                 <div
-                  className={`${
-                    isActive ? 'text-[#7440ff] font-semibold bg-[#7440ff]/10 rounded-lg p-1' : 'text-black/80'
-                  }`}
+                  className={
+                    isActive ? 'text-[#7440ff] font-semibold' : 'text-black/80'
+                  }
+                  style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '24px' }}
                 >
-                  {item.icon}
+                  {React.isValidElement(item.icon)
+                    ? React.cloneElement(item.icon, {
+                        className: `${item.icon.props.className || ''} ${!isActive ? 'filter grayscale brightness-100 opacity-60' : ''}`,
+                        style: { display: 'block', margin: '0 auto' }
+                      })
+                    : item.icon}
                 </div>
               </div>
               <span
-                className={`text-xs mt-1 font-poppins font-light ${isActive ? 'text-[#7440ff] font-semibold' : 'text-black/80'}`}
+                className={`text-xs mt-0.5 font-poppins font-light ${isActive ? 'text-[#7440ff] font-semibold' : 'text-black/80'}`}
+                style={{ lineHeight: 1, marginTop: 2 }}
               >
                 {item.label}
               </span>

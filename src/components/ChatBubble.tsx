@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Check, CheckCheck } from 'lucide-react';
 import UserLevelBadge from './UserLevelBadge';
+import { EventChatMessageReactions } from './EventChatMessageReactions';
 
 interface ChatBubbleProps {
   content: string;
@@ -24,6 +25,9 @@ interface ChatBubbleProps {
     };
   };
   onReply?: () => void;
+  onAvatarClick?: () => void;
+  messageId?: string;
+  reactions?: Array<{ id: string; emoji: string; user_id: string }>;
 }
 
 const ChatBubble: React.FC<ChatBubbleProps> = ({
@@ -41,7 +45,10 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   mediaUrl,
   mentions,
   replyTo,
-  onReply
+  onReply,
+  onAvatarClick,
+  messageId,
+  reactions
 }) => {
   const date = new Date(timestamp);
   const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -65,26 +72,78 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     return <span dangerouslySetInnerHTML={{ __html: formattedText }} />;
   };
 
+  const [imgSrc, setImgSrc] = useState(avatarUrl || '/default-avatar.png');
+  const [showActions, setShowActions] = useState(false);
+  let longPressTimer: NodeJS.Timeout | null = null;
+
+  // Mobile: long-press to show actions
+  const handleTouchStart = () => {
+    if (window.innerWidth <= 768) {
+      longPressTimer = setTimeout(() => setShowActions(true), 400);
+    }
+  };
+  const handleTouchEnd = () => {
+    if (window.innerWidth <= 768) {
+      if (longPressTimer) clearTimeout(longPressTimer);
+      setTimeout(() => setShowActions(false), 1200);
+    }
+  };
+  // Desktop: hover to show actions
+  const handleMouseEnter = () => {
+    if (window.innerWidth > 768) setShowActions(true);
+  };
+  const handleMouseLeave = () => {
+    if (window.innerWidth > 768) setShowActions(false);
+  };
+
   return (
-    <div className={`flex w-full ${isSender ? 'justify-end' : 'justify-start'} mb-3`}>
+    <div
+      className={`flex w-full ${isSender ? 'justify-end' : 'justify-start'} mb-3`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
       <div className={`flex ${isSender ? 'flex-row-reverse' : 'flex-row'} items-start gap-1 max-w-[65%] group`}>
         {/* Avatar */}
         {hasAvatar && !isSender && (
           <div className="flex-shrink-0">
-            <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden">
+            <div className="w-6 h-6 rounded-full bg-gray-200 overflow-hidden cursor-pointer" onClick={onAvatarClick}>
               <img
-                src={avatarUrl || '/default-avatar.png'}
+                src={imgSrc}
                 alt={`${senderUsername || senderName}'s avatar`}
                 className="w-full h-full object-cover"
-                onError={(e) => {
-                  e.currentTarget.src = '/default-avatar.png';
+                onError={() => {
+                  if (imgSrc !== '/default-avatar.png') {
+                    setImgSrc('/default-avatar.png');
+                  }
                 }}
               />
             </div>
           </div>
         )}
+        <div className="flex flex-col w-full relative">
+          {/* Actions: reactions + reply */}
+          {showActions && (
+            <div className={`absolute flex gap-2 items-center z-20 ${isSender ? 'left-0' : 'right-0'} -top-8`}>
+              {messageId && reactions && (
+                <EventChatMessageReactions messageId={messageId} reactions={reactions} />
+              )}
+              {onReply && (
+                <button
+                  onClick={onReply}
+                  className="p-1 rounded-full bg-gray-900/50 hover:bg-gray-900/70"
+                  style={{ marginLeft: 4 }}
+                >
+                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="white" strokeWidth="2">
+                    <path d="M9 20L3 12L9 4" />
+                    <path d="M3 12H21" />
+                  </svg>
+                </button>
+              )}
+            </div>
+          )}
 
-        <div className="flex flex-col w-full">
           {/* Sender name and badges */}
           {!isSender && (senderName || senderUsername) && (
             <div className="flex items-center gap-1 mb-0.5 px-0.5">
@@ -103,7 +162,7 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
           )}
 
           {/* Reply preview if this is a reply */}
-          {replyTo && (
+          {replyTo && replyTo.sender && replyTo.content && (
             <div className={`text-[11px] mb-1 px-2 py-1 rounded ${isSender ? 'bg-purple-700/30' : 'bg-purple-600/30'}`}>
               <span className="font-medium text-purple-200">@{replyTo.sender.username}</span>
               <span className="text-purple-100 ml-1">{replyTo.content.substring(0, 50)}{replyTo.content.length > 50 ? '...' : ''}</span>

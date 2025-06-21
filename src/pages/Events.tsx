@@ -69,7 +69,7 @@ const Events = () => {
       label: 'Create Event',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#1A472E]',
-      icon: <img src="/create.png" alt="Create Event" className="w-12 h-12" />,
+      icon: <img src="/create.png" alt="Create Event" className="w-10 h-10" />,
     },
     {
       id: 'bantzz',
@@ -79,18 +79,20 @@ const Events = () => {
       icon: (
         <span className="relative flex items-center justify-center">
           <span className="bantzz-animated-ring absolute inset-0 z-0" />
-          <svg width="40" height="40" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 relative z-10">
-            <circle cx="18" cy="18" r="18" fill="#fff"/>
-            <ellipse cx="18" cy="22" rx="8" ry="4" fill="#7440ff"/>
-            <ellipse cx="13" cy="16" rx="2.5" ry="3.5" fill="#000"/>
-            <ellipse cx="23" cy="16" rx="2.5" ry="1.2" fill="#000"/>
-            <ellipse cx="13" cy="16" rx="1" ry="1.5" fill="#fff"/>
-            <ellipse cx="23" cy="16" rx="0.7" ry="0.4" fill="#fff"/>
-            <path d="M12 26 Q18 30 24 26" stroke="#000" strokeWidth="1.5" fill="none"/>
-            <ellipse id="wink" cx="23" cy="16" rx="2.5" ry="1.2" fill="#000">
-              <animate attributeName="ry" values="1.2;0.2;1.2" keyTimes="0;0.5;1" dur="2s" repeatCount="indefinite" />
-            </ellipse>
-          </svg>
+          <svg className="bantzz-bounce" width="25" height="25" viewBox="0 0 337 283" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M14.0001 90.0721H34.125L35 198.245H14.0001C9.80011 198.245 8.75012 195.241 8.75012 193.738V171.202C2.45015 171.923 0.291824 168.498 0.000156403 166.695V121.623C0.000156403 118.017 1.75015 116.515 2.62514 116.214H8.75012V94.5794C8.75012 90.2524 12.2501 89.7717 14.0001 90.0721Z" fill="#90A4AE"/>
+<path d="M7.62939e-05 160.481H34.6675V198.456H13.0004C10.227 198.456 8.95582 195.442 8.66693 193.936V171.331C2.4268 172.054 0.288971 168.618 7.62939e-05 166.81V160.481Z" fill="#81939C"/>
+<path d="M323 89.0721H302.875L302 197.245H323C327.2 197.245 328.25 194.241 328.25 192.738V170.202C334.55 170.923 336.708 167.498 337 165.695V120.623C337 117.017 335.25 115.515 334.375 115.214H328.25V93.5794C328.25 89.2524 324.75 88.7717 323 89.0721Z" fill="#90A4AE"/>
+<path d="M337 159.481H302.333V197.456H324C326.773 197.456 328.044 194.442 328.333 192.936V170.331C334.573 171.054 336.711 167.618 337 165.81V159.481Z" fill="#81939C"/>
+<path d="M167.087 0C136.798 0 131.63 27.6443 132.832 41.4664H204.947C204.947 31.5505 204.947 0 167.087 0Z" fill="#BDC9CF"/>
+<rect x="113" y="36.4661" width="109.976" height="14.4231" rx="5" fill="#90A4AE"/>
+<path d="M188.214 15.9956C184.799 13.719 178.914 10.5439 171.71 8.50736C169.975 8.01685 169.851 5.7962 171.649 5.65628C178.938 5.08887 186.092 9.07075 193.322 15.9091C194.301 16.8349 193.822 18.2018 192.506 17.9141C191.347 17.6607 189.889 17.1119 188.214 15.9956Z" fill="#F3F5F6"/>
+<path d="M194.782 13.9468C194.903 13.124 194.041 12.1168 193.021 11.2555C192.047 10.4324 191.062 11.115 191.795 12.1587C192.909 13.7437 194.613 15.0998 194.782 13.9468Z" fill="#F3F5F6"/>
+<path d="M314 87C314 63.8041 295.196 45 272 45H64C40.804 45 22 63.804 22 87V209.646C22 232.842 40.8046 251.646 64.0006 251.646C66.1132 251.646 68.2102 251.646 70.2923 251.646C76.9872 251.646 77.9135 282.531 84.3308 282.531C91.0057 282.531 103.161 251.646 109.6 251.646C164.413 251.646 211.839 251.646 271.991 251.646C295.187 251.646 314 232.842 314 209.646V87Z" fill="#FFAE37"/>
+<path d="M262.625 114.4C256.668 113.394 249.92 112.188 245.213 108.286C239.423 103.54 238.881 94.5304 239.131 87.733C239.298 83.4292 232.55 83.0672 232.216 87.3307C232.133 88.2558 232.091 89.181 232.008 90.1463C231.717 90.5887 231.466 102.253 225.676 107.442C221.261 111.383 214.513 111.866 208.848 112.349C204.849 112.711 205.64 118.623 209.348 118.945C215.846 119.468 224.01 119.951 228.218 125.501C230.217 128.116 230.509 131.494 230.717 134.632C231.008 138.453 231.217 142.274 231.467 146.135C231.716 150.318 238.465 150.881 238.381 146.537C238.298 142.837 238.423 139.136 238.798 135.476C239.089 132.5 239.006 128.236 241.797 126.306C244.297 124.576 247.837 123.691 250.753 122.927C254.46 121.962 258.292 121.318 262.125 121.077C266.665 120.755 267.04 115.124 262.625 114.4Z" fill="white"/>
+<path d="M203 187C207.419 187 211.089 190.623 210.158 194.942C206.514 211.838 191.486 224.5 173.5 224.5C155.515 224.5 140.486 211.838 136.843 194.942C135.912 190.623 139.582 187 144 187H203Z" fill="#BEFF07"/>
+<path d="M69.1721 121.535C69.1721 139.001 83.8484 153.167 101.936 153.167C120.01 153.167 134.672 139.001 134.672 121.535C134.672 104.069 120.01 89.922 101.936 89.922C83.8484 89.922 69.1721 104.069 69.1721 121.535Z" fill="white"/>
+</svg>
         </span>
       ),
     },
@@ -106,7 +108,7 @@ const Events = () => {
       label: 'Pop Culture',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#2A1F0E]',
-      icon: <img src="/popcorn.svg" alt="Create Event" className="w-11 h-11" />,
+      icon: <img src="/popcorn.svg" alt="Create Event" className="w-9 h-9" />,
     },
     {
       id: 'sports',
@@ -120,7 +122,7 @@ const Events = () => {
       label: 'Music',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#1F1435]',
-      icon: <img src="/dj setup.png" alt="Create Event" className="w-12 h-12" />,
+      icon: <img src="/dj setup.png" alt="Create Event" className="w-11 h-11" />,
     },
     {
       id: 'gaming',
@@ -134,14 +136,14 @@ const Events = () => {
       label: 'Crypto',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-[#FFA620FF]',
-      icon: <img src="/bitcoin.svg" alt="Create Event" className="w-12 h-12" />,
+      icon: <img src="/bitcoin.svg" alt="Create Event" className="w-11 h-11" />,
     },
     {
       id: 'politics',
       label: 'Politics',
       gradient: 'from-[#A020F0] to-[#CCFF00]',
       bgColor: 'bg-light-bg',
-      icon: <img src="/politics.png" alt="Create Event" className="w-9 h-10" />,
+      icon: <img src="/politics.png" alt="Create Event" className="w-7 h-9" />,
     },
   ];
 
@@ -196,21 +198,21 @@ const Events = () => {
       >
         <Header showSearch />
         {/* Category Bar is now inside the animated wrapper */}
-        <div className="bg-light-bg z-40 py-2.5">
-          <div className="container mx-auto px-4">
-            <div className="flex md:justify-center overflow-x-auto [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-white/20 gap-3">
-              <div className="flex gap-3 md:max-w-[800px]">
+        <div className="bg-light-bg z-40 py-1">
+          <div className="container mx-auto px-0">
+            <div className="flex overflow-x-auto pl-4 md:justify-center [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-thumb]:bg-white/10 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-track]:bg-transparent hover:[&::-webkit-scrollbar-thumb]:bg-white/20 gap-2 scroll-snap-x mandatory">
+              <div className="flex gap-2 md:max-w-[800px]">
                 {categories.map((category) => (
                   <button
                     type="button"
                     key={category.id}
                     onClick={() => handleCategoryClick(category.id)}
-                    className="flex-shrink-0 flex flex-col items-center relative pt-1"
+                    className="flex-shrink-0 flex flex-col items-center relative pt-1 scroll-snap-align-start"
                   >
-                    <div className="relative">
+                    <div className="relative flex items-center justify-center">
                       {/* Gradient outline container */}
                       <div
-                        className={`w-16 h-16 rounded-full relative
+                        className={`w-12 h-12 rounded-full relative
                           ${selectedCategory === category.id ? 'opacity-100' : 'opacity-100'}
                           transition-all duration-300`}
                       >
@@ -218,13 +220,13 @@ const Events = () => {
                         <div className={`absolute inset-0 rounded-full bg-gradient-to-r ${category.gradient}`} />
                         {/* Inner circle with icon */}
                         <div
-                          className={`absolute inset-[2px] rounded-full
+                          className={`absolute inset-[1px] rounded-full
                             flex items-center justify-center
                             bg-light-bg
                             ${selectedCategory === category.id ? 'scale-105' : 'scale-100'}
                             transition-all duration-300`}
                         >
-                          <span className="text-2xl">{category.icon}</span>
+                          <span className="text-xl flex items-center justify-center">{category.icon}</span>
                         </div>
                       </div>
                       {/* Category Label Badge */}
@@ -247,9 +249,9 @@ const Events = () => {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-3">
+      <div className="w-full px-2 md:px-16 py-3">
         {/* Events Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 mx-auto md:max-w-none md:mx-0">
           {filteredEvents.map(event => {
             // Patch creator and participants for EventCard compatibility
             const creator = {
@@ -300,8 +302,19 @@ export default Events;
   z-index: 0;
   opacity: 0.7;
 }
+
+.bantzz-bounce {
+  animation: bantzz-bounce 2s ease-in-out infinite;
+  transform-origin: center;
+}
+
 @keyframes bantzz-ring-spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+@keyframes bantzz-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
 }
 */

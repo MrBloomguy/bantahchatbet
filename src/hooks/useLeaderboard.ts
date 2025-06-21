@@ -77,8 +77,9 @@ export function useLeaderboard() {
     const { error: pointsError } = await supabase.rpc('award_points', {
       p_user_id: currentUser.id,
       p_points: 500,
-      p_reason: 'daily_login',
-      p_note: 'Daily login bonus'
+      p_action_type: 'daily_login',
+      p_description: 'Daily login bonus',
+      p_metadata: {}
     });
     if (pointsError) {
       return { success: false, message: 'Error awarding points' };

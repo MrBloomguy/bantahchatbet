@@ -23,7 +23,7 @@ import { format } from 'date-fns';
 
 // Local components
 import MobileFooterNav from '../components/MobileFooterNav';
-import Header from '../components/Header';
+import PageHeader from '../components/PageHeader';
 import { ChallengeList } from '../components/ChallengeList';
 import ChallengeModal from '../components/ChallengeModal';
 import ChallengeDetailsModal from '../components/ChallengeDetailsModal';
@@ -624,21 +624,21 @@ const Games: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#F6F7FB] flex flex-col pb-[70px]">
-      <Header title="Challenge" showBackButton={true} showMenu={false} />
+      <PageHeader title="Challenge" showBackButton={true} />
       <div className="flex-1 flex flex-col items-center w-full">
       <div className="w-full max-w-2xl mx-auto px-2 sm:px-4 py-4">
           {/* Compact Tabs Bar */}
-          <div className="flex justify-center gap-1 mb-5 bg-white rounded-xl shadow-sm p-1 overflow-x-auto">            {[
-          { id: 'active', label: 'Active', icon: <Gamepad2 className="w-4 h-4" /> },
-          { id: 'friends', label: 'Friends', icon: <Users className="w-4 h-4" /> },
-          { id: 'scheduled', label: 'Scheduled', icon: <Gamepad2 className="w-4 h-4" /> },
-          { id: 'ended', label: 'Ended', icon: <Trophy className="w-4 h-4" /> }
+          <div className="flex justify-center gap-0.5 mb-4 bg-white rounded-xl shadow-sm p-1 overflow-x-auto">            {[
+          { id: 'active', label: 'Active', icon: <Gamepad2 className="w-3 h-3" /> },
+          { id: 'friends', label: 'Friends', icon: <Users className="w-3 h-3" /> },
+          { id: 'scheduled', label: 'Upcoming', icon: <Gamepad2 className="w-3 h-3" /> },
+          { id: 'ended', label: 'Ended', icon: <Trophy className="w-3 h-3" /> }
         ].map((tab) => (
           <button
             type="button"
             key={tab.id}
             onClick={() => setActiveTab(tab.id as typeof activeTab)}
-            className={`flex items-center gap-2 px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
+            className={`flex items-center gap-1 px-3 py-1 rounded-md text-sm font-medium whitespace-nowrap transition-colors ${
               activeTab === tab.id
                 ? 'bg-[#7440ff] text-white shadow'
                 : 'bg-transparent text-gray-700 hover:bg-gray-100'
@@ -647,7 +647,7 @@ const Games: React.FC = () => {
             {tab.icon}
             {tab.label}
             {tab.id === 'active' && userChallengesCount > 0 && (
-              <span className="ml-1 bg-[#CCFF00] text-black text-[10px] px-1.5 py-0.5 rounded-full">
+              <span className="ml-1 bg-[#CCFF00] text-black text-[9px] px-1.5 py-0.5 rounded-full">
                 {userChallengesCount}
               </span>
             )}
@@ -725,10 +725,9 @@ const Games: React.FC = () => {
                       placeholder="Search friends to challenge..."
                       value={searchQuery}
                       onChange={handleSearchChange}
-                      className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-[#7440FF] focus:border-transparent"
+                      className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-1 focus:ring-[#7440FF] focus:border-transparent"
                     />
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                      <MapPin className="h-5 w-5 text-gray-400 cursor-pointer hover:text-[#7440FF] transition-colors" aria-label="Find friends by location" onClick={() => navigate('/bantah-map')} />
                     </div>
                     {searching && (
                       <div className="absolute inset-y-0 right-8 flex items-center">
@@ -805,18 +804,21 @@ const Games: React.FC = () => {
                       <div
                         key={challenge.id}
                         onClick={() => {
-                          // For active challenges, go directly to the challenge chat
-                          if (challenge.challenger.id === currentUser?.id || challenge.challenged.id === currentUser?.id) {
-                            navigate(`/challenge-chat/${challenge.id}`);
-                          } else if (activeTab === 'scheduled') {
-                            // For scheduled challenges, show the details modal
+                          // Always open modal for scheduled/upcoming challenges
+                          if (activeTab === 'scheduled') {
                             setSelectedChallenge(challenge);
                             setShowChallengeDetailsModal(true);
+                          } else if (challenge.challenger.id === currentUser?.id || challenge.challenged.id === currentUser?.id) {
+                            // For active challenges, go directly to the challenge chat
+                            navigate(`/challenge-chat/${challenge.id}`);
                           } else {
-                            navigate(`/messages?tab=challenges&chatId=${challenge.id}`);
+                            // Show details modal for non-participants
+                            setSelectedChallenge(challenge);
+                            setShowChallengeDetailsModal(true);
                           }
                         }}
-                        className="bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 cursor-pointer group flex flex-col gap-2">
+                        className="bg-white rounded-2xl shadow-sm px-4 py-3 transition border border-transparent hover:border-[#CCFF00]/40 cursor-pointer group flex flex-col gap-2"
+                      >
                         <div className="flex items-center justify-between mb-1">
                           <h3 className="text-gray-900 font-semibold truncate">{challenge.title || 'Untitled Challenge'}</h3>
                           <span className="flex items-center">

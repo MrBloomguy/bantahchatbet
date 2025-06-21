@@ -62,14 +62,11 @@ const HeaderActions = () => {
       {wallet ? (
         <button
           onClick={() => handleNavigate('/wallet')}
-          className="flex items-center gap-1 px-2.5 py-0.5 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"
+          className="flex items-center gap-1 px-3 py-0.8 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"
           aria-label="Wallet"
         >
           <span className="text-sm font-bold">
             {formatNumber(balance, '₦')}
-            <span className="text-[10px] opacity-60 ml-0.5">
-              ({formatNumber(parseFloat(usdEquivalent), '$')})
-            </span>
           </span>
         </button>
       ) : (

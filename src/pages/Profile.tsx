@@ -18,16 +18,8 @@ const Profile: React.FC = () => {
       path: '/settings/profile'
     },
     {
-      label: 'Wallet',
-      path: '/wallet'
-    },
-    {
       label: 'Gift',
       path: '/gift'
-    },
-    {
-      label: 'My Events',
-      path: '/myevents'
     },
     {
       label: 'Levels & Badges',
@@ -56,10 +48,6 @@ const Profile: React.FC = () => {
     {
       label: 'Data Deletion Request',
       path: '/settings/data-deletion'
-    },
-    {
-      label: 'Help & Support',
-      path: '/help'
     }
   ];
 
