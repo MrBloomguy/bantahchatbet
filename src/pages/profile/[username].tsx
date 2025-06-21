@@ -11,6 +11,14 @@ interface UserProfile {
   avatar_url: string | null;
   reputation_score: number;
   bio?: string;
+  followers_count?: number;
+  following_count?: number;
+  stats?: {
+    events_won: number;
+    events_participated: number;
+    total_earnings: number;
+    rank?: number;
+  };
 }
 
 interface Event {
@@ -39,6 +47,9 @@ const PublicProfilePage: React.FC = () => {
   const [challenges, setChallenges] = useState<Challenge[]>([]);
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [loadingChallenges, setLoadingChallenges] = useState(false);
+  const [userStats, setUserStats] = useState<UserProfile['stats'] | null>(null);
+  const [followers, setFollowers] = useState<number>(0);
+  const [following, setFollowing] = useState<number>(0);
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -54,6 +65,25 @@ const PublicProfilePage: React.FC = () => {
         setUser(null);
       } else {
         setUser(data);
+        // Fetch stats, followers, following
+        const [{ data: statsData }, { data: followersData }, { data: followingData }] = await Promise.all([
+          supabase
+            .from('user_stats')
+            .select('events_won, events_participated, total_earnings, rank')
+            .eq('user_id', data.id)
+            .maybeSingle(),
+          supabase
+            .from('followers')
+            .select('id', { count: 'exact', head: true })
+            .eq('following_id', data.id),
+          supabase
+            .from('followers')
+            .select('id', { count: 'exact', head: true })
+            .eq('follower_id', data.id),
+        ]);
+        setUserStats(statsData || null);
+        setFollowers(followersData?.length ?? 0);
+        setFollowing(followingData?.length ?? 0);
       }
       setLoading(false);
     };
@@ -117,6 +147,33 @@ const PublicProfilePage: React.FC = () => {
         <div className="text-gray-500 text-sm mb-2">@{user.username}</div>
         <UserLevelBadge points={user.reputation_score} size="md" showLabel={true} />
         {user.bio && <div className="mt-2 text-center text-gray-700 text-sm">{user.bio}</div>}
+        {/* Stats Row */}
+        <div className="grid grid-cols-2 gap-4 w-full mt-4 mb-2">
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-bold text-blue-700">{userStats?.events_won ?? 0}</span>
+            <span className="text-xs text-gray-500">Events Won</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-bold text-blue-700">{userStats?.events_participated ?? 0}</span>
+            <span className="text-xs text-gray-500">Participated</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-bold text-green-700">₦{userStats?.total_earnings?.toLocaleString() ?? 0}</span>
+            <span className="text-xs text-gray-500">Earnings</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-bold text-purple-700">{userStats?.rank ?? '-'}</span>
+            <span className="text-xs text-gray-500">Rank</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-bold text-yellow-700">{followers}</span>
+            <span className="text-xs text-gray-500">Followers</span>
+          </div>
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-bold text-yellow-700">{following}</span>
+            <span className="text-xs text-gray-500">Following</span>
+          </div>
+        </div>
       </div>
       <div className="w-full max-w-md">
         <div className="flex border-b mb-4">

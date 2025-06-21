@@ -12,6 +12,7 @@ interface UserAvatarProps {
   className?: string;
   points?: number;
   showLevelBadge?: boolean;
+  badge?: React.ReactNode; // New prop for custom badge overlay
 }
 
 const UserAvatar: React.FC<UserAvatarProps> = ({
@@ -22,7 +23,8 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
   status = null,
   className = '',
   points = 0,
-  showLevelBadge = false
+  showLevelBadge = false,
+  badge = null
 }) => {
   const sizeClasses = {
     sm: 'w-8 h-8',
@@ -124,6 +126,11 @@ const UserAvatar: React.FC<UserAvatarProps> = ({
             )}
           </div>
         </div>
+      )}
+
+      {/* Custom badge overlay (top-right) */}
+      {badge && (
+        <div className={`absolute -top-1 -right-1 z-20`}>{badge}</div>
       )}
     </div>
   );

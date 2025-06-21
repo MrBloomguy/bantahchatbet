@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Trophy, Users, TrendingUp, Star, Send, Share2 } from 'lucide-react';
+import { X, Trophy, Users, TrendingUp, Star, Send, Share2, UserPlus, UserMinus } from 'lucide-react';
 import { useProfile, Profile } from '../hooks/useProfile';
 import { useAuth } from '../contexts/AuthContext';
 import UserLevelBadge from './UserLevelBadge';
@@ -219,10 +219,35 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
       </div>
       {/* Header: Avatar, Name, Username, Badges */}
       <div className="w-full flex flex-col items-center pt-6 pb-2 px-4 relative">
-        <img
+        <UserAvatar
           src={profile.avatar_url}
           alt={profile.name}
-          className="w-10 h-10 rounded-full ring-1 ring-lime-100 shadow mb-1"
+          size="md"
+          badge={
+            currentUser && currentUser.id !== profile.id ? (
+              <button
+                onClick={async (e) => {
+                  e.stopPropagation();
+                  if (profile.is_following) {
+                    await handleUnfollow();
+                  } else {
+                    await handleFollow();
+                  }
+                }}
+                disabled={loadingFollow || loadingUnfollow}
+                className={`rounded-full bg-white shadow p-0.5 border border-gray-200 hover:bg-purple-100 transition-colors ${loadingFollow || loadingUnfollow ? 'opacity-60' : ''}`}
+                title={profile.is_following ? 'Unfollow' : 'Follow'}
+                aria-label={profile.is_following ? 'Unfollow' : 'Follow'}
+                style={{ minWidth: 22, minHeight: 22, position: 'absolute', bottom: -6, right: -6 }}
+              >
+                {profile.is_following ? (
+                  <UserMinus className="w-4 h-4 text-purple-600" />
+                ) : (
+                  <UserPlus className="w-4 h-4 text-purple-600" />
+                )}
+              </button>
+            ) : null
+          }
         />
         <h2 className="text-base font-semibold text-gray-800 mt-1">{profile.name}</h2>
         <p className="text-xs text-gray-400 mb-1">@{profile.username}</p>
@@ -277,51 +302,26 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
           <span className="text-[10px] text-gray-500 mt-0.5">Earnings</span>
         </div>
       </div>
-      {/* Actions */}
+      {/* Actions - single row: Challenge, Gift, Message, Tip */}
       {currentUser && currentUser.id !== profile.id && (
         <div className="flex gap-2 w-full px-4 mb-2">
           <button
             type="button"
-            onClick={async (e) => {
+            onClick={(e) => {
               e.stopPropagation();
-              if (profile.is_following) {
-                await handleUnfollow();
-              } else {
-                await handleFollow();
-              }
+              toast.showInfo('Challenge feature coming soon!');
             }}
-            disabled={loadingFollow || loadingUnfollow}
-            className={`flex-1 py-1.5 rounded-full text-[13px] font-medium border transition-all ${
-              profile.is_following
-                ? 'bg-gray-100 text-gray-700 border-gray-300 hover:bg-gray-200'
-                : 'bg-[#7440ff] text-white border-#7440ff hover:bg-[#7440ff]-700'
-            }`}
-            aria-label={profile.is_following ? 'Unfollow user' : 'Follow user'}
-            title={profile.is_following ? 'Unfollow' : 'Follow'}
+            className="flex-1 py-1.5 rounded-full text-[13px] font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 flex items-center justify-center gap-1"
+            aria-label="Challenge user"
+            title="Challenge user"
           >
-            {loadingFollow || loadingUnfollow ? (
-              <LoadingSpinner size="sm" color={profile.is_following ? "#4B5563" : "#FFFFFF"} />
-            ) : (
-              profile.is_following ? 'Unfollow' : 'Follow'
-            )}
+            <Trophy className="w-4 h-4" />
+            Challenge
           </button>
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              setShowTipModal(true);
-            }}
-            className="flex-1 py-1.5 rounded-full text-[13px] font-medium bg-[#CCFF00] text-black hover:bg-[#CCFF00]/90 border border-[#CCFF00]"
-            aria-label="Tip user"
-            title="Tip user"
-          >
-            Tip
-          </button>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              // TODO: Implement gift logic or navigation
               toast.showInfo('Gift feature coming soon!');
             }}
             className="flex-1 py-1.5 rounded-full text-[13px] font-medium bg-pink-100 text-pink-700 hover:bg-pink-200 border border-pink-200 flex items-center justify-center gap-1"
@@ -332,6 +332,31 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
               <path strokeLinecap="round" strokeLinejoin="round" d="M20 7h-1.81A3.001 3.001 0 0 0 12 4a3.001 3.001 0 0 0-6.19 3H4a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2zm-8-2a1 1 0 1 1 2 0 1 1 0 0 1-2 0zm8 4v2h-2V9h2zM4 9h2v2H4V9zm2 11v-7h12v7H6zm14-9a1 1 0 0 1-1 1h-1v-2h2v1zm-16 0V9h2v2H4a1 1 0 0 1-1-1zm2 9a1 1 0 0 1-1-1v-7h2v8H6zm14 0h-2v-8h2v7a1 1 0 0 1-1 1z" />
             </svg>
             Gift
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              toast.showInfo('Message feature coming soon!');
+            }}
+            className="flex-1 py-1.5 rounded-full text-[13px] font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 border border-gray-200 flex items-center justify-center gap-1"
+            aria-label="Message user"
+            title="Message user"
+          >
+            <Send className="w-4 h-4" />
+            Chat
+          </button>
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowTipModal(true);
+            }}
+            className="flex-1 py-1.5 rounded-full text-[13px] font-medium bg-[#CCFF00] text-black hover:bg-[#CCFF00]/90 border border-[#CCFF00] flex items-center justify-center gap-1"
+            aria-label="Tip user"
+            title="Tip user"
+          >
+            Tip
           </button>
         </div>
       )}

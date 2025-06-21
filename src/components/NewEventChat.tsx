@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { ArrowLeft, Send, Loader, X } from 'lucide-react';
+import { ArrowLeft, Send, Loader, X, UserPlus, UserCheck } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -11,6 +11,7 @@ import { useEventChat } from '../hooks/useEventChat';
 import ProfileCard from './ProfileCard';
 import { supabase } from '../lib/supabase';
 import ChatBubble from './ChatBubble';
+import { useProfile } from '../hooks/useProfile';
 
 // Update the Gif interface to match Tenor's API response
 interface Gif {
@@ -89,6 +90,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const { messages, sendMessage, isLoading } = useEventChat(eventId);
   const { joinEvent, getUserPrediction, getPredictionCounts } = useEventParticipation();
   const { updatePoolAmount } = useEventPool();
+  const { followUser, unfollowUser } = useProfile();
 
   const [event, setEvent] = useState<Event | null>(null);
   const [loadingEvent, setLoadingEvent] = useState(true);
@@ -112,6 +114,8 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const [gifs, setGifs] = useState<Gif[]>([]);
   const [profileCardUserId, setProfileCardUserId] = useState<string | null>(null);
   const [messageReactions, setMessageReactions] = useState<Record<string, any[]>>({});
+  const [isFollowing, setIsFollowing] = useState<boolean | null>(null);
+  const [followLoading, setFollowLoading] = useState(false);
 
   // Group Info Modal state
   const [showGroupInfo, setShowGroupInfo] = useState(false);
@@ -569,6 +573,35 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     fetchReactions();
   }, [messages]);
 
+  // Fetch initial follow state for event creator
+  useEffect(() => {
+    if (!event?.creator?.id || !currentUser?.id) return;
+    if (event.creator.id === currentUser.id) return;
+    (async () => {
+      const { data, error } = await supabase
+        .from('followers')
+        .select('id')
+        .eq('follower_id', currentUser.id)
+        .eq('following_id', event.creator.id)
+        .maybeSingle();
+      setIsFollowing(!!data);
+    })();
+  }, [event?.creator?.id, currentUser?.id]);
+
+  const handleFollowBadgeClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!event?.creator?.id || !currentUser?.id) return;
+    setFollowLoading(true);
+    if (isFollowing) {
+      const success = await unfollowUser(event.creator.id);
+      if (success) setIsFollowing(false);
+    } else {
+      const success = await followUser(event.creator.id);
+      if (success) setIsFollowing(true);
+    }
+    setFollowLoading(false);
+  };
+
   if (loadingEvent || !event) {
     return (
       <div className="flex flex-col h-screen bg-white items-center justify-center p-6">
@@ -688,7 +721,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
               className="transition-all duration-300 max-h-[56px] opacity-100 overflow-hidden"
             >
               <div
-                className="relative border-b border-gray-200 py-1 px-4 shadow-sm flex items-center justify-between min-h-[44px] rounded-xl overflow-hidden"
+                className="relative border-b border-gray-200 py-1 px-4 shadow-sm flex items-center justify-between min-h-[44px] rounded-lg overflow-hidden"
                 style={{
                   backgroundImage: event.banner_url ? `url(${event.banner_url})` : undefined,
                   backgroundSize: 'cover',
