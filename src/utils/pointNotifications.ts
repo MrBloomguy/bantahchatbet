@@ -62,7 +62,7 @@ export const sendPointsNotification = async (
 
   return await supabase.from('notifications').insert({
     user_id: params.userId,
-    type,
+    notification_type: type,
     title: content.title,
     content: content.content,
     metadata: {

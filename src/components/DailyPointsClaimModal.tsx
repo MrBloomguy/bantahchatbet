@@ -79,7 +79,7 @@ const DailyPointsClaimModal: React.FC<DailyPointsClaimModalProps> = ({
         {claimResult ? (
           <div className={`flex flex-col items-center mb-2 ${claimResult.success ? 'text-green-600' : 'text-red-500'}`}>
             {/* Debug: Show claim result */}
-            {(() => { console.log('[DailyPointsClaimModal] Claim result', claimResult); return null; })()}
+            {(() => { console.log('[DailyPointsClaimModal] Claim result', claimResult); if (!claimResult.success) console.error('[DailyPointsClaimModal] Claim error:', claimResult.message); return null; })()}
             {claimResult.success ? <CheckCircle className="w-8 h-8 mb-1 animate-bounce" /> : <X className="w-8 h-8 mb-1 animate-shake" />}
             <span className="font-medium text-center">{claimResult.message}</span>
           </div>
@@ -91,7 +91,14 @@ const DailyPointsClaimModal: React.FC<DailyPointsClaimModalProps> = ({
         ) : null}
         <button
           className={`mt-2 w-full py-3 rounded-xl font-extrabold text-lg shadow transition-all duration-200 ${alreadyClaimed || loading ? 'bg-gray-300 text-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-[#7440FF] via-[#FFB800] to-[#FF4D4D] text-white hover:scale-105'}`}
-          onClick={() => { console.log('[DailyPointsClaimModal] Claim button clicked'); onClaim(); }}
+          onClick={async () => {
+            console.log('[DailyPointsClaimModal] Claim button clicked');
+            try {
+              await onClaim();
+            } catch (err) {
+              console.error('[DailyPointsClaimModal] Error during claim:', err);
+            }
+          }}
           disabled={alreadyClaimed || loading}
         >
           {loading ? 'Claiming...' : 'Claim 500 Points'}

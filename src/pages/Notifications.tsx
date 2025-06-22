@@ -50,6 +50,18 @@ const filters = [
   }
 ];
 
+// Add Notification type for better type safety
+interface Notification {
+  id: string;
+  user_id: string;
+  notification_type: string;
+  title: string;
+  content: string;
+  metadata?: any;
+  created_at: string;
+  read_at?: string;
+}
+
 const Notifications = () => {
   const navigate = useNavigate();
   const { notifications, loading, unreadCount, refetchNotifications, markAsRead, markAllAsRead } = useNotification();
@@ -58,10 +70,10 @@ const Notifications = () => {
   const [error, setError] = useState<string | null>(null);
   const toast = useToast();
 
+  // Use Notification[] type for notifications
   const filterNotifications = React.useMemo(() => {
-    return notifications.filter(notification => {
-      // Handle both notification_type and type fields
-      const notificationType = notification.notification_type || notification.type;
+    return (notifications as Notification[]).filter(notification => {
+      const notificationType = notification.notification_type;
       const { metadata } = notification;
 
       if (filter === 'all') return true;
@@ -103,7 +115,7 @@ const Notifications = () => {
     try {
       const notifications = userIds.map(userId => ({
         user_id: userId,
-        type: 'challenge_ended',
+        notification_type: 'challenge_ended',
         title: 'Challenge Ended',
         content: 'Challenge ended, winnings will be released soon or check your wallet for your payout.',
         metadata: { challenge_id: challengeId }
@@ -192,7 +204,7 @@ const Notifications = () => {
                       </div>
                       <p className="text-gray-500 text-sm truncate">{notification.content}</p>
                       {/* Challenge Accept/Decline Buttons */}
-                      {(notification.type === 'challenge_received' || notification.notification_type === 'challenge_received') && notification.metadata?.challenge_id && !notification.read_at && (
+                      {(notification.notification_type === 'challenge_received') && notification.metadata?.challenge_id && !notification.read_at && (
                         <div className="flex gap-2 mt-2">
                           <button
                             className="px-3 py-1 rounded-full bg-[#7440ff] text-white text-xs font-semibold shadow hover:bg-[#7440ff] transition"
@@ -217,18 +229,35 @@ const Notifications = () => {
                                   .update({ status: 'accepted' })
                                   .eq('id', notification.metadata.challenge_id);
 
+                                // Move funds from real_balance to locked_balance for both users
+                                const { data: challengeDetails, error: challengeDetailsError } = await supabase
+                                  .from('challenges')
+                                  .select('challenger_id, challenged_id, amount')
+                                  .eq('id', notification.metadata.challenge_id)
+                                  .single();
+                                if (challengeDetailsError) throw challengeDetailsError;
+
+                                const { challenger_id, challenged_id, amount } = challengeDetails;
+
+                                // Update wallets for both users
+                                const { error: walletUpdateError } = await supabase.rpc('move_funds_to_locked_balance', {
+                                  user_ids: [challenger_id, challenged_id],
+                                  amount: amount
+                                });
+                                if (walletUpdateError) throw walletUpdateError;
+
                                 // Notify both parties
                                 await supabase.from('notifications').insert([
                                   {
                                     user_id: notification.metadata.challenger_id,
-                                    type: 'challenge_accepted',
+                                    notification_type: 'challenge_accepted',
                                     title: 'Challenge Accepted',
                                     content: `Your challenge with @${currentUser.username} has been accepted!`,
                                     metadata: notification.metadata
                                   },
                                   {
                                     user_id: currentUser.id,
-                                    type: 'challenge_started',
+                                    notification_type: 'challenge_started',
                                     title: 'Challenge Started',
                                     content: `The challenge has started! Duration: 1 hour, Amount: ₦${notification.metadata.amount}`,
                                     metadata: notification.metadata
@@ -258,9 +287,9 @@ const Notifications = () => {
                                 // Notify the challenger
                                 await supabase.from('notifications').insert({
                                   user_id: notification.metadata.challenger_id,
-                                  type: 'challenge_declined',
+                                  notification_type: 'challenge_declined',
                                   title: 'Challenge Declined',
-                                  content: `Your challenge with @${currentUser.username} was declined.`,
+                                  content: `Your challenge with @${currentUser.username} has been declined!`,
                                   metadata: notification.metadata
                                 });
 
@@ -280,7 +309,7 @@ const Notifications = () => {
                     {/* Time & Actions */}
                     <div className="flex flex-col items-end ml-4 gap-2 min-w-[80px]">
                       <span className="text-xs text-gray-400 whitespace-nowrap">{new Date(notification.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      {!notification.read_at && !(notification.notification_type?.startsWith('challenge_') || notification.type?.startsWith('challenge_')) && (
+                      {!notification.read_at && !notification.notification_type?.startsWith('challenge_') && (
                         <button
                           onClick={() => handleMarkAsRead(notification.id)}
                           className="text-xs px-3 py-1 rounded-full bg-[#7440ff] text-white font-medium shadow hover:bg-[#7440ff] transition"

@@ -41,7 +41,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
     platform: '' as Platform,
     scheduledDate: '',
     scheduledTime: '',
-    evidence: 'SCREENSHOT' as 'SCREENSHOT' | 'VIDEO',
+    evidence: 'SCREENSHOT' as 'SCREENSHOT' | 'VIDEO' | 'IMAGES',
     expirationHours: 24,
   });
   const [customGame, setCustomGame] = useState('');
@@ -84,6 +84,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
           amount: challengeData.amount,
           title,
           game_type: challengeData.gameType,
+          custom_game_name: challengeData.gameType === 'OTHER' ? customGame : null,
           platform: challengeData.platform,
           scheduled_at: scheduledAt,
           expires_at: expirationTime.toISOString(),
@@ -106,7 +107,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
 
       await supabase.from('notifications').insert({
         user_id: challengedId,
-        type: 'challenge_received',
+        notification_type: 'challenge_received',
         title: 'New Challenge Received',
         content: `@${challengerData.username} has challenged you to a ${challengeData.gameType} match.`,
         metadata: {
@@ -255,7 +256,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
                     : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-purple-50"
                 }`}
               >
-                {type}
+                {type === 'OTHER' ? 'Other' : type}
               </button>
             ))}
           </div>
@@ -293,18 +294,18 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
           {/* Evidence Pills */}
           <div className="flex gap-1 justify-center">
             <span className="text-[10px] text-gray-400 font-medium self-center">Proof</span>
-            {["Screenshot", "Video"].map(evidence => (
+            {["SCREENSHOT", "VIDEO", "IMAGES"].map(evidence => (
               <button
                 key={evidence}
                 type="button"
-                onClick={() => setChallengeData(prev => ({ ...prev, evidence: evidence as any }))}
+                onClick={() => setChallengeData(prev => ({ ...prev, evidence }))}
                 className={`px-2 py-1 rounded-full text-[11px] font-medium border transition-all ${
                   challengeData.evidence === evidence
                     ? "bg-[#7440ff] text-white"
                     : "bg-gray-100 text-gray-700 border-gray-200 hover:bg-purple-50"
                 }`}
               >
-                {evidence === "SCREENSHOT" ? "Screenshot" : "Video"}
+                {evidence.charAt(0) + evidence.slice(1).toLowerCase()}
               </button>
             ))}
           </div>

@@ -122,7 +122,7 @@ export function useProfile() {
         .from('notifications')
         .insert({
           user_id: userId,
-          type: 'follow',
+          notification_type: 'follow',
           title: 'New Follower',
           content: `${currentUser?.name || 'Someone'} started following you`,
           metadata: {
