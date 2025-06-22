@@ -143,13 +143,7 @@ const App: React.FC = () => {
                       {/* Show daily claim modal globally for all authenticated users */}
                       <DailyClaimModalGlobal />
                       {!isAuthPage && !isAdminPage && <DesktopNav onMenuToggle={setIsSidebarOpen} />}
-                      <main className={`$${
-                        !isAdminPage && !isAuthPage ?
-                          isEventsPage ?
-                            isSidebarOpen ? 'lg:ml-[200px]' : 'lg:ml-[70px]'
-                          : 'lg:ml-[70px]'
-                        : ''
-                      } flex-1 transition-all duration-200`}>
+                      <main className={`flex-1 transition-all duration-300 lg:ml-[70px] ${isEventsPage ? (isSidebarOpen ? 'lg:ml-[200px]' : 'lg:ml-[70px]') : ''}`}> 
                         <Routes>
                           {/* Public routes */}
                           <Route path="/" element={<Events />} />

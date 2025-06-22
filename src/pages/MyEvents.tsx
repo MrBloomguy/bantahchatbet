@@ -10,11 +10,11 @@ import Header from '../components/Header';
 import MobileFooterNav from '../components/MobileFooterNav';
 import { supabase } from '../lib/supabase';
 import PageHeader from '../components/PageHeader';
+import SkeletonEventCard from '../components/SkeletonEventCard';
 
 const tabs = [
   { id: 'created', label: 'Created', icon: Star },
-  { id: 'joined', label: 'Active', icon: Clock },
-  { id: 'engaged', label: 'Discuss', icon: MessageCircle },
+  { id: 'active', label: 'Active', icon: Clock },
   { id: 'won', label: 'Won', icon: Trophy },
   { id: 'lost', label: 'Lost', icon: Award },
 ];
@@ -33,10 +33,12 @@ const MyEvents = () => {
     switch (activeTab) {
       case 'created':
         return createdEvents;
-      case 'joined':
-        return joinedEvents;
-      case 'engaged':
-        return engagedEvents;
+      case 'active': {
+        // Merge joinedEvents and engagedEvents, remove duplicates by event.id
+        const allEvents = [...joinedEvents, ...engagedEvents];
+        const uniqueEvents = Array.from(new Map(allEvents.map(e => [e.id, e])).values());
+        return uniqueEvents;
+      }
       case 'won':
         return joinedEvents.filter(event =>
           event.status === 'completed' &&
@@ -52,101 +54,117 @@ const MyEvents = () => {
     }
   };
 
-  const renderEventCard = (event: any) => (
-    <div key={event.id} className="bg-[#242538] rounded-lg overflow-hidden">
-      <div className="flex">
-        {event.banner_url && (
-          <div
-            className="relative w-32 h-24 cursor-pointer"
-            onClick={() => navigate(`/event/${event.id}/chat`)}
-          >
-            <img
-              src={event.banner_url}
-              alt={event.title}
-              className="w-full h-full object-cover"
-            />
-          </div>
-        )}
+  const renderEventCard = (event: any) => {
+    // For badge logic
+    const isJoined = joinedEvents.some(e => e.id === event.id);
+    const isEngaged = engagedEvents.some(e => e.id === event.id);
+    return (
+      <div key={event.id} className="bg-[#242538] rounded-lg overflow-hidden">
+        <div className="flex">
+          {event.banner_url && (
+            <div
+              className="relative w-32 h-24 cursor-pointer"
+              onClick={() => navigate(`/event/${event.id}/chat`)}
+            >
+              <img
+                src={event.banner_url}
+                alt={event.title}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
 
-        <div className="flex-1 p-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h3
-                  className="text-base font-semibold text-white truncate cursor-pointer hover:text-[#7440ff]"
-                  onClick={() => navigate(`/event/${event.id}/chat`)}
-                >
-                  {event.title}
-                </h3>
-                <span className={`px-2 py-0.5 rounded-full text-xs ${
-                  event.status === 'completed'
-                    ? 'bg-green-500 text-white'
-                    : 'bg-[#7440ff] text-black'
-                }`}>
-                  {event.status}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-x-3 text-xs text-gray-400 mb-2">
-                {activeTab !== 'created' && event.creator && (
-                  <div
-                    className="flex items-center gap-1 cursor-pointer hover:text-[#7440ff]"
+          <div className="flex-1 p-3">
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 mb-1">
+                  <h3
+                    className="text-base font-semibold text-white truncate cursor-pointer hover:text-[#7440ff]"
                     onClick={() => navigate(`/event/${event.id}/chat`)}
                   >
+                    {event.title}
+                  </h3>
+                  <span className={`px-2 py-0.5 rounded-full text-xs ${
+                    event.status === 'completed'
+                      ? 'bg-green-500 text-white'
+                      : 'bg-[#7440ff] text-black'
+                  }`}>
+                    {event.status}
+                  </span>
+                  {/* Badges for joined/engaged */}
+                  {activeTab === 'active' && (
+                    <>
+                      {isJoined && (
+                        <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-blue-600 text-white">Joined</span>
+                      )}
+                      {isEngaged && (
+                        <span className="ml-1 px-2 py-0.5 rounded-full text-xs bg-yellow-500 text-black">Engaged</span>
+                      )}
+                    </>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-x-3 text-xs text-gray-400 mb-2">
+                  {activeTab !== 'created' && event.creator && (
+                    <div
+                      className="flex items-center gap-1 cursor-pointer hover:text-[#7440ff]"
+                      onClick={() => navigate(`/event/${event.id}/chat`)}
+                    >
+                      <Users className="w-3 h-3" />
+                      <span>By {event.creator.username}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    <span>{new Date(event.start_time).toLocaleDateString()}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
                     <Users className="w-3 h-3" />
-                    <span>By {event.creator.username}</span>
+                    <span>{typeof event.participant_count === 'number' ? event.participant_count : (event.participant_count?.count || 0)}</span>
                   </div>
-                )}
-                <div className="flex items-center gap-1">
-                  <Clock className="w-3 h-3" />
-                  <span>{new Date(event.start_time).toLocaleDateString()}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Users className="w-3 h-3" />
-                  <span>{typeof event.participant_count === 'number' ? event.participant_count : (event.participant_count?.count || 0)}</span>
-                </div>
-              </div>
 
-              <div className="flex items-center gap-3 text-xs">
-                <div className="bg-black/30 px-2 py-1 rounded">
-                  <span className="text-[#7440ff]">₦ {Number(event.pool_amount || event.pool?.total_amount || 0).toLocaleString()}</span> Pool
-                </div>
-                {event.status === 'completed' && (
+                <div className="flex items-center gap-3 text-xs">
                   <div className="bg-black/30 px-2 py-1 rounded">
-                    <span className="text-[#7440ff]">
-                      ₦ {Number(event.user_earnings || 0).toLocaleString()}
-                    </span>
-                    {' '}
-                    {event.user_earnings > 0 ? 'Won' : 'Lost'}
+                    <span className="text-[#7440ff]">₦ {Number(event.pool_amount || event.pool?.total_amount || 0).toLocaleString()}</span> Pool
                   </div>
+                  {event.status === 'completed' && (
+                    <div className="bg-black/30 px-2 py-1 rounded">
+                      <span className="text-[#7440ff]">
+                        ₦ {Number(event.user_earnings || 0).toLocaleString()}
+                      </span>
+                      {' '}
+                      {event.user_earnings > 0 ? 'Won' : 'Lost'}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <button
+                  onClick={() => navigate(`/event/${event.id}/chat`)}
+                  className="px-2 py-1 bg-[#7440ff] text-black rounded text-xs font-medium whitespace-nowrap"
+                >
+                  Chat
+                </button>
+                {event.is_editable && event.status === 'active' && (
+                  <button
+                    onClick={() => {
+                      setSelectedEvent(event);
+                      setIsEditModalOpen(true);
+                    }}
+                    className="px-2 py-1 border border-[#7440ff] text-white rounded text-xs font-medium whitespace-nowrap"
+                  >
+                    Edit
+                  </button>
                 )}
               </div>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <button
-                onClick={() => navigate(`/event/${event.id}/chat`)}
-                className="px-2 py-1 bg-[#7440ff] text-black rounded text-xs font-medium whitespace-nowrap"
-              >
-                Chat
-              </button>
-              {event.is_editable && event.status === 'active' && (
-                <button
-                  onClick={() => {
-                    setSelectedEvent(event);
-                    setIsEditModalOpen(true);
-                  }}
-                  className="px-2 py-1 border border-[#7440ff] text-white rounded text-xs font-medium whitespace-nowrap"
-                >
-                  Edit
-                </button>
-              )}
             </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="min-h-screen bg-[#F6F7FB] flex flex-col">
@@ -173,8 +191,10 @@ const MyEvents = () => {
           </div>
 
           {loading ? (
-            <div className="flex justify-center items-center h-64">
-              <LoadingSpinner />
+            <div className="space-y-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <SkeletonEventCard key={i} />
+              ))}
             </div>
           ) : (
             <div className="space-y-4">

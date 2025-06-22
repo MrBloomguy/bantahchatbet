@@ -7,6 +7,7 @@ import MobileFooterNav from '../components/MobileFooterNav';
 import Header from '../components/Header';
 import { Gamepad2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import SkeletonEventCard from '../components/SkeletonEventCard';
 
 interface Event {
   id: string;
@@ -34,6 +35,7 @@ interface Event {
 const Events = () => {
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const { events, fetchEvents } = useEvent();
   const toast = useToast();
 
@@ -147,9 +149,15 @@ const Events = () => {
     },
   ];
 
-  const filteredEvents = events.filter(event =>
-    selectedCategory === 'all' ? true : event.category.toLowerCase() === selectedCategory
-  );
+  // Filter events by category and search query
+  const filteredEvents = events.filter(event => {
+    const matchesCategory = selectedCategory === 'all' ? true : event.category.toLowerCase() === selectedCategory;
+    const matchesSearch = searchQuery.trim() === '' ||
+      event.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      event.creator?.username?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
 
   // --- Mobile scroll-based header/category animation ---
   const [headerOffset, setHeaderOffset] = useState(0);
@@ -196,7 +204,7 @@ const Events = () => {
           opacity: headerOffset === -80 ? 0 : 1,
         } : {}}
       >
-        <Header showSearch />
+        <Header showSearch searchValue={searchQuery} onSearchChange={setSearchQuery} />
         {/* Category Bar is now inside the animated wrapper */}
         <div className="bg-light-bg z-40 py-1">
           <div className="container mx-auto px-0">
@@ -249,29 +257,33 @@ const Events = () => {
         </div>
       </div>
 
-      <div className="w-full px-2 md:px-16 py-3">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-8 lg:px-12 py-3 lg:pl-24">
         {/* Events Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 mx-auto md:max-w-none md:mx-0">
-          {filteredEvents.map(event => {
-            // Patch creator and participants for EventCard compatibility
-            const creator = {
-              id: event.creator.id,
-              username: event.creator.username,
-              name: (event.creator as any).name || event.creator.username || '',
-              avatar_url: (event.creator as any).avatar_url || '',
-              stats: (event.creator as any).stats || {},
-            };
-            const participants = (event.participants || []).map((p: any) => ({
-              avatar: p.avatar || undefined,
-            }));
-            return (
-              <EventCard
-                key={event.id}
-                event={{ ...event, creator, participants }}
-                onChatClick={handleChatClick}
-              />
-            );
-          })}
+          {events.length === 0 ? (
+            Array.from({ length: 6 }).map((_, i) => <SkeletonEventCard key={i} />)
+          ) : (
+            filteredEvents.map(event => {
+              // Patch creator and participants for EventCard compatibility
+              const creator = {
+                id: event.creator.id,
+                username: event.creator.username,
+                name: (event.creator as any).name || event.creator.username || '',
+                avatar_url: (event.creator as any).avatar_url || '',
+                stats: (event.creator as any).stats || {},
+              };
+              const participants = (event.participants || []).map((p: any) => ({
+                avatar: p.avatar || undefined,
+              }));
+              return (
+                <EventCard
+                  key={event.id}
+                  event={{ ...event, creator, participants }}
+                  onChatClick={handleChatClick}
+                />
+              );
+            })
+          )}
         </div>
       </div>
 

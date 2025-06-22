@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useToast } from '../contexts/ToastContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -20,6 +20,7 @@ const SignIn: React.FC = () => {
   const privyAuth = usePrivyAuth();
   const navigate = useNavigate();
   const toast = useToast();
+  const location = useLocation();
   const [isSignIn, setIsSignIn] = useState(true);
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
@@ -33,6 +34,7 @@ const SignIn: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
+  const [referral, setReferral] = useState('');
   const { login, ready } = usePrivy();
 
   useEffect(() => {
@@ -50,6 +52,13 @@ const SignIn: React.FC = () => {
       authenticated: privyAuth.authenticated
     });
   }, [privyAuth?.ready]);
+
+  useEffect(() => {
+    // Prefill referral code from ?ref= param if present
+    const params = new URLSearchParams(location.search);
+    const ref = params.get('ref');
+    if (ref) setReferral(ref);
+  }, [location.search]);
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +93,8 @@ const SignIn: React.FC = () => {
 
     setLoading(true);
     try {
-      await signUp(email, password);
+      // If your signUp function supports referral, pass it here
+      await signUp(email, password, referral); // If not, just ignore referral for now
       setIsSignIn(true);
       navigate('/');
     } catch (error: any) {
@@ -399,25 +409,34 @@ const SignIn: React.FC = () => {
                 </button>
               </div>
               {!isSignIn && (
-                <div className="relative">
+                <>
+                  <div className="relative">
+                    <input
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Confirm Password"
+                      required
+                      className="w-full bg-white/10 text-white rounded-full px-3 py-2 text-xs backdrop-blur-md focus:outline-none focus:ring-1 focus:ring-[#CCFF00] border border-white/20 font-sans pr-10"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#CCFF00] focus:outline-none"
+                      onClick={() => setShowConfirmPassword((v) => !v)}
+                      aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
+                    >
+                      {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
                   <input
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm Password"
-                    required
-                    className="w-full bg-white/10 text-white rounded-full px-3 py-2 text-xs backdrop-blur-md focus:outline-none focus:ring-1 focus:ring-[#CCFF00] border border-white/20 font-sans pr-10"
+                    type="text"
+                    value={referral}
+                    onChange={(e) => setReferral(e.target.value)}
+                    placeholder="Referral Code (optional)"
+                    className="w-full bg-white/10 text-white rounded-full px-3 py-2 text-xs backdrop-blur-md focus:outline-none focus:ring-1 focus:ring-[#CCFF00] border border-white/20 font-sans"
                   />
-                  <button
-                    type="button"
-                    tabIndex={-1}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#CCFF00] focus:outline-none"
-                    onClick={() => setShowConfirmPassword((v) => !v)}
-                    aria-label={showConfirmPassword ? 'Hide password' : 'Show password'}
-                  >
-                    {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
-                </div>
+                </>
               )}
               <button
                 type="submit"

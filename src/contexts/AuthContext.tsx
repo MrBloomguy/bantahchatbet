@@ -9,7 +9,7 @@ interface AuthContextType {
   currentUser: User | null;
   loading: boolean;
   signInWithEmail: (email: string, password: string) => Promise<any>;
-  signUp: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string, referral?: string) => Promise<any>;
   logout: () => Promise<void>;
   refreshUser: (customUser?: any) => Promise<void>;
   signInWithGoogle: () => Promise<any>;
@@ -102,7 +102,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [refreshUser]);
 
-  const signUp = useCallback(async (email: string, password: string) => {
+  const signUp = useCallback(async (email: string, password: string, referral?: string) => {
     try {
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -110,6 +110,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (error) throw error;
+      // If referral is provided, update the user's profile with it
+      if (data.user && referral) {
+        await supabase
+          .from('users')
+          .update({ referral_code: referral })
+          .eq('id', data.user.id);
+      }
       toast.showSuccess('Please check your email to verify your account');
       return data;
     } catch (error) {

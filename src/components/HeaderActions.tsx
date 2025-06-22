@@ -62,7 +62,7 @@ const HeaderActions = () => {
       {wallet ? (
         <button
           onClick={() => handleNavigate('/wallet')}
-          className="flex items-center gap-1 px-3 py-0.8 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"
+          className="flex items-center gap-1 px-3 py-1 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"
           aria-label="Wallet"
         >
           <span className="text-sm font-bold">

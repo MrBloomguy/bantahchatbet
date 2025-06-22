@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Bell,
@@ -23,6 +23,8 @@ interface HeaderProps {
   onMenuClick?: () => void;
   showSearch?: boolean;
   showBackButton?: boolean;
+  searchValue?: string;
+  onSearchChange?: (value: string) => void;
 }
 
 const Header: React.FC<HeaderProps> = ({
@@ -30,7 +32,9 @@ const Header: React.FC<HeaderProps> = ({
   showMenu = true,
   onMenuClick,
   showSearch = false,
-  showBackButton = false
+  showBackButton = false,
+  searchValue = '',
+  onSearchChange,
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -52,7 +56,6 @@ const Header: React.FC<HeaderProps> = ({
   const totalMessageNotifications = unreadMessages + pendingFriendRequests;
   const isMobile = useMediaQuery('(max-width: 768px)');
   const { wallet } = useWallet();
-  const [searchQuery, setSearchQuery] = useState('');
 
   const handleNavigate = (path: string) => {
     navigate(path);
@@ -74,7 +77,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="sticky top-0 z-50 bg-white bg-opacity-95 border-b border-gray-200 shadow-sm">
+    <header className="sticky top-0 z-50 bg-white bg-opacity-95 border-b border-gray-200 shadow-sm w-full lg:left-[70px] lg:w-[calc(100%-70px)] lg:ml-[70px]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Left Section */}
@@ -108,8 +111,8 @@ const Header: React.FC<HeaderProps> = ({
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
                 <input
                   type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  value={searchValue}
+                  onChange={(e) => onSearchChange && onSearchChange(e.target.value)}
                   placeholder="Search events..."
                   className="w-full pl-10 pr-4 py-2 bg-gray-100 text-gray-900 rounded-full focus:outline-none focus:ring-2 focus:ring-purple-500"
                 />
@@ -118,7 +121,7 @@ const Header: React.FC<HeaderProps> = ({
           )}
 
           {/* Right Section */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2">
             {/* Check both currentUser and privyAuth.privyUser */}
             {(currentUser || privyAuth?.privyUser) ? (
               <>
@@ -172,7 +175,7 @@ const Header: React.FC<HeaderProps> = ({
                 <button
                   type="button"
                   onClick={() => handleNavigate('/wallet')}
-                  className="flex items-center gap-1 px-3 py-0.9 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"
+                  className="flex items-center gap-1 px-3 py-1 bg-[#CCFF00] text-black font-semibold rounded-full hover:bg-[#CCFF00]/80 transition-colors"
                   aria-label="Wallet"
                 >
                   <span className="text-sm font-bold">
