@@ -39,8 +39,32 @@ const SupportChat: React.FC = () => {
     }
   };
 
+  const defaultQuestions = [
+    "How can I get help?"
+  ];
+
   return (
     <div className="flex flex-col h-full bg-white">
+      {/* Default Questions */}
+      {messages.length === 0 && !loading && (
+        <div className="p-4 pb-0">
+          <div className="mb-2 text-gray-700 font-semibold">Quick questions:</div>
+          <div className="flex flex-wrap gap-2">
+            {defaultQuestions.map((q) => (
+              <button
+                key={q}
+                className="bg-purple-100 text-purple-700 px-3 py-1 rounded-full text-sm hover:bg-purple-200 transition"
+                onClick={async () => {
+                  setMessage("");
+                  await sendMessage(q);
+                }}
+              >
+                {q}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4">
         {loading ? (

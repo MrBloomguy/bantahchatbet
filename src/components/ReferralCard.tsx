@@ -52,8 +52,8 @@ const ReferralCard: React.FC = () => {
           <div className="w-8 h-8 rounded-lg bg-[#CCFF00]/20 flex items-center justify-center mb-2">
             <Gift className="w-4 h-4 text-[#CCFF00]" />
           </div>
-          <p className="text-white/60 text-sm">Total Rewards</p>
-          <p className="text-[#CCFF00] font-bold">₦ {stats.totalRewards.toLocaleString()}</p>
+          <p className="text-white/60 text-sm">Total Points Earned</p>
+          <p className="text-[#CCFF00] font-bold">{stats.totalRewards.toLocaleString()} pts</p>
         </div>
       </div>
 
@@ -79,7 +79,7 @@ const ReferralCard: React.FC = () => {
       </div>
 
       <p className="text-white/60 text-sm mt-4">
-        Earn ₦500 for every 10 friends who join using your referral code. Plus, get bonus rewards when they create events or join groups!
+        Earn points for every 10 friends who join using your referral code. Plus, get bonus points when they create events or join groups!
       </p>
     </div>
   );
