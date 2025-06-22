@@ -137,7 +137,10 @@ const MobileFooterNav: React.FC = () => {
             >
               <div className="relative flex flex-col items-center justify-center h-full">
                 {item.badge && (
-                  <span className="absolute -top-1 -right-2 bg-[#FF2E2EFF] text-white text-[10px] font-medium rounded-md px-1 py-0.5 min-w-[15px] h-[15px] flex items-center justify-center">
+                  <span
+                    className="absolute -top-0.5 -right-0.5 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow"
+                    style={{ minWidth: '16px', height: '16px', fontSize: '10px', padding: '0 4px', zIndex: 1 }}
+                  >
                     {item.badge}
                   </span>
                 )}

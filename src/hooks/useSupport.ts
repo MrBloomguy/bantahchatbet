@@ -19,18 +19,16 @@ export const useSupport = () => {
   const [messages, setMessages] = useState<SupportMessage[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch messages
+  // Fetch messages (no join, just support_messages)
   const fetchMessages = useCallback(async () => {
     if (!currentUser) return;
-
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from('support_messages_with_details')
+        .from('support_messages')
         .select('*')
         .or(`user_id.eq.${currentUser.id},is_support.eq.true`)
         .order('created_at', { ascending: true });
-
       if (error) throw error;
       setMessages(data || []);
     } catch (error) {
@@ -40,19 +38,19 @@ export const useSupport = () => {
     }
   }, [currentUser]);
 
-  // Send a message
+  // Send a message (store user_name/avatar for display, no join needed)
   const sendMessage = async (content: string) => {
     if (!currentUser) return;
-
     try {
       const { error } = await supabase
         .from('support_messages')
         .insert([{
           user_id: currentUser.id,
           content,
-          is_support: false
+          is_support: false,
+          user_name: currentUser.user_metadata?.name || currentUser.email || 'User',
+          user_avatar_url: currentUser.user_metadata?.avatar_url || null
         }]);
-
       if (error) throw error;
       await fetchMessages();
     } catch (error) {
@@ -64,9 +62,7 @@ export const useSupport = () => {
   // Subscribe to new messages
   useEffect(() => {
     if (!currentUser) return;
-
     const channel = supabase.channel(`support-${currentUser.id}`);
-    
     channel
       .on(
         'postgres_changes',
@@ -85,9 +81,7 @@ export const useSupport = () => {
           console.log('Successfully subscribed to support messages');
         }
       });
-
     fetchMessages();
-
     return () => {
       channel.unsubscribe();
     };
@@ -96,24 +90,19 @@ export const useSupport = () => {
   // Mark messages as read
   useEffect(() => {
     if (!currentUser || messages.length === 0) return;
-
     const markMessagesAsRead = async () => {
       const unreadMessages = messages.filter(
         msg => !msg.read && msg.is_support && msg.user_id === currentUser.id
       );
-
       if (unreadMessages.length === 0) return;
-
       const { error } = await supabase
         .from('support_messages')
         .update({ read: true, read_at: new Date().toISOString() })
         .in('id', unreadMessages.map(msg => msg.id));
-
       if (error) {
         console.error('Error marking messages as read:', error);
       }
     };
-
     markMessagesAsRead();
   }, [currentUser, messages]);
 
