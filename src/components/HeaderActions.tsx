@@ -39,12 +39,14 @@ const HeaderActions = () => {
           <img src="/leaderboard_icon.png" alt="Leaderboard" className="w-5 h-5" />
         </button>
 
+        {/*
         <button
           onClick={() => navigate('/messages')}
           className="p-2 rounded-full hover:bg-gray-100 transition-colors"
         >
           <img src="/mes.svg" alt="Messages" className="w-5 h-5" />
         </button>
+        */}
 
         <button
           onClick={() => navigate('/notifications')}

@@ -142,6 +142,7 @@ const App: React.FC = () => {
                     <div className={`min-h-screen ${isAdminPage ? 'bg-[#1a1b2e]' : 'bg-gray-50'}`}>
                       {/* Show daily claim modal globally for all authenticated users */}
                       <DailyClaimModalGlobal />
+                      {/* Only show DesktopNav if not on auth or admin pages */}
                       {!isAuthPage && !isAdminPage && <DesktopNav onMenuToggle={setIsSidebarOpen} />}
                       <main className={`flex-1 transition-all duration-300 lg:ml-[70px] ${isEventsPage ? (isSidebarOpen ? 'lg:ml-[200px]' : 'lg:ml-[70px]') : ''}`}> 
                         <Routes>

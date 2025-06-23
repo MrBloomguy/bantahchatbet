@@ -24,7 +24,7 @@ const DailyPointsClaimModal: React.FC<DailyPointsClaimModalProps> = ({
   const alreadyClaimed = lastClaimedDate && lastClaimedDate.slice(0, 10) === today;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 pointer-events-auto">
       {/* Debug: Log claimResult and alreadyClaimed */}
       {(() => { console.log('[DailyPointsClaimModal] Render', { claimResult, alreadyClaimed, loading, lastClaimedDate }); return null; })()}
       {/* Confetti Burst Animation (on claim) */}

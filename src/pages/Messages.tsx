@@ -217,7 +217,7 @@ const Messages: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col bg-gray-50">
-      <Header title="Messages" showBackButton={true} />
+      <Header title="Chat" showBackButton={true} />
       <div className="container mx-auto flex-grow flex">
         <div className={`w-full lg:w-1/3 lg:max-w-sm flex-shrink-0 bg-white border-r border-gray-200 overflow-y-auto ${
           showMobileChat ? 'hidden lg:block' : 'block'
@@ -339,7 +339,7 @@ const Messages: React.FC = () => {
                   >
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                   </button>
-                  <div className="flex-1">
+                  <div className="flex-1 text-left font-semibold text-gray-900 truncate">
                     {filteredChatList.find(chat => chat.other_user.id === activeChatUserId)?.other_user.name || 'Chat'}
                   </div>
                 </div>

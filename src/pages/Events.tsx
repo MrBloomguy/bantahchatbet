@@ -257,9 +257,9 @@ const Events = () => {
         </div>
       </div>
 
-      <div className="w-full max-w-7xl mx-auto px-2 sm:px-8 lg:px-12 py-3 lg:pl-24">
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-8 lg:px-12 py-3">
         {/* Events Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 mx-auto md:max-w-none md:mx-0">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-1 mx-auto">
           {events.length === 0 ? (
             Array.from({ length: 6 }).map((_, i) => <SkeletonEventCard key={i} />)
           ) : (

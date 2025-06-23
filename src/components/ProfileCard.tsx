@@ -302,14 +302,15 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
           <span className="text-[10px] text-gray-500 mt-0.5">Earnings</span>
         </div>
       </div>
-      {/* Actions - single row: Challenge, Message, Tip */}
+      {/* Actions - single row: Challenge, Tip */}
       {currentUser && currentUser.id !== profile.id && (
         <div className="flex gap-2 w-full px-4 mb-2">
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              toast.showInfo('Challenge feature coming soon!');
+              // Navigate to challenge creation page with this user as opponent
+              window.location.href = `/create?opponent=${profile.id}`;
             }}
             className="flex-1 py-1.5 rounded-full text-[13px] font-medium bg-blue-100 text-blue-700 hover:bg-blue-200 border border-blue-200 flex items-center justify-center gap-1"
             aria-label="Challenge user"
@@ -318,11 +319,13 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
             <Trophy className="w-4 h-4" />
             Challenge
           </button>
+          {/*
           <button
             type="button"
             onClick={(e) => {
               e.stopPropagation();
-              toast.showInfo('Message feature coming soon!');
+              // Navigate to messages page with this user
+              window.location.href = `/messages/${profile.id}`;
             }}
             className="flex-1 py-1.5 rounded-full text-[13px] font-medium bg-green-100 text-green-700 hover:bg-green-200 border border-green-200 flex items-center justify-center gap-1"
             aria-label="Message user"
@@ -331,6 +334,7 @@ const ProfileCard: React.FC<ProfileCardProps> = ({ profile: initialProfile, user
             <Send className="w-4 h-4" />
             Chat
           </button>
+          */}
           <button
             type="button"
             onClick={(e) => {

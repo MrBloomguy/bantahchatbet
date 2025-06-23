@@ -6,8 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import backgroundVideo from '../new_background_video.mp4';
 import Logo from '../components/Logo';
 import { supabase } from '../lib/supabase';
-import { usePrivyAuth } from '../contexts/PrivyAuthContext';
-import { usePrivy } from '@privy-io/react-auth';
+import { PrivyProvider, usePrivy } from '@privy-io/react-auth';
 import { Eye, EyeOff } from 'lucide-react';
 
 const MAX_RETRIES = 3;
@@ -17,7 +16,6 @@ const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 const SignIn: React.FC = () => {
   const { currentUser, signInWithEmail, signUp } = useAuth();
-  const privyAuth = usePrivyAuth();
   const navigate = useNavigate();
   const toast = useToast();
   const location = useLocation();
@@ -35,23 +33,13 @@ const SignIn: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
   const [referral, setReferral] = useState('');
-  const { login, ready } = usePrivy();
+  const { login: privyLogin, ready: privyReady } = usePrivy();
 
   useEffect(() => {
     if (currentUser) {
       navigate('/');
     }
   }, [currentUser, navigate]);
-
-  useEffect(() => {
-    if (!privyAuth?.ready) return;
-    
-    // Log Privy initialization status
-    console.log('Privy initialization status:', {
-      ready: privyAuth.ready,
-      authenticated: privyAuth.authenticated
-    });
-  }, [privyAuth?.ready]);
 
   useEffect(() => {
     // Prefill referral code from ?ref= param if present
@@ -297,21 +285,18 @@ const SignIn: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center relative overflow-hidden">
-      {/* Video Background */}
+    <div className="min-h-screen h-screen w-full flex flex-col items-center justify-center bg-black relative overflow-hidden">
+      {/* Video background and overlay */}
       <video
         autoPlay
         loop
         muted
         playsInline
-        className="absolute w-full h-full object-cover"
+        className="absolute inset-0 w-full h-full object-cover z-0"
         src={backgroundVideo}
       />
-
-      {/* Overlay with gradient */}
-      <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-black/70"></div>
-
-      <div className="z-10 w-full max-w-sm px-6 flex flex-col items-center min-h-[100vh] py-8">
+      <div className="absolute inset-0 bg-black/60 z-10" />
+      <div className="relative z-20 w-full max-w-xs mx-auto flex flex-col items-center justify-center min-h-screen h-screen px-0">
         <div className="flex flex-col items-center mt-8">
           {/* Logo */}
           <div className="flex justify-center mb-4">
@@ -330,8 +315,8 @@ const SignIn: React.FC = () => {
 
         {/* Social Login Buttons - Positioned at bottom */}
         <div className="w-full space-y-2 mb-2 max-w-[240px]">
-           {/* Log In Button (opens email form) */}
-           <button
+          {/* Log In Button (opens email form) */}
+          <button
             type="button"
             onClick={toggleEmailForm}
             className="w-full flex items-center justify-center gap-2 bg-white hover:bg-gray-100 text-gray-800 font-medium py-2 px-3 rounded-full transition-colors text-sm font-sans"
@@ -374,7 +359,15 @@ const SignIn: React.FC = () => {
           </button>
 
           {/* Privy Sign-in Button */}
-          
+          <button
+            type="button"
+            onClick={() => privyLogin()}
+            disabled={!privyReady || loading}
+            className="w-full flex items-center justify-center gap-2 bg-[#191C26] hover:bg-[#23263a] text-white font-medium py-2 px-3 rounded-full transition-colors text-sm font-sans border border-[#CCFF00]"
+          >
+            <img src="https://privy.io/favicon.ico" alt="Privy" className="w-5 h-5" />
+            Sign in with Privy
+          </button>
         </div>
 
         {/* Email Form */}
@@ -470,5 +463,12 @@ const SignIn: React.FC = () => {
   );
 };
 
-export default SignIn;
+// Wrap SignIn with PrivyProvider
+const PrivySignInWrapper: React.FC = () => (
+  <PrivyProvider appId={process.env.PRIVY_APP_ID || 'cmc9a12oh01lnky0m1agzgdoc'}>
+    <SignIn />
+  </PrivyProvider>
+);
+
+export default PrivySignInWrapper;
 

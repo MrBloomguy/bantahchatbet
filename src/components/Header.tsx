@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Bell,
-  MessageSquare,
   Wallet,
   LogIn,
   Search,
@@ -12,7 +11,6 @@ import Logo from './Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { usePrivyAuth } from '../contexts/PrivyAuthContext';
 import { useNotification } from '../hooks/useNotification';
-import { useMessageNotifications } from '../hooks/useMessageNotifications';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useWallet } from '../contexts/WalletContext';
 import { formatNaira, formatUSD, convertNGNtoUSD } from '../utils/currency';
@@ -50,10 +48,6 @@ const Header: React.FC<HeaderProps> = ({
     });
   }, [currentUser, privyAuth]);
   const { unreadCount } = useNotification();
-  const { unreadMessages, pendingFriendRequests } = useMessageNotifications();
-
-  // Calculate total message notifications
-  const totalMessageNotifications = unreadMessages + pendingFriendRequests;
   const isMobile = useMediaQuery('(max-width: 768px)');
   const { wallet } = useWallet();
 
@@ -137,25 +131,6 @@ const Header: React.FC<HeaderProps> = ({
                     alt="Leaderboard"
                     className="h-5 w-5 opacity-80 hover:opacity-100 transition-opacity"
                   />
-                </button>
-
-                {/* Messages */}
-                <button
-                  type="button"
-                  onClick={() => handleNavigate('/messages')}
-                  className="p-2 rounded-full hover:bg-gray-100 transition-colors relative"
-                  aria-label="Messages"
-                >
-                  <img
-                    src="/mes.svg"
-                    alt="mes"
-                    className="h-5 w-5 opacity-100 hover:opacity-100 transition-opacity"
-                  />
-                  {totalMessageNotifications > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full min-w-[18px] h-[18px] flex items-center justify-center">
-                      {formatNotificationCount(totalMessageNotifications)}
-                    </span>
-                  )}
                 </button>
 
                 {/* Notifications */}

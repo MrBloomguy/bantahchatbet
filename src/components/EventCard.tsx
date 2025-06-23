@@ -198,7 +198,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick, className }) 
           />
 
           {/* Single header row with creator info, title, and status */}
-          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/80 to-transparent pt-2 pb-1.5">
+          <div className="absolute top-0 left-0 right-0 bg-gradient-to-b from-black/95 to-transparent pt-2 pb-1.5">
             <div className="px-3 grid grid-cols-[auto_1fr_auto] items-center w-full gap-2">
               {/* Creator info - Left side */}
               <div className="flex items-center flex-shrink-0">
