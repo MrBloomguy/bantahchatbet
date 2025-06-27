@@ -6,7 +6,6 @@ import { useAuth } from '../contexts/AuthContext';
 import backgroundVideo from '../new_background_video.mp4';
 import Logo from '../components/Logo';
 import { supabase } from '../lib/supabase';
-import { PrivyProvider, usePrivy } from '@privy-io/react-auth';
 import { Eye, EyeOff } from 'lucide-react';
 
 const MAX_RETRIES = 3;
@@ -33,7 +32,6 @@ const SignIn: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
   const [referral, setReferral] = useState('');
-  const { login: privyLogin, ready: privyReady } = usePrivy();
 
   useEffect(() => {
     if (currentUser) {
@@ -357,17 +355,6 @@ const SignIn: React.FC = () => {
             </svg>
             Sign in with X
           </button>
-
-          {/* Privy Sign-in Button */}
-          <button
-            type="button"
-            onClick={() => privyLogin()}
-            disabled={!privyReady || loading}
-            className="w-full flex items-center justify-center gap-2 bg-[#191C26] hover:bg-[#23263a] text-white font-medium py-2 px-3 rounded-full transition-colors text-sm font-sans border border-[#CCFF00]"
-          >
-            <img src="https://privy.io/favicon.ico" alt="Privy" className="w-5 h-5" />
-            Sign in with Privy
-          </button>
         </div>
 
         {/* Email Form */}
@@ -463,12 +450,4 @@ const SignIn: React.FC = () => {
   );
 };
 
-// Wrap SignIn with PrivyProvider
-const PrivySignInWrapper: React.FC = () => (
-  <PrivyProvider appId={process.env.PRIVY_APP_ID || 'cmc9a12oh01lnky0m1agzgdoc'}>
-    <SignIn />
-  </PrivyProvider>
-);
-
-export default PrivySignInWrapper;
-
+export default SignIn;
