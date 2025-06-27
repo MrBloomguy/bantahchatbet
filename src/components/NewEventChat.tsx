@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { ArrowLeft, Send, Loader, X, UserPlus, UserCheck } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
 import { useAuth } from '../contexts/AuthContext';
@@ -125,6 +125,53 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   const [searchInput, setSearchInput] = useState('');
   const [searchResults, setSearchResults] = useState<{messages: ChatMessage[]; users: {id: string; username: string; name?: string}[]}>({messages: [], users: []});
 
+  // --- Typing indicator state and logic ---
+  const [typingUsers, setTypingUsers] = useState<{ username: string; userId: string }[]>([]);
+  const typingTimeouts = useRef<{ [userId: string]: NodeJS.Timeout }>({});
+  const typingChannelRef = useRef<any>(null);
+
+  // Setup typing channel once per eventId
+  useEffect(() => {
+    if (typingChannelRef.current) {
+      typingChannelRef.current.unsubscribe();
+      typingChannelRef.current = null;
+    }
+    const channel = supabase.channel(`event-chat-typing-${eventId}`);
+    typingChannelRef.current = channel;
+    channel.on('broadcast', { event: 'typing' }, (payload) => {
+      const { userId, username } = payload.payload;
+      if (!userId || userId === currentUser?.id) return;
+      setTypingUsers((prev) => {
+        if (prev.some((u) => u.userId === userId)) return prev;
+        return [...prev, { username, userId }];
+      });
+      // Remove after 2.5s
+      if (typingTimeouts.current[userId]) clearTimeout(typingTimeouts.current[userId]);
+      typingTimeouts.current[userId] = setTimeout(() => {
+        setTypingUsers((prev) => prev.filter((u) => u.userId !== userId));
+      }, 2500);
+    });
+    channel.subscribe();
+    return () => {
+      channel.unsubscribe();
+      typingChannelRef.current = null;
+      Object.values(typingTimeouts.current).forEach(clearTimeout);
+      typingTimeouts.current = {};
+    };
+  }, [eventId, currentUser]);
+
+  // Broadcast typing event using .broadcast()
+  const broadcastTyping = useCallback(() => {
+    if (!currentUser) return;
+    const username = currentUser.user_metadata?.username;
+    if (!username) return;
+    if (!typingChannelRef.current) return;
+    typingChannelRef.current.broadcast('typing', {
+      userId: currentUser.id,
+      username,
+    });
+  }, [currentUser]);
+
   // Add handleMention function
   const handleMention = async (input: string) => {
     const mentionMatch = input.match(/@(\w*)$/);
@@ -163,6 +210,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
     const newValue = e.target.value;
     setMessage(newValue);
     handleMention(newValue);
+    broadcastTyping();
   };
 
   // Handle reply
@@ -917,6 +965,13 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
             <Send size={20} />
           </button>
         </form>
+
+        {/* Typing indicator - shows above the input area */}
+        {typingUsers.length > 0 && (
+          <div className="text-xs text-gray-500 mb-1">
+            {typingUsers.map(u => `@${u.username} is typing`).join(', ')}
+          </div>
+        )}
 
         {/* Mentions dropdown */}
         {showMentionDropdown && mentionResults.length > 0 && (
