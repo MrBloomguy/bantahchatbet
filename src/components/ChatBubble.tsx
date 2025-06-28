@@ -123,19 +123,33 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   onReact,
   onRemoveReaction
 }) => {
-  // Local state for optimistic reactions
-  const [localReactions, setLocalReactions] = useState(reactions);
-
-  useEffect(() => {
-    setLocalReactions(reactions);
-  }, [reactions]);
-
   const [showActions, setShowActions] = useState(false);
   const [showQuickReactions, setShowQuickReactions] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [imgSrc, setImgSrc] = useState(avatarUrl || '/default-avatar.png');
   
-  let longPressTimer: NodeJS.Timeout | null = null;
+  // Track local optimistic reactions
+  const [optimisticReactions, setOptimisticReactions] = useState<typeof reactions>([]);
+
+  useEffect(() => {
+    // Reset optimistic reactions if parent prop changes (e.g. after backend update)
+    setOptimisticReactions([]);
+  }, [JSON.stringify(reactions)]);
+
+  // Merge reactions: parent prop + local optimistic, deduped by emoji+user_id
+  const mergedReactions = [
+    ...reactions,
+    ...optimisticReactions.filter(or => !reactions.some(r => r.emoji === or.emoji && r.user_id === or.user_id))
+  ];
+
+  // Group reactions by emoji
+  const groupedReactions = mergedReactions.reduce((acc, reaction) => {
+    if (!acc[reaction.emoji]) {
+      acc[reaction.emoji] = [];
+    }
+    acc[reaction.emoji].push(reaction);
+    return acc;
+  }, {} as Record<string, typeof mergedReactions>);
 
   const date = new Date(timestamp);
   const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -159,16 +173,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     return <span dangerouslySetInnerHTML={{ __html: formattedText }} />;
   };
 
-  // Group reactions by emoji
-  const groupedReactions = localReactions.reduce((acc, reaction) => {
-    if (!acc[reaction.emoji]) {
-      acc[reaction.emoji] = [];
-    }
-    acc[reaction.emoji].push(reaction);
-    return acc;
-  }, {} as Record<string, typeof localReactions>);
-
   // Mobile: long-press to show quick reactions
+  let longPressTimer: NodeJS.Timeout | null = null;
   const handleTouchStart = (e: React.TouchEvent) => {
     if (window.innerWidth <= 768) {
       e.preventDefault();
@@ -201,13 +207,17 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     }
   };
 
+  // Track last added emoji for animation
+  const [lastAnimatedEmoji, setLastAnimatedEmoji] = useState<string | null>(null);
+
   const handleReactionClick = (emoji: string) => {
     onReact?.(emoji);
     // Optimistically add reaction if not already present for this user
-    // (Assume user_id is available as currentUserId)
     const currentUserId = window?.SUPABASE_USER_ID || 'me';
-    if (!localReactions.some(r => r.emoji === emoji && r.user_id === currentUserId)) {
-      setLocalReactions([...localReactions, { id: `local-${emoji}`, emoji, user_id: currentUserId }]);
+    if (!mergedReactions.some(r => r.emoji === emoji && r.user_id === currentUserId)) {
+      setOptimisticReactions([...optimisticReactions, { id: `local-${emoji}`, emoji, user_id: currentUserId }]);
+      setLastAnimatedEmoji(emoji);
+      setTimeout(() => setLastAnimatedEmoji(null), 600); // Animation duration
     }
     setShowQuickReactions(false);
     setShowEmojiPicker(false);
@@ -217,6 +227,22 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     handleReactionClick(emoji);
     setShowEmojiPicker(false);
   };
+
+  // Reaction pop animation for emoji reactions
+  const style = document.createElement('style');
+  style.innerHTML = `
+  .animate-reaction-pop {
+    animation: reaction-pop 0.6s cubic-bezier(.23,1.12,.67,.99);
+  }
+  @keyframes reaction-pop {
+    0% { transform: scale(0.5); opacity: 0; }
+    60% { transform: scale(1.3); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }`;
+  if (typeof window !== 'undefined' && !document.getElementById('reaction-pop-style')) {
+    style.id = 'reaction-pop-style';
+    document.head.appendChild(style);
+  }
 
   return (
     <div
@@ -345,11 +371,12 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
                 <button
                   key={emoji}
                   onClick={() => handleReactionClick(emoji)}
-                  className="flex items-center gap-1 px-2 py-1 bg-white/60 rounded-full text-xs hover:bg-white/80 transition-colors border border-gray-200"
+                  className={`flex items-center gap-0.5 px-1 py-0.5 bg-white/60 rounded-full text-[10px] hover:bg-white/80 transition-colors border border-gray-200 focus:outline-none ${lastAnimatedEmoji === emoji ? 'animate-reaction-pop' : ''}`}
                   title={`Reacted by: ${reactionList.map(r => r.username || r.user_id).join(', ')}`}
+                  style={{ fontSize: '0.95rem', lineHeight: 1 }}
                 >
-                  <span>{emoji}</span>
-                  <span className="text-gray-600">{reactionList.length}</span>
+                  <span className="text-[13px]">{emoji}</span>
+                  <span className="text-gray-600 text-[10px]">{reactionList.length}</span>
                 </button>
               ))}
             </div>
