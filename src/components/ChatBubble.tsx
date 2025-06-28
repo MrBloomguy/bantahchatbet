@@ -2,15 +2,21 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Check, CheckCheck, Reply, Smile } from 'lucide-react';
 import UserLevelBadge from './UserLevelBadge';
 import { EventChatMessageReactions } from './EventChatMessageReactions';
+import { useToast } from '../contexts/ToastContext';
 
 // WhatsApp-style emoji picker
-const EmojiPicker = ({ onEmojiSelect, onClose, position }) => {
+interface EmojiPickerProps {
+  onEmojiSelect: (emoji: string) => void;
+  onClose: () => void;
+  position: 'left' | 'right';
+}
+const EmojiPicker: React.FC<EmojiPickerProps> = ({ onEmojiSelect, onClose, position }) => {
   const popularEmojis = ['❤️', '😂', '😮', '😢', '😡', '👍', '👎', '🔥', '💯', '🎉'];
   const pickerRef = useRef(null);
 
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (pickerRef.current && (pickerRef.current as HTMLDivElement).contains(event.target as Node) === false) {
         onClose();
       }
     };
@@ -46,7 +52,11 @@ const EmojiPicker = ({ onEmojiSelect, onClose, position }) => {
 };
 
 // Quick reaction component
-const QuickReactions = ({ onReact, position }) => {
+interface QuickReactionsProps {
+  onReact: (emoji: string) => void;
+  position: 'left' | 'right';
+}
+const QuickReactions: React.FC<QuickReactionsProps> = ({ onReact, position }) => {
   const quickEmojis = ['❤️', '😂', '😮', '😢', '😡', '👍'];
   
   return (
@@ -119,27 +129,28 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   onReply,
   onAvatarClick,
   messageId,
-  reactions = [],
+  reactions,
   onReact,
   onRemoveReaction
 }) => {
+  // Always ensure reactions is an array
+  const safeReactions = Array.isArray(reactions) ? reactions : [];
   const [showActions, setShowActions] = useState(false);
   const [showQuickReactions, setShowQuickReactions] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [imgSrc, setImgSrc] = useState(avatarUrl || '/default-avatar.png');
   
   // Track local optimistic reactions
-  const [optimisticReactions, setOptimisticReactions] = useState<typeof reactions>([]);
+  const [optimisticReactions, setOptimisticReactions] = useState<typeof safeReactions>([]);
 
   useEffect(() => {
-    // Reset optimistic reactions if parent prop changes (e.g. after backend update)
     setOptimisticReactions([]);
-  }, [JSON.stringify(reactions)]);
+  }, [JSON.stringify(safeReactions)]);
 
   // Merge reactions: parent prop + local optimistic, deduped by emoji+user_id
   const mergedReactions = [
-    ...reactions,
-    ...optimisticReactions.filter(or => !reactions.some(r => r.emoji === or.emoji && r.user_id === or.user_id))
+    ...safeReactions,
+    ...optimisticReactions.filter(or => !safeReactions.some(r => r.emoji === or.emoji && r.user_id === or.user_id))
   ];
 
   // Group reactions by emoji
@@ -210,14 +221,24 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   // Track last added emoji for animation
   const [lastAnimatedEmoji, setLastAnimatedEmoji] = useState<string | null>(null);
 
-  const handleReactionClick = (emoji: string) => {
-    onReact?.(emoji);
-    // Optimistically add reaction if not already present for this user
-    const currentUserId = window?.SUPABASE_USER_ID || 'me';
-    if (!mergedReactions.some(r => r.emoji === emoji && r.user_id === currentUserId)) {
-      setOptimisticReactions([...optimisticReactions, { id: `local-${emoji}`, emoji, user_id: currentUserId }]);
-      setLastAnimatedEmoji(emoji);
-      setTimeout(() => setLastAnimatedEmoji(null), 600); // Animation duration
+  const toast = useToast();
+  const handleReactionClick = async (emoji: string) => {
+    if (!onReact) return;
+    try {
+      await onReact(emoji);
+      // Optimistically add reaction if not already present for this user
+      const currentUserId = (typeof window !== 'undefined' && window.localStorage.getItem('supabase_user_id')) || 'me';
+      if (!mergedReactions.some(r => r.emoji === emoji && r.user_id === currentUserId)) {
+        setOptimisticReactions([...optimisticReactions, { id: `local-${emoji}`, emoji, user_id: currentUserId }]);
+        setLastAnimatedEmoji(emoji);
+        setTimeout(() => setLastAnimatedEmoji(null), 600); // Animation duration
+      }
+    } catch (err: any) {
+      if (toast && typeof toast.showError === 'function') {
+        toast.showError('Failed to react: ' + (err?.message || String(err)));
+      } else {
+        alert('Failed to react: ' + (err?.message || String(err)));
+      }
     }
     setShowQuickReactions(false);
     setShowEmojiPicker(false);

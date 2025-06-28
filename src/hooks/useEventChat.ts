@@ -232,6 +232,7 @@ export function useEventChat(eventId: string) {
   );
 
   const handleRealtimeMessage = useCallback(async (payload: any) => {
+    console.log('[Realtime] Received payload:', payload);
     if (!payload.new || typeof payload.new !== 'object' || !('id' in payload.new)) return;
 
     const messageId = payload.new.id;
@@ -261,7 +262,7 @@ export function useEventChat(eventId: string) {
         .single();
 
       if (error || !messageData) {
-        console.error('Error fetching message data:', error);
+        console.error('[Realtime] Error fetching message data:', error);
         return;
       }
 
@@ -272,24 +273,23 @@ export function useEventChat(eventId: string) {
         // Remove any optimistic message from the same sender with similar timestamp
         const filteredMessages = prevMessages.filter(msg => {
           if (!msg.isOptimistic) return true;
-          
           // Remove optimistic message if it's from the same sender and within 10 seconds
           const timeDiff = Math.abs(
             new Date(newMessage.created_at).getTime() - new Date(msg.created_at).getTime()
           );
           return !(msg.sender_id === newMessage.sender_id && timeDiff < 10000);
         });
-
         // Add the new message and sort by timestamp
         const updatedMessages = [...filteredMessages, newMessage];
+        console.log('[Realtime] Updated messages:', updatedMessages);
         return updatedMessages.sort((a, b) => 
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         );
       });
     } catch (error) {
-      console.error('Error processing real-time message:', error);
+      console.error('[Realtime] Error processing real-time message:', error);
     }
-  }, []);
+  }, [formatMessage, setMessages, processedMessageIds]);
 
   // Initial message fetch
   useEffect(() => {
@@ -301,6 +301,7 @@ export function useEventChat(eventId: string) {
     if (!eventId) return;
 
     const setupSubscription = () => {
+      console.log('[Realtime] Subscribing to channel:', `event-chat-${eventId}`);
       const channel = supabase.channel(`event-chat-${eventId}`, {
         config: {
           presence: { key: currentUser?.id }
@@ -319,7 +320,7 @@ export function useEventChat(eventId: string) {
           handleRealtimeMessage
         )
         .subscribe((status) => {
-          console.log(`Event chat subscription status for ${eventId}:`, status);
+          console.log(`[Realtime] Event chat subscription status for ${eventId}:`, status);
           
           if (status === 'SUBSCRIBED') {
             setConnectionStatus('connected');

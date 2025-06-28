@@ -616,6 +616,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
         .in('message_id', ids);
       if (!error && data) {
         const grouped: Record<string, any[]> = {};
+        ids.forEach(id => { grouped[id] = []; }); // Ensure every message gets an array
         data.forEach((r) => {
           if (!grouped[r.message_id]) grouped[r.message_id] = [];
           grouped[r.message_id].push(r);
