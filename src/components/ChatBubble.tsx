@@ -1,7 +1,76 @@
-import React, { useState } from 'react';
-import { Check, CheckCheck } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { Check, CheckCheck, Reply, Smile } from 'lucide-react';
 import UserLevelBadge from './UserLevelBadge';
 import { EventChatMessageReactions } from './EventChatMessageReactions';
+
+// WhatsApp-style emoji picker
+const EmojiPicker = ({ onEmojiSelect, onClose, position }) => {
+  const popularEmojis = ['❤️', '😂', '😮', '😢', '😡', '👍', '👎', '🔥', '💯', '🎉'];
+  const pickerRef = useRef(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (pickerRef.current && !pickerRef.current.contains(event.target)) {
+        onClose();
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [onClose]);
+
+  // Horizontal positioning beside the bubble
+  const horizontalStyle = position === 'left'
+    ? { left: '110%', top: '50%', transform: 'translateY(-50%)' }
+    : { right: '110%', top: '50%', transform: 'translateY(-50%)' };
+
+  return (
+    <div 
+      ref={pickerRef}
+      className={`absolute z-50 bg-white/95 backdrop-blur-sm rounded-lg p-2 shadow-lg border border-gray-200`}
+      style={horizontalStyle}
+    >
+      <div className="flex gap-1 flex-wrap max-w-[200px]">
+        {popularEmojis.map((emoji) => (
+          <button
+            key={emoji}
+            onClick={() => onEmojiSelect(emoji)}
+            className="text-lg hover:scale-125 transition-transform p-1 rounded hover:bg-gray-100"
+          >
+            {emoji}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Quick reaction component
+const QuickReactions = ({ onReact, position }) => {
+  const quickEmojis = ['❤️', '😂', '😮', '😢', '😡', '👍'];
+  
+  return (
+    <div className={`absolute z-40 bg-white/95 backdrop-blur-sm rounded-full px-2 py-1 shadow-lg border border-gray-200 flex gap-1 ${
+      position === 'left' ? 'left-0' : 'right-0'
+    }`} style={{ top: '-40px' }}>
+      {quickEmojis.map((emoji) => (
+        <button
+          key={emoji}
+          onClick={() => onReact(emoji)}
+          className="text-sm hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100"
+        >
+          {emoji}
+        </button>
+      ))}
+      <button
+        onClick={() => {}} // This would open full emoji picker
+        className="text-sm hover:scale-125 transition-transform p-1 rounded-full hover:bg-gray-100"
+      >
+        <Smile className="w-3 h-3" />
+      </button>
+    </div>
+  );
+};
 
 interface ChatBubbleProps {
   content: string;
@@ -27,7 +96,9 @@ interface ChatBubbleProps {
   onReply?: () => void;
   onAvatarClick?: () => void;
   messageId?: string;
-  reactions?: Array<{ id: string; emoji: string; user_id: string }>;
+  reactions?: Array<{ id: string; emoji: string; user_id: string; username?: string }>;
+  onReact?: (emoji: string) => void;
+  onRemoveReaction?: (reactionId: string) => void;
 }
 
 const ChatBubble: React.FC<ChatBubbleProps> = ({
@@ -48,8 +119,24 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
   onReply,
   onAvatarClick,
   messageId,
-  reactions
+  reactions = [],
+  onReact,
+  onRemoveReaction
 }) => {
+  // Local state for optimistic reactions
+  const [localReactions, setLocalReactions] = useState(reactions);
+
+  useEffect(() => {
+    setLocalReactions(reactions);
+  }, [reactions]);
+
+  const [showActions, setShowActions] = useState(false);
+  const [showQuickReactions, setShowQuickReactions] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [imgSrc, setImgSrc] = useState(avatarUrl || '/default-avatar.png');
+  
+  let longPressTimer: NodeJS.Timeout | null = null;
+
   const date = new Date(timestamp);
   const timeStr = date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
   const dateStr = date.toLocaleDateString('en-US', { 
@@ -72,28 +159,63 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
     return <span dangerouslySetInnerHTML={{ __html: formattedText }} />;
   };
 
-  const [imgSrc, setImgSrc] = useState(avatarUrl || '/default-avatar.png');
-  const [showActions, setShowActions] = useState(false);
-  let longPressTimer: NodeJS.Timeout | null = null;
+  // Group reactions by emoji
+  const groupedReactions = localReactions.reduce((acc, reaction) => {
+    if (!acc[reaction.emoji]) {
+      acc[reaction.emoji] = [];
+    }
+    acc[reaction.emoji].push(reaction);
+    return acc;
+  }, {} as Record<string, typeof localReactions>);
 
-  // Mobile: long-press to show actions
-  const handleTouchStart = () => {
+  // Mobile: long-press to show quick reactions
+  const handleTouchStart = (e: React.TouchEvent) => {
     if (window.innerWidth <= 768) {
-      longPressTimer = setTimeout(() => setShowActions(true), 400);
+      e.preventDefault();
+      longPressTimer = setTimeout(() => {
+        setShowQuickReactions(true);
+        // Hide after 3 seconds
+        setTimeout(() => setShowQuickReactions(false), 3000);
+      }, 500);
     }
   };
+
   const handleTouchEnd = () => {
-    if (window.innerWidth <= 768) {
-      if (longPressTimer) clearTimeout(longPressTimer);
-      setTimeout(() => setShowActions(false), 1200);
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
     }
   };
+
   // Desktop: hover to show actions
   const handleMouseEnter = () => {
-    if (window.innerWidth > 768) setShowActions(true);
+    if (window.innerWidth > 768) {
+      setShowActions(true);
+    }
   };
+
   const handleMouseLeave = () => {
-    if (window.innerWidth > 768) setShowActions(false);
+    if (window.innerWidth > 768) {
+      setShowActions(false);
+      setShowQuickReactions(false);
+      setShowEmojiPicker(false);
+    }
+  };
+
+  const handleReactionClick = (emoji: string) => {
+    onReact?.(emoji);
+    // Optimistically add reaction if not already present for this user
+    // (Assume user_id is available as currentUserId)
+    const currentUserId = window?.SUPABASE_USER_ID || 'me';
+    if (!localReactions.some(r => r.emoji === emoji && r.user_id === currentUserId)) {
+      setLocalReactions([...localReactions, { id: `local-${emoji}`, emoji, user_id: currentUserId }]);
+    }
+    setShowQuickReactions(false);
+    setShowEmojiPicker(false);
+  };
+
+  const handleEmojiSelect = (emoji: string) => {
+    handleReactionClick(emoji);
+    setShowEmojiPicker(false);
   };
 
   return (
@@ -101,10 +223,8 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
       className={`flex w-full ${isSender ? 'justify-end' : 'justify-start'} mb-3`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
     >
-      <div className={`flex ${isSender ? 'flex-row-reverse' : 'flex-row'} items-start gap-1 max-w-[65%] group`}>
+      <div className={`flex ${isSender ? 'flex-row-reverse' : 'flex-row'} items-start gap-1 max-w-[65%] group relative`}>
         {/* Avatar */}
         {hasAvatar && !isSender && (
           <div className="flex-shrink-0">
@@ -122,26 +242,14 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             </div>
           </div>
         )}
+
         <div className="flex flex-col w-full relative">
-          {/* Actions: reactions + reply */}
-          {showActions && (
-            <div className={`absolute flex gap-2 items-center z-20 ${isSender ? 'left-0' : 'right-0'} -top-8`}>
-              {messageId && reactions && (
-                <EventChatMessageReactions messageId={messageId} reactions={reactions} />
-              )}
-              {onReply && (
-                <button
-                  onClick={onReply}
-                  className="p-1 rounded-full bg-gray-900/50 hover:bg-gray-900/70"
-                  style={{ marginLeft: 4 }}
-                >
-                  <svg viewBox="0 0 24 24" className="w-4 h-4" fill="none" stroke="white" strokeWidth="2">
-                    <path d="M9 20L3 12L9 4" />
-                    <path d="M3 12H21" />
-                  </svg>
-                </button>
-              )}
-            </div>
+          {/* Quick reactions overlay (mobile only) */}
+          {showQuickReactions && (
+            <QuickReactions 
+              onReact={handleReactionClick}
+              position={isSender ? 'right' : 'left'}
+            />
           )}
 
           {/* Sender name and badges */}
@@ -169,45 +277,83 @@ const ChatBubble: React.FC<ChatBubbleProps> = ({
             </div>
           )}
 
-          {/* Message bubble */}
-          <div
-            className={`relative group px-2 py-[4px] rounded-2xl ${
-              isSender 
-                ? 'bg-white/40 text-black rounded-tr-sm' 
-                : 'bg-white/40 text-black rounded-tl-sm'
-            }`}
-          >
-            {mediaType && mediaUrl ? (
-              <div className="rounded-lg overflow-hidden mb-1">
-                <img 
-                  src={mediaUrl} 
-                  alt={mediaType === 'gif' ? 'GIF' : 'Image'} 
-                  className="max-w-full rounded-lg"
-                  loading="lazy"
-                />
-              </div>
-            ) : null}
-            {content && (
-              <div className="text-[13px] leading-[18px] whitespace-pre-wrap break-words">
-                {formatContent(content)}
+          {/* Row: hover icons + bubble */}
+          <div className="flex items-center relative w-full">
+            {/* Desktop: show reply and emoji buttons on hover, outside bubble */}
+            {typeof window !== 'undefined' && window.innerWidth > 768 && (
+              <div className={`flex flex-col gap-2 absolute z-20 ${isSender ? 'right-full pr-2' : 'left-full pl-2'} top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity`}>
+                <button
+                  onClick={e => { e.stopPropagation(); setShowEmojiPicker(true); }}
+                  className="p-1 rounded-full bg-gray-900/70 hover:bg-gray-900/90"
+                  title="React"
+                  tabIndex={0}
+                >
+                  <Smile className="w-4 h-4 text-white" />
+                </button>
+                {onReply && (
+                  <button
+                    onClick={onReply}
+                    className="p-1 rounded-full bg-gray-900/70 hover:bg-gray-900/90"
+                    title="Reply"
+                    tabIndex={0}
+                  >
+                    <Reply className="w-4 h-4 text-white" />
+                  </button>
+                )}
+                {/* Emoji picker (desktop, positioned beside bubble) */}
+                {showEmojiPicker && (
+                  <EmojiPicker 
+                    onEmojiSelect={(emoji: string) => { handleEmojiSelect(emoji); setShowEmojiPicker(false); }}
+                    onClose={() => setShowEmojiPicker(false)}
+                    position={isSender ? 'right' : 'left'}
+                  />
+                )}
               </div>
             )}
-
-            {/* Reply button on hover */}
-            {onReply && (
-              <button
-                onClick={onReply}
-                className={`absolute top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full bg-gray-900/50 hover:bg-gray-900/70 ${
-                  isSender ? '-left-8' : '-right-8'
-                }`}
-              >
-                <svg viewBox="0 0 24 24" className="w-3.5 h-3.5" fill="none" stroke="white" strokeWidth="2">
-                  <path d="M9 20L3 12L9 4" />
-                  <path d="M3 12H21" />
-                </svg>
-              </button>
-            )}
+            {/* Message bubble */}
+            <div
+              className={`relative group px-2 py-[4px] rounded-2xl ${
+                isSender 
+                  ? 'bg-white/40 text-black rounded-tr-sm' 
+                  : 'bg-white/40 text-black rounded-tl-sm'
+              }`}
+              onTouchStart={handleTouchStart}
+              onTouchEnd={handleTouchEnd}
+            >
+              {mediaType && mediaUrl ? (
+                <div className="rounded-lg overflow-hidden mb-1">
+                  <img 
+                    src={mediaUrl} 
+                    alt={mediaType === 'gif' ? 'GIF' : 'Image'} 
+                    className="max-w-full rounded-lg"
+                    loading="lazy"
+                  />
+                </div>
+              ) : null}
+              {content && (
+                <div className="text-[13px] leading-[18px] whitespace-pre-wrap break-words">
+                  {formatContent(content)}
+                </div>
+              )}
+            </div>
           </div>
+
+          {/* Reactions display (bottom of bubble) */}
+          {Object.keys(groupedReactions).length > 0 && (
+            <div className={`flex flex-wrap gap-1 mt-1 ${isSender ? 'justify-end' : 'justify-start'}`}>
+              {Object.entries(groupedReactions).map(([emoji, reactionList]) => (
+                <button
+                  key={emoji}
+                  onClick={() => handleReactionClick(emoji)}
+                  className="flex items-center gap-1 px-2 py-1 bg-white/60 rounded-full text-xs hover:bg-white/80 transition-colors border border-gray-200"
+                  title={`Reacted by: ${reactionList.map(r => r.username || r.user_id).join(', ')}`}
+                >
+                  <span>{emoji}</span>
+                  <span className="text-gray-600">{reactionList.length}</span>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Timestamp and read status */}
           <div className={`flex items-center gap-1 mt-0.5 ${isSender ? 'justify-end' : 'justify-start'}`}>

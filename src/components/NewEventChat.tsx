@@ -602,9 +602,14 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
   }, [showMenuDropdown]);
 
   useEffect(() => {
+    if (!messages.length) return;
+    // Only include messages with valid UUIDs
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const ids = messages
+      .map((m) => m.id)
+      .filter((id) => uuidRegex.test(id));
+    if (ids.length === 0) return;
     const fetchReactions = async () => {
-      if (!messages.length) return;
-      const ids = messages.map((m) => m.id);
       const { data, error } = await supabase
         .from('event_chat_message_reactions')
         .select('*')
@@ -863,8 +868,10 @@ const NewEventChat: React.FC<NewEventChatProps> = ({
               const isCurrentUserSender = msg.sender_id === currentUser?.id;
               // Find the replied-to message if reply_to exists
               let replyToData = undefined;
-              if (msg.reply_to) {
-                const repliedMsg = messages.find((m) => m.id === (msg.reply_to as any)?.id);
+              // Support reply_to as string (ID) or object
+              const replyToId = typeof msg.reply_to === 'string' ? msg.reply_to : (msg.reply_to && (msg.reply_to as any).id);
+              if (replyToId) {
+                const repliedMsg = messages.find((m) => m.id === replyToId);
                 if (repliedMsg) {
                   replyToData = {
                     id: repliedMsg.id,
