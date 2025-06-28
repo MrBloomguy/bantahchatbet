@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock } from 'lucide-react';
+import { Lock, Share2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -267,32 +267,65 @@ const EventCard: React.FC<EventCardProps> = ({ event, onChatClick, className }) 
             </div>
           </div>
 
-          {/* Join Button */}
-          <button
-            type="button"
-            onClick={handleJoinClick}
-            disabled={['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label) || isProcessing || requestSent}
-            className={`${
-              ['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label)
-                ? 'bg-gray-500 cursor-not-allowed text-white'
-                : requestSent
-                  ? 'bg-[#CCFF00] text-black hover:bg-[#CCFF00]'
-                  : isProcessing
-                    ? 'bg-gray-400 text-white hover:bg-gray-400'
-                    : 'btn-primary bg-[#ccff00] text-black hover:bg-[#ccff00]'
-            } h-10 flex items-center justify-center gap-1 px-4 rounded-3x1'`}
-          >
-            {updatedEvent.is_private && !requestSent && <Lock className="h-4 w-4" />}
-            {['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label)
-              ? 'Closed'
-              : isProcessing
-                ? 'Processing...'
-                : requestSent
-                  ? 'Request Sent'
-                  : updatedEvent.is_private
-                    ? 'Request'
-                    : 'Join'}
-          </button>
+          {/* Share + Join Button Row */}
+          <div className="flex items-center gap-2">
+            {/* Share Button - white icon, no background */}
+            <button
+              type="button"
+              aria-label="Share Event"
+              onClick={async () => {
+                const shareData = {
+                  title: event.title,
+                  text: `Join the event: ${event.title}`,
+                  url: window.location.origin + `/event/${event.id}`,
+                };
+                if (navigator.share) {
+                  try {
+                    await navigator.share(shareData);
+                  } catch (err) {
+                    // Optionally handle error
+                  }
+                } else {
+                  try {
+                    await navigator.clipboard.writeText(shareData.url);
+                  } catch {
+                    // Optionally handle error
+                  }
+                }
+              }}
+              className="p-2 flex items-center justify-center"
+              style={{ background: 'none', boxShadow: 'none' }}
+            >
+              <Share2 className="h-5 w-5 text-white" />
+            </button>
+            {/* Join Button - original design untouched */}
+            <button
+              type="button"
+              onClick={handleJoinClick}
+              disabled={['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label) || isProcessing || requestSent}
+              className={
+                // This is the original className from your previous code, do not change
+                `${['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label)
+                  ? 'bg-gray-500 cursor-not-allowed text-white'
+                  : requestSent
+                    ? 'bg-[#CCFF00] text-black hover:bg-[#CCFF00]'
+                    : isProcessing
+                      ? 'bg-gray-400 text-white hover:bg-gray-400'
+                      : 'btn-primary bg-[#ccff00] text-black hover:bg-[#ccff00]'} h-10 flex items-center justify-center gap-1 px-4 rounded-3x1'`
+              }
+            >
+              {updatedEvent.is_private && !requestSent && <Lock className="h-4 w-4" />}
+              {['CANCELLED', 'ENDED'].includes(updatedEvent.status || getEventStatus().label)
+                ? 'Closed'
+                : isProcessing
+                  ? 'Processing...'
+                  : requestSent
+                    ? 'Request Sent'
+                    : updatedEvent.is_private
+                      ? 'Request'
+                      : 'Join'}
+            </button>
+          </div>
         </div>
       </div>
 
