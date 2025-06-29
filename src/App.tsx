@@ -11,7 +11,6 @@ import { AdminAuthProvider } from './contexts/AdminAuthContext';
 import { WalletProvider } from './contexts/WalletContext';
 import { SettingsProvider } from './contexts/SettingsContext';
 import { SplashScreenProvider } from './contexts/SplashScreenContext';
-import { PrivyAuthProvider } from './contexts/PrivyAuthContext';
 import { PointsProvider } from './contexts/PointsContext';
 import { UserPresenceProvider } from './contexts/UserPresenceContext';
 import { NotificationProvider } from './contexts/NotificationContext';
@@ -22,6 +21,8 @@ import DailyPointsClaimModal from './components/DailyPointsClaimModal';
 import { useLeaderboard } from './hooks/useLeaderboard';
 import { useAuth } from './contexts/AuthContext';
 import PublicProfilePage from './pages/profile/[username]';
+import ChatRoom from './pages/ChatRoom';
+import { DemoChatRoom } from './pages/demochatroom';
 
 // Admin Pages
 import AdminLogin from './pages/AdminLogin';
@@ -130,7 +131,6 @@ const App: React.FC = () => {
   return (
     <ToastProvider>
       <SupabaseProvider>
-        <PrivyAuthProvider>
           <AuthProvider>
             <AdminAuthProvider>
               <WalletProvider>
@@ -155,11 +155,13 @@ const App: React.FC = () => {
                           <Route path="/stories" element={<Stories />} />
                           <Route path="/data-deletion-callback" element={<DataDeletionCallback />} />
                           <Route path="/auth/tiktok-callback" element={<TikTokAuthCallback />} />
+                          <Route path="/chatroom" element={<ChatRoom />} />
                           <Route path="/support-chat" element={
                             <ProtectedRoute>
                               <SupportChat />
                             </ProtectedRoute>
                           } />
+                          <Route path="/demochatroom" element={<DemoChatRoom />} />
 
                           {/* Admin routes */}
                           <Route path="/admin/login" element={<AdminLogin />} />
@@ -428,8 +430,7 @@ const App: React.FC = () => {
               </WalletProvider>
             </AdminAuthProvider>
           </AuthProvider>
-        </PrivyAuthProvider>
-      </SupabaseProvider>
+        </SupabaseProvider>
     </ToastProvider>
   );
 };

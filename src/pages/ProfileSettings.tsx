@@ -3,7 +3,7 @@ import { ArrowLeft, Camera, Lock, Mail } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { privyDIDtoUUID } from '../utils/auth';
+
 import LoadingSpinner from '../components/LoadingSpinner';
 import LoadingOverlay from '../components/LoadingOverlay';
 import { toast } from 'react-toastify';
@@ -42,7 +42,7 @@ const ProfileSettings: React.FC = () => {
 
     try {
       setImageLoading(true);
-      const userId = privyDIDtoUUID(currentUser.id);
+      const userId = currentUser.id;
       const fileExt = file.name.split('.').pop();
       const filePath = `${userId}/avatar.${fileExt}`;
 
@@ -79,7 +79,7 @@ const ProfileSettings: React.FC = () => {
 
     try {
       setLoading(true);
-      const userId = privyDIDtoUUID(currentUser.id);
+      const userId = currentUser.id;
 
       const { error } = await supabase
         .from('users')

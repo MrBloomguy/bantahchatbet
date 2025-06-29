@@ -48,8 +48,13 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Fetch event - serve cached content when offline
+// Early exit for /chatroom requests: do not run any service worker logic
 self.addEventListener('fetch', (event) => {
+  if (event.request.url.includes('/chatroom')) {
+    // Do not intercept, cache, or handle anything for /chatroom
+    return;
+  }
+
   // Skip service worker for certain domains
   if (SKIP_DOMAINS.some(domain => event.request.url.includes(domain))) {
     console.log('Skipping service worker interception for:', event.request.url);

@@ -1,15 +1,12 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
-  Bell,
-  Wallet,
   LogIn,
   Search,
   ArrowLeft
 } from 'lucide-react';
 import Logo from './Logo';
 import { useAuth } from '../contexts/AuthContext';
-import { usePrivyAuth } from '../contexts/PrivyAuthContext';
 import { useNotification } from '../hooks/useNotification';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 import { useWallet } from '../contexts/WalletContext';
@@ -27,8 +24,7 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = ({
   title,
-  showMenu = true,
-  onMenuClick,
+  // showMenu and onMenuClick are unused
   showSearch = false,
   showBackButton = false,
   searchValue = '',
@@ -37,16 +33,8 @@ const Header: React.FC<HeaderProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { currentUser } = useAuth();
-  const privyAuth = usePrivyAuth?.();
 
-  // Debug log for header state
-  useEffect(() => {
-    console.log('Header component - Auth state:', {
-      currentUser,
-      privyUser: privyAuth?.privyUser,
-      privyAuthenticated: privyAuth?.authenticated
-    });
-  }, [currentUser, privyAuth]);
+  // Debug log for header state (removed privyAuth effect)
   const { unreadCount } = useNotification();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const { wallet } = useWallet();
@@ -56,15 +44,15 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const balance = wallet?.real_balance || 0;
-  const usdEquivalent = convertNGNtoUSD(balance);
+  // const usdEquivalent = convertNGNtoUSD(balance); // unused
 
   // Format the notification count for display
-  const formatNotificationCount = (count: number) => {
-    if (count > 99) return '99+';
-    return count.toString();
-  };
+  // const formatNotificationCount = (count: number) => {
+  //   if (count > 99) return '99+';
+  //   return count.toString();
+  // };
 
-  const formatNumber = (num, currency) => {
+  const formatNumber = (num: number, currency: string) => {
     if (num >= 1_000_000) return currency + (num / 1_000_000).toFixed(2).replace(/\.00$/, '') + 'M';
     if (num >= 1_000) return currency + (num / 1_000).toFixed(2).replace(/\.00$/, '') + 'K';
     return currency + num.toFixed(2).replace(/\.00$/, '');
@@ -116,8 +104,7 @@ const Header: React.FC<HeaderProps> = ({
 
           {/* Right Section */}
           <div className="flex items-center gap-2">
-            {/* Check both currentUser and privyAuth.privyUser */}
-            {(currentUser || privyAuth?.privyUser) ? (
+            {currentUser ? (
               <>
               {/* Leaderboard */}
               <button

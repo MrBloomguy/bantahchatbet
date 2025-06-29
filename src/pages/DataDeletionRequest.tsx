@@ -3,7 +3,7 @@ import { Trash2, AlertCircle, Shield, UserCheck, CheckCircle } from 'lucide-reac
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { privyDIDtoUUID } from '../utils/auth';
+
 import LoadingSpinner from '../components/LoadingSpinner';
 import PageHeader from '../components/PageHeader';
 import MobileFooterNav from '../components/MobileFooterNav';
@@ -46,7 +46,7 @@ const DataDeletionRequest: React.FC = () => {
 
     try {
       setLoading(true);
-      const userId = privyDIDtoUUID(currentUser.id);
+      const userId = currentUser.id;
 
       // Submit data deletion request to database
       const { error } = await supabase

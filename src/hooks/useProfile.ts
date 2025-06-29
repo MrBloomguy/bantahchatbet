@@ -2,7 +2,6 @@ import { useCallback, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
-import { privyDIDtoUUID } from '../utils/auth';
 
 export interface Profile {
   id: string;
@@ -105,7 +104,7 @@ export function useProfile() {
 
     try {
       setLoadingFollow(true);
-      const followerId = privyDIDtoUUID(currentUser.id);
+      // Removed privyDIDtoUUID usage
 
       // Create follow relationship
       const { error } = await supabase
@@ -149,7 +148,7 @@ export function useProfile() {
 
     try {
       setLoadingUnfollow(true);
-      const followerId = privyDIDtoUUID(currentUser.id);
+      // Removed privyDIDtoUUID usage
 
       const { error } = await supabase
         .from('followers')
