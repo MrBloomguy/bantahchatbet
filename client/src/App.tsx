@@ -75,6 +75,7 @@ import Terms from './pages/Terms';
 import SupportChat from './pages/SupportChat';
 import Bantzz from './pages/Bantzz';
 import Gift from './pages/Gift';
+import NotificationTest from './pages/NotificationTest';
 
 // Components
 import PWAInstallPrompt from './components/PWAInstallPrompt';
@@ -162,6 +163,7 @@ const App: React.FC = () => {
                             </ProtectedRoute>
                           } />
                           <Route path="/demochatroom" element={<DemoChatRoom />} />
+                          <Route path="/test-notifications" element={<NotificationTest />} />
 
                           {/* Admin routes */}
                           <Route path="/admin/login" element={<AdminLogin />} />
