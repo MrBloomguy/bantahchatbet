@@ -1,3 +1,0 @@
-// This is a reference image for the Bantzz welcome area redesign.
-// File: original-bd5d8754e3d03844d50ce92931b3a17f.webp
-// Please use this image as a visual guide for layout, color, and spacing.
