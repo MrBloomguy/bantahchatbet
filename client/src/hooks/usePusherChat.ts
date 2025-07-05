@@ -174,9 +174,10 @@ export function usePusherChat(eventId: string) {
       sender_id: currentUser.id,
       created_at: new Date().toISOString(),
       sender: {
-        name: currentUser.name || currentUser.user_metadata?.name || currentUser.email || 'User',
-        username: currentUser.username || currentUser.user_metadata?.username || 'user',
-        avatar_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || '/default-avatar.png'
+        name: currentUser.name || currentUser.username || 'User',
+        username: currentUser.username || 'user',
+        avatar_url: currentUser.avatar_url || '/default-avatar.png',
+        isVerified: !!currentUser.is_verified
       },
       media_type: mediaType,
       media_url: mediaUrl,
@@ -259,9 +260,10 @@ export function usePusherChat(eventId: string) {
             data: {
               ...newMessage,
               sender: {
-                name: currentUser.name || currentUser.user_metadata?.name || currentUser.email || 'User',
-                username: currentUser.username || currentUser.user_metadata?.username || 'user',
-                avatar_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || '/default-avatar.png'
+                name: currentUser.name || currentUser.username || 'User',
+                username: currentUser.username || 'user',
+                avatar_url: currentUser.avatar_url || '/default-avatar.png',
+                isVerified: !!currentUser.is_verified
               }
             }
           })

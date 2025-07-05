@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, X } from 'lucide-react';
 import Header from './Header';
@@ -92,7 +91,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
   // Memoize Pusher client
   const pusherClient = React.useMemo(() => {
     if (!pusherKey) return null;
-    
+
     const pusher = new Pusher(pusherKey, {
       cluster: pusherCluster,
       encrypted: true,
@@ -110,7 +109,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
   // Listen for Pusher connection state changes
   useEffect(() => {
     if (!pusherClient) return;
-    
+
     const handleStateChange = (state: string) => {
       setPusherConnectionState(state);
     };
@@ -157,10 +156,10 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
   // Subscribe to Pusher channel events
   useEffect(() => {
     if (!pusherClient) return;
-    
+
     let channel: any;
     let mounted = true;
-    
+
     setIsLoading(true);
     setPusherError(null);
 
@@ -207,13 +206,13 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
     const setupChannel = async () => {
       try {
         channel = pusherClient.subscribe(channelName);
-        
+
         // Bind to message events
         channel.bind('new-message', async (data: any) => {
           if (!mounted) return;
-          
+
           const senderProfile = data.sender || await fetchProfile(data.sender_id);
-          
+
           setMessages((prev) => [
             ...prev,
             {
@@ -337,10 +336,10 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
           data: {
             ...newMessage,
             sender: {
-              name: currentUser.user_metadata?.name || currentUser.user_metadata?.username || currentUser.name || 'User',
-              username: currentUser.user_metadata?.username || currentUser.username || 'user',
-              avatar_url: currentUser.user_metadata?.avatar_url || currentUser.avatar_url || '/default-avatar.png',
-              isVerified: !!currentUser.user_metadata?.is_verified,
+              name: currentUser.name || currentUser.username || 'User',
+              username: currentUser.username || 'user',
+              avatar_url: currentUser.avatar_url || '/default-avatar.png',
+              isVerified: !!currentUser.is_verified,
             }
           }
         })
@@ -350,7 +349,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
         console.error('Pusher message failed:', await response.text());
         throw new Error('Failed to send message via Pusher');
       }
-      
+
       console.log('Message sent successfully via Pusher');
 
     } catch (err: any) {
@@ -573,13 +572,13 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
         .ilike('content', `%${searchInput}%`)
         .eq('event_id', eventId);
       if (messageError) throw messageError;
-      
+
       const { data: users, error: userError } = await supabase
         .from('users')
         .select('id, username, name')
         .ilike('username', `%${searchInput}%`);
       if (userError) throw userError;
-      
+
       setSearchResults({ messages: messages || [], users: users || [] });
     } catch (error) {
       toast.showError('Search failed');
