@@ -854,91 +854,98 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
           </span>
         </div>
 
-        {/* Compact Banner - reduced height, no drawer */}
-        {bannerOpen && (
-          <div className="relative w-[98vw] max-w-[700px] mx-auto">
+        {/* Compact Banner with Drawer */}
+        <div className="relative mx-3">
+          <div
+            className={`transition-all duration-300 ${bannerOpen ? 'max-h-[80px] opacity-100' : 'max-h-0 opacity-0 pointer-events-none'} overflow-hidden`}
+          >
             <div
-              className="transition-all duration-300 max-h-[56px] opacity-100 overflow-hidden"
+              className="relative border-b border-gray-200 py-2 px-4 shadow-sm flex items-center justify-between min-h-[64px] rounded-xl overflow-hidden"
+              style={{
+                backgroundImage: event?.banner_url ? `url(${event.banner_url})` : undefined,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
+              }}
             >
-              <div
-                className="relative border-b border-gray-200 py-1 px-4 shadow-sm flex items-center justify-between min-h-[44px] rounded-lg overflow-hidden"
-                style={{
-                  backgroundImage: event?.banner_url ? `url(${event.banner_url})` : undefined,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                }}
-              >
-                <div className="absolute inset-0 bg-gray-900/60 pointer-events-none" />
-                <div className="relative flex items-center gap-6 text-sm text-white z-10">
-                  <span className="flex items-center gap-1">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="inline-block h-3 w-3 mr-1 align-text-top text-white"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={2.5}
-                    >
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span className="text-xs">{getCountdown()}</span>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0zm6 13v-2a4 4 0 00-3-3.87M6 20v-2a4 4 0 013-3.87" />
-                    </svg>
-                    <span className="text-xs">{formatShortNumber(event?.participant_count || 0)}</span>
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
-                      <text x="2" y="17" fontSize="16" fontFamily="Arial" fill="currentColor">₦</text>
-                    </svg>
-                    <span className="text-xs">{formatShortNumber(event?.pool_total_amount || 0)}</span>
-                  </span>
-                </div>
-                <div className="relative flex items-center gap-2 z-10">
-                  <button
-                    onClick={() => handlePrediction(true)}
-                    disabled={isProcessing || prediction !== null || getCountdown() === 'Event ended'}
-                    className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
-                      prediction === true
-                        ? 'bg-green-700 text-white cursor-not-allowed'
-                        : prediction !== null
-                        ? 'bg-gray-400 text-white cursor-not-allowed'
-                        : 'bg-green-500 text-white hover:bg-green-600'
-                    }`}
+              <div className="absolute inset-0 bg-gray-900/60 pointer-events-none" />
+              <div className="relative flex items-center gap-6 text-sm text-white z-10">
+                <span className="flex items-center gap-1">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="inline-block h-3 w-3 mr-1 align-text-top text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={1.5}
                   >
-                    YES
-                    {predictionCounts && predictionCounts.yes > 0 && (
-                      <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-green-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
-                        {predictionCounts.yes}
-                      </span>
-                    )}
-                  </button>
-                  <button
-                    onClick={() => handlePrediction(false)}
-                    disabled={isProcessing || prediction !== null || getCountdown() === 'Event ended'}
-                    className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
-                      prediction === false
-                        ? 'bg-red-700 text-white cursor-not-allowed'
-                        : prediction !== null
-                        ? 'bg-gray-400 text-white cursor-not-allowed'
-                        : 'bg-red-500 text-white hover:bg-red-600'
-                    }`}
-                  >
-                    NO
-                    {predictionCounts && predictionCounts.no > 0 && (
-                      <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-red-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
-                        {predictionCounts.no}
-                      </span>
-                    )}
-                  </button>
-                </div>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <span className="text-xs">{getCountdown()}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <img src="/avatar-count.svg" alt="Members" className="w-4 h-4" />
+                  <span className="text-xs">{event?.participant_count || 0}</span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <img src="/bet_icon.png" alt="Pool" className="w-4 h-4" />
+                  <span className="text-xs">₦{event?.pool_total_amount?.toLocaleString() || 0}</span>
+                </span>
+              </div>
+              <div className="relative flex items-center gap-2 z-10">
+                <button
+                  onClick={() => handlePrediction(true)}
+                  disabled={isProcessing || prediction !== null || getCountdown() === 'Event ended'}
+                  className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
+                    prediction === true
+                      ? 'bg-green-700 text-white cursor-not-allowed'
+                      : prediction !== null
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-green-500 text-white hover:bg-green-600'
+                  }`}
+                >
+                  YES
+                  {predictionCounts && predictionCounts.yes > 0 && (
+                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-green-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
+                      {predictionCounts.yes}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => handlePrediction(false)}
+                  disabled={isProcessing || prediction !== null || getCountdown() === 'Event ended'}
+                  className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
+                    prediction === false
+                      ? 'bg-red-700 text-white cursor-not-allowed'
+                      : prediction !== null
+                      ? 'bg-gray-400 text-white cursor-not-allowed'
+                      : 'bg-red-500 text-white hover:bg-red-600'
+                  }`}
+                >
+                  NO
+                  {predictionCounts && predictionCounts.no > 0 && (
+                    <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-red-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
+                      {predictionCounts.no}
+                    </span>
+                  )}
+                </button>
               </div>
             </div>
           </div>
-        )}
+          {/* Drawer Button - far left, aligned with header bottom */}
+          <div className="absolute -left-4 top-0 z-20">
+            <button
+              onClick={() => setBannerOpen((prev) => !prev)}
+              className="bg-white shadow p-1 border border-gray-200 hover:bg-gray-100 transition-all rounded"
+              aria-label="Toggle Banner Drawer"
+              style={{ borderRadius: '4px' }}
+            >
+              <svg className={`w-6 h-6 text-gray-500 transition-transform ${bannerOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Pusher connection error banner */}
