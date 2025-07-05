@@ -69,7 +69,7 @@
   }
 }
 
-/* Dark mode styles */
+/* Color variables */
 :root {
   color-scheme: light;
   --framer-font-family: 'SF Pro Rounded', 'SF Pro Rounded Medium', '-apple-system', 'BlinkMacSystemFont', sans-serif;
@@ -77,6 +77,12 @@
   --framer-font-family-bold-italic: 'Inter-BoldItalic', 'Inter', 'Inter Placeholder', sans-serif;
   --framer-font-family-italic: 'Inter-Italic', 'Inter', 'Inter Placeholder', sans-serif;
   --framer-font-color: #232323;
+  
+  /* Light theme colors */
+  --light-bg: #ffffff;
+  --light-text: #1f2937;
+  --dark-bg: #1a1b2e;
+  --dark-text: #f8fafc;
 }
 
 :root.dark {
@@ -93,24 +99,56 @@
   
   body {
     color: var(--framer-font-color);
-    @apply bg-light-bg text-light-text transition-colors duration-200;
+    background-color: var(--light-bg);
+    color: var(--light-text);
+    transition: colors 200ms;
     font-family: 'Nunito', Arial, Helvetica, sans-serif;
   }
 
   .dark body {
-    @apply bg-dark-bg text-dark-text;
+    background-color: var(--dark-bg);
+    color: var(--dark-text);
   }
 
   input, textarea, select {
     font-family: var(--framer-font-family);
     color: var(--framer-font-color);
-    @apply bg-light-bg dark:bg-dark-bg text-light-text dark:text-dark-text;
+    background-color: var(--light-bg);
+    color: var(--light-text);
+  }
+
+  .dark input, .dark textarea, .dark select {
+    background-color: var(--dark-bg);
+    color: var(--dark-text);
   }
 
   button {
     font-family: var(--framer-font-family);
     color: var(--framer-font-color);
-    @apply text-light-text dark:text-dark-text;
+    color: var(--light-text);
+  }
+
+  .dark button {
+    color: var(--dark-text);
+  }
+}
+
+/* Utility classes */
+@layer utilities {
+  .bg-light-bg {
+    background-color: var(--light-bg);
+  }
+  
+  .bg-dark-bg {
+    background-color: var(--dark-bg);
+  }
+  
+  .text-light-text {
+    color: var(--light-text);
+  }
+  
+  .text-dark-text {
+    color: var(--dark-text);
   }
 
   body, html, #root {
