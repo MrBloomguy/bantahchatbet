@@ -123,12 +123,18 @@ export function usePusherChat(eventId: string) {
       if (error) throw error;
 
       const formattedMessages: PusherChatMessage[] = await Promise.all((data || []).map(async (msg: any) => {
-        // Fetch user profile separately to avoid join permission issues
-        const { data: userData } = await supabase
-          .from('users')
-          .select('id, name, username, avatar_url')
-          .eq('id', msg.sender_id)
-          .single();
+        // Try to fetch user profile, fallback to basic info if permission denied
+        let userData = null;
+        try {
+          const { data: userResult } = await supabase
+            .from('users')
+            .select('id, name, username, avatar_url')
+            .eq('id', msg.sender_id)
+            .single();
+          userData = userResult;
+        } catch (error) {
+          console.log('Could not fetch user data for', msg.sender_id, error);
+        }
 
         return {
           id: msg.id,
@@ -136,7 +142,7 @@ export function usePusherChat(eventId: string) {
           sender_id: msg.sender_id,
           created_at: msg.created_at,
           sender: {
-            name: userData?.name || 'Unknown',
+            name: userData?.name || 'User',
             username: userData?.username || undefined,
             avatar_url: userData?.avatar_url || '/default-avatar.png'
           },

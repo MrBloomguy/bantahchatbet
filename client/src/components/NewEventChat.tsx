@@ -246,7 +246,18 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
 
           if (!error && messageHistory && mounted) {
             const formattedMessages = await Promise.all(messageHistory.map(async (msg: any) => {
-              const senderProfile = await fetchProfile(msg.sender_id);
+              let senderProfile;
+              try {
+                senderProfile = await fetchProfile(msg.sender_id);
+              } catch (error) {
+                console.log('Could not fetch profile for', msg.sender_id);
+                senderProfile = {
+                  name: 'User',
+                  username: 'user',
+                  avatar_url: '/default-avatar.png',
+                  isVerified: false,
+                };
+              }
               return {
                 id: msg.id,
                 content: msg.content,
@@ -313,6 +324,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
       if (error) throw error;
 
       // Send to Pusher channel via API endpoint
+      console.log('Sending message to channel:', channelName);
       const response = await fetch('/api/pusher/message', {
         method: 'POST',
         headers: {
@@ -335,8 +347,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
       });
 
       if (!response.ok) {
+        console.error('Pusher message failed:', await response.text());
         throw new Error('Failed to send message via Pusher');
       }
+      
+      console.log('Message sent successfully via Pusher');
 
     } catch (err: any) {
       console.error('Failed to send Pusher message:', err);
