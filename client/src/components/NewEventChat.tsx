@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, X } from 'lucide-react';
+import { Send, X, ArrowLeft } from 'lucide-react';
 import Header from './Header';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
@@ -675,6 +675,34 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
     loadPredictionData();
   }, [currentUser?.id, eventId]);
 
+  // Helper function to get countdown
+  const getCountdown = () => {
+    if (!event?.end_time) return '';
+    const endTime = new Date(event.end_time);
+    const now = new Date();
+    
+    if (!isNaN(endTime.getTime())) {
+      if (endTime > now) {
+        const diff = endTime.getTime() - now.getTime();
+        const hours = String(Math.floor(diff / (1000 * 60 * 60))).padStart(2, '0');
+        const minutes = String(Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))).padStart(2, '0');
+        const seconds = String(Math.floor((diff % (1000 * 60)) / 1000)).padStart(2, '0');
+        return `${hours}h ${minutes}m ${seconds}s`;
+      } else {
+        return 'Event ended';
+      }
+    } else {
+      return 'Invalid end time';
+    }
+  };
+
+  // Utility to format numbers as 50k/1.2M
+  const formatShortNumber = (num: number): string => {
+    if (num >= 1_000_000) return (num / 1_000_000).toFixed(num % 1_000_000 === 0 ? 0 : 1) + 'M';
+    if (num >= 1_000) return (num / 1_000).toFixed(num % 1_000 === 0 ? 0 : 1) + 'k';
+    return num.toString();
+  };
+
   // Close menu dropdown when clicking outside
   React.useEffect(() => {
     if (!showMenuDropdown) return;
@@ -713,47 +741,205 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      {/* Site Header */}
-      <Header
-        title="Event Chat"
-        showBackButton={true}
-        onMenuClick={undefined}
-        showMenu={false}
-        showSearch={false}
-        onSearchChange={undefined}
-        searchValue={''}
-        onBack={onBack}
-      />
-
-      {/* Pusher connection state indicator */}
-      <div className="w-full flex items-center justify-center bg-gray-50 border-b border-gray-200 text-xs text-gray-600 py-1">
-        <span className={
-          pusherConnectionState === 'connected' ? 'text-green-600' :
-          pusherConnectionState === 'connecting' ? 'text-yellow-600' :
-          pusherConnectionState === 'disconnected' || pusherConnectionState === 'unavailable' || pusherConnectionState === 'failed' ? 'text-red-600' : 'text-gray-600'
-        }>
-          Pusher connection: {pusherConnectionState}
-        </span>
-      </div>
-
-      {/* Compact event banner below header */}
-      {event && bannerOpen && (
-        <div className="flex items-center bg-purple-50 border-b border-purple-200 px-3 py-1.5 text-xs min-h-[38px]">
-          {event.banner_url && (
-            <img src={event.banner_url} alt="Event banner" className="h-7 w-7 rounded object-cover mr-2" />
-          )}
-          <span className="font-semibold text-purple-900 truncate max-w-[120px] mr-2">{event.title}</span>
-          <div className="flex items-center gap-1 mr-2">
-            {event.creator?.avatar_url && (
-              <img src={event.creator.avatar_url} alt="Creator avatar" className="h-5 w-5 rounded-full object-cover" />
-            )}
-            <span className="text-purple-700 font-medium truncate max-w-[80px]">@{event.creator?.username}</span>
-          </div>
-          <button onClick={() => setBannerOpen(false)} className="ml-auto text-purple-400 hover:text-purple-700 p-1" aria-label="Close banner">
-            <X size={16} />
+      {/* Fixed Header */}
+      <div className="flex-shrink-0">
+        {/* Top Bar */}
+        <div className="bg-gray-50 border-b border-gray-200 p-3 flex items-center shadow-sm">
+          <button onClick={onBack} className="mr-4 text-gray-600 hover:text-purple-700">
+            <ArrowLeft size={20} />
           </button>
+          <div className="flex items-center flex-1 min-w-0 gap-3">
+            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+              {event?.creator?.avatar_url ? (
+                <img src={event.creator.avatar_url} alt={event.creator.username || ''} className="w-full h-full object-cover" />
+              ) : (
+                <img src="/bantahlogo.png" alt="" className="w-full h-full object-cover" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <h6 className="font-semibold text-gray-800 flex items-center gap-2">
+                <span className="truncate max-w-[200px]">{event?.title}</span>
+                <span className="text-xs text-gray-400 font-normal flex items-center gap-1 flex-shrink-0">
+                  {event?.creator?.username ? `by @${event.creator.username}` : ''}
+                </span>
+                <span className="ml-1 align-middle inline-flex items-center" title="Verified">
+                  <svg viewBox="0 0 24 24" className="w-3.5 h-3.5 inline-block" fill="#7440ff">
+                    <path d="M22.5 12.5c0-1.58-.875-2.95-2.148-3.6.154-.435.238-.905.238-1.4 0-2.21-1.71-3.998-3.818-3.998-.47 0-.92.084-1.336.25C14.818 2.415 13.51 1.5 12 1.5s-2.816.917-3.437 2.25c-.415-.165-.866-.25-1.336-.25-2.11 0-3.818 1.79-3.818 4 0 .494.083.964.237 1.4-1.272.65-2.147 2.018-2.147 3.6 0 1.495.782 2.798 1.942 3.486-.02.17-.032.34-.032.514 0 2.21 1.708 4 3.818 4 .47 0 .92-.085 1.335-.25.62 1.334 1.926 2.25 3.437 2.25 1.512 0 2.818-.916 3.437-2.25.415.165.865.25 1.336.25 2.11 0 3.818-1.79 3.818-4 0-.174-.012-.344-.033-.513 1.158-.687 1.943-1.99 1.943-3.484zm-6.616-3.334l-4.334 6.5c-.145.217-.382.334-.625.334-.143 0-.288-.04-.416-.126l-.115-.094-2.415-2.415c-.293-.293-.293-.768 0-1.06s.768-.294 1.06 0l1.77 1.767 3.825-5.74c.23-.345.696-.436 1.04-.207.346.23.437.695.21 1.04z" />
+                  </svg>
+                </span>
+              </h6>
+            </div>
+          </div>
+          {/* Menu Dropdown */}
+          <div className="relative ml-2">
+            <button
+              onClick={() => setShowMenuDropdown(!showMenuDropdown)}
+              className="p-2 rounded-full hover:bg-gray-200 transition-colors"
+              aria-label="Menu"
+            >
+              <svg
+                className="w-6 h-6 text-gray-600"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <circle cx="12" cy="12" r="1.5" />
+                <circle cx="19.5" cy="12" r="1.5" />
+                <circle cx="4.5" cy="12" r="1.5" />
+              </svg>
+            </button>
+
+            {/* Dropdown Menu */}
+            {showMenuDropdown && (
+              <div id="event-chat-menu-dropdown" className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <button
+                  onClick={() => {
+                    setShowMenuDropdown(false);
+                    // Add search functionality here
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Search
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMenuDropdown(false);
+                    setBannerOpen(!bannerOpen);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  {bannerOpen ? 'Hide Banner' : 'Show Banner'}
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMenuDropdown(false);
+                    // Add group info functionality here
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  View Group Info
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMenuDropdown(false);
+                    handleShareEvent();
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Share
+                </button>
+                <button
+                  onClick={() => {
+                    setShowMenuDropdown(false);
+                    // Add report functionality here
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"
+                >
+                  Report
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      )}
+
+        {/* Pusher connection state indicator */}
+        <div className="w-full flex items-center justify-center bg-gray-50 border-b border-gray-200 text-xs text-gray-600 py-1">
+          <span className={
+            pusherConnectionState === 'connected' ? 'text-green-600' :
+            pusherConnectionState === 'connecting' ? 'text-yellow-600' :
+            pusherConnectionState === 'disconnected' || pusherConnectionState === 'unavailable' || pusherConnectionState === 'failed' ? 'text-red-600' : 'text-gray-600'
+          }>
+            Pusher connection: {pusherConnectionState}
+          </span>
+        </div>
+
+        {/* Compact Banner - reduced height, no drawer */}
+        {bannerOpen && (
+          <div className="relative w-[98vw] max-w-[700px] mx-auto">
+            <div
+              className="transition-all duration-300 max-h-[56px] opacity-100 overflow-hidden"
+            >
+              <div
+                className="relative border-b border-gray-200 py-1 px-4 shadow-sm flex items-center justify-between min-h-[44px] rounded-lg overflow-hidden"
+                style={{
+                  backgroundImage: event?.banner_url ? `url(${event.banner_url})` : undefined,
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat',
+                }}
+              >
+                <div className="absolute inset-0 bg-gray-900/60 pointer-events-none" />
+                <div className="relative flex items-center gap-6 text-sm text-white z-10">
+                  <span className="flex items-center gap-1">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="inline-block h-3 w-3 mr-1 align-text-top text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth={2.5}
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-xs">{getCountdown()}</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <path d="M17 20h5v-2a4 4 0 00-3-3.87M9 20H4v-2a4 4 0 013-3.87M16 7a4 4 0 11-8 0 4 4 0 018 0zm6 13v-2a4 4 0 00-3-3.87M6 20v-2a4 4 0 013-3.87" />
+                    </svg>
+                    <span className="text-xs">{formatShortNumber(event?.participant_count || 0)}</span>
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                      <text x="2" y="17" fontSize="16" fontFamily="Arial" fill="currentColor">₦</text>
+                    </svg>
+                    <span className="text-xs">{formatShortNumber(event?.pool_total_amount || 0)}</span>
+                  </span>
+                </div>
+                <div className="relative flex items-center gap-2 z-10">
+                  <button
+                    onClick={() => handlePrediction(true)}
+                    disabled={isProcessing || prediction !== null || getCountdown() === 'Event ended'}
+                    className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
+                      prediction === true
+                        ? 'bg-green-700 text-white cursor-not-allowed'
+                        : prediction !== null
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-green-500 text-white hover:bg-green-600'
+                    }`}
+                  >
+                    YES
+                    {predictionCounts && predictionCounts.yes > 0 && (
+                      <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-green-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
+                        {predictionCounts.yes}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => handlePrediction(false)}
+                    disabled={isProcessing || prediction !== null || getCountdown() === 'Event ended'}
+                    className={`relative px-3 py-1.5 text-base font-semibold rounded-md transition-colors ${
+                      prediction === false
+                        ? 'bg-red-700 text-white cursor-not-allowed'
+                        : prediction !== null
+                        ? 'bg-gray-400 text-white cursor-not-allowed'
+                        : 'bg-red-500 text-white hover:bg-red-600'
+                    }`}
+                  >
+                    NO
+                    {predictionCounts && predictionCounts.no > 0 && (
+                      <span className="absolute top-0 right-0 -mt-1 -mr-1 bg-white text-red-700 text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center shadow">
+                        {predictionCounts.no}
+                      </span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Pusher connection error banner */}
       {pusherError && (
