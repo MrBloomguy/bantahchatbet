@@ -107,7 +107,7 @@ const ChallengeModal: React.FC<ChallengeModalProps> = ({
 
       await supabase.from('notifications').insert({
         user_id: challengedId,
-        type: 'challenge_received',
+        type: 'challenge',
         title: 'New Challenge Received',
         content: `@${challengerData.username} has challenged you to a ${challengeData.gameType} match.`,
         metadata: {
