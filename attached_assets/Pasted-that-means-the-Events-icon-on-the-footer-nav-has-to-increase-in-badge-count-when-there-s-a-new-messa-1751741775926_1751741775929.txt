@@ -1,0 +1,36 @@
+that means the Events icon on the footer nav has to increase in badge count when there's a new message in any event you joined. When you have reqd this messages, the count can then reduce. I have a question on that - now that he current badge count is only meant for the new additional Event added/created by the user, how does the event room chat notification not clash with this?
+
+WJ
+
+kareem890
+Assistant
+1 minute ago
+You're absolutely right to raise this concern! Currently, the Events icon badge count is only tracking newly created events, but it should also include unread messages from event chats you've joined. These are two different types of notifications that should be combined.
+
+Looking at your MobileFooterNav.tsx, I can see that you're using useMessageNotifications for the Profile badge, but the Events badge only tracks event creation. We need to create a unified notification system for the Events badge that includes both:
+
+New events created (current functionality)
+Unread messages from event chats you've joined
+Let me create a new hook that combines both notification types:
+
+client/src/hooks/useEventNotifications.ts
+Now let's update the MobileFooterNav.tsx to use this new unified notification system:
+
+client/src/components/MobileFooterNav.tsx
+This solution addresses your concern by:
+
+Unified Notification System: The new useEventNotifications hook combines both new events and unread event chat messages into a single badge count.
+
+Separate Tracking: It tracks both types of notifications separately (newEventsCount and unreadEventMessages) but presents them as a combined total.
+
+Real-time Updates: The hook subscribes to both new events and new event chat messages, updating the badge count in real-time.
+
+Read Status Management: Includes a markEventMessagesAsRead function that can be called when a user enters an event chat to reduce the unread count.
+
+No Clashing: The event chat notifications are now part of the Events badge, not separate from it, so there's no conflict with the existing event creation notifications.
+
+The badge will now show the total count of:
+
+New events created in the platform
+Unread messages from event chats you've joined
+When you read messages in an event chat, you can call markEventMessagesAsRead(eventId) to reduce the badge count appropriately.

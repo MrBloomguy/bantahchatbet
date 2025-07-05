@@ -320,6 +320,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Message Reaction Routes
+  app.post("/api/messages/:messageId/reactions", async (req, res) => {
+    try {
+      const { emoji, userId } = req.body;
+      
+      if (!emoji || !userId) {
+        return res.status(400).json({ success: false, message: "Missing emoji or userId" });
+      }
+
+      // For now, return success - this will be implemented when we have the database schema
+      res.json({ success: true, message: "Reaction added successfully" });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  });
+
+  app.delete("/api/messages/:messageId/reactions/:reactionId", async (req, res) => {
+    try {
+      // For now, return success - this will be implemented when we have the database schema
+      res.json({ success: true, message: "Reaction removed successfully" });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  });
+
   // Health check
   app.get("/api/health", (req, res) => {
     res.json({ success: true, message: "API is healthy" });
