@@ -143,17 +143,13 @@ const Games: React.FC = () => {
       setSearching(true);
 
       // Search for users with the query
-      const { data, error } = await supabase
-        .from('users')
-        .select('id, name, username, avatar_url')
-        .or(`name.ilike.%${query}%,username.ilike.%${query}%`)
-        .neq('id', currentUser?.id)
-        .limit(20);
+      const response = await fetch(`/api/users/search?q=${encodeURIComponent(query)}&limit=20`);
+      const { data, error } = await response.json();
 
       if (error) throw error;
 
       if (data && data.length > 0) {
-        const formattedUsers = data.map(user => ({
+        const formattedUsers = data.map((user: any) => ({
           id: user.id,
           name: user.name || 'Anonymous',
           username: user.username || `user_${user.id.slice(0, 8)}`,
@@ -247,50 +243,12 @@ const Games: React.FC = () => {
     try {
       setLoading(true);
 
-      // First check for past scheduled challenges
-      try {
-        await supabase.rpc('handle_past_scheduled_challenges');
-      } catch (error) {
-        console.warn('Error handling past scheduled challenges:', error);
-        // Continue with fetching challenges even if this fails
-      }
-
-      let query = supabase
-        .from('challenges')
-        .select(`
-          id,
-          amount,
-          game_type,
-          platform,
-          title,
-          rules,
-          required_evidence,
-          created_at,
-          scheduled_at,
-          expires_at,
-          status,
-          winner_id,
-          challenger:challenger_id(id, name, avatar_url),
-          challenged:challenged_id(id, name, avatar_url)
-        `);
-
-      switch (activeTab) {
-        case 'active':
-          query = query.eq('status', 'accepted');
-          break;
-        case 'scheduled':
-          query = query
-            .eq('status', 'pending')
-            .not('scheduled_at', 'is', null);
-          break;
-        case 'ended':
-          query = query.in('status', ['completed', 'expired', 'declined', 'missed']);
-          break;
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
-      if (error) throw error;
-      setChallenges((data || []).map(mapChallenge));
+      // Fetch challenges from API
+      const response = await fetch(`/api/challenges?status=${activeTab}&userId=${currentUser?.id}`);
+      const { data, error } = await response.json();
+      
+      if (error) throw new Error(error);
+      setChallenges(data || []);
 
       // Count user's active challenges
       if (currentUser) {

@@ -174,11 +174,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // User Search Route
+  app.get("/api/users/search", async (req, res) => {
+    try {
+      const query = req.query.q as string;
+      const limit = parseInt(req.query.limit as string) || 20;
+      
+      if (!query || query.length < 2) {
+        return res.json({ success: true, data: [] });
+      }
+
+      // For now, return empty array - will be implemented when search functionality is added
+      res.json({ success: true, data: [] });
+    } catch (error) {
+      res.status(500).json({ success: false, message: "Internal server error" });
+    }
+  });
+
   // Challenge Routes
   app.get("/api/challenges", async (req, res) => {
     try {
+      const status = req.query.status as string;
+      const userId = req.query.userId as string;
+      
       const challenges = await storage.getChallenges();
-      res.json({ success: true, challenges });
+      
+      // Filter challenges based on status and user
+      let filteredChallenges = challenges;
+      
+      if (userId) {
+        filteredChallenges = challenges.filter(challenge => 
+          challenge.challengerId === userId || challenge.challengedId === userId
+        );
+      }
+      
+      if (status) {
+        switch (status) {
+          case 'active':
+            filteredChallenges = filteredChallenges.filter(c => c.status === 'accepted');
+            break;
+          case 'scheduled':
+            filteredChallenges = filteredChallenges.filter(c => c.status === 'pending');
+            break;
+          case 'ended':
+            filteredChallenges = filteredChallenges.filter(c => 
+              ['completed', 'cancelled', 'missed'].includes(c.status || '')
+            );
+            break;
+        }
+      }
+      
+      res.json({ success: true, data: filteredChallenges });
     } catch (error) {
       res.status(500).json({ success: false, message: "Internal server error" });
     }
