@@ -115,20 +115,37 @@ export function usePusherChat(eventId: string) {
           media_url,
           media_type,
           mentions,
-          reply_to,
-          users!inner (
-            id,
-            name,
-            username,
-            avatar_url
-          )
+          reply_to
         `)
         .eq('event_id', eventId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
 
-      const formattedMessages: PusherChatMessage[] = (data || []).map(formatMessage);
+      const formattedMessages: PusherChatMessage[] = await Promise.all((data || []).map(async (msg: any) => {
+        // Fetch user profile separately to avoid join permission issues
+        const { data: userData } = await supabase
+          .from('users')
+          .select('id, name, username, avatar_url')
+          .eq('id', msg.sender_id)
+          .single();
+
+        return {
+          id: msg.id,
+          content: msg.content,
+          sender_id: msg.sender_id,
+          created_at: msg.created_at,
+          sender: {
+            name: userData?.name || 'Unknown',
+            username: userData?.username || undefined,
+            avatar_url: userData?.avatar_url || '/default-avatar.png'
+          },
+          media_type: msg.media_type || undefined,
+          media_url: msg.media_url || undefined,
+          mentions: msg.mentions || undefined,
+          reply_to: msg.reply_to || undefined
+        };
+      }));
       setMessages(formattedMessages);
       
       formattedMessages.forEach(msg => processedMessageIds.current.add(msg.id));

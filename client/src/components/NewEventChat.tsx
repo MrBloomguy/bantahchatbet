@@ -238,35 +238,26 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
               media_url,
               media_type,
               mentions,
-              reply_to,
-              users!inner (
-                id,
-                name,
-                username,
-                avatar_url,
-                is_verified
-              )
+              reply_to
             `)
             .eq('event_id', eventId)
             .order('created_at', { ascending: true })
             .limit(50);
 
           if (!error && messageHistory && mounted) {
-            const formattedMessages = messageHistory.map((msg: any) => ({
-              id: msg.id,
-              content: msg.content,
-              created_at: msg.created_at,
-              sender_id: msg.sender_id,
-              sender: {
-                name: msg.users[0]?.name || 'Unknown',
-                username: msg.users[0]?.username || 'unknown',
-                avatar_url: msg.users[0]?.avatar_url || '',
-                isVerified: !!msg.users[0]?.is_verified,
-              },
-              media_type: msg.media_type,
-              media_url: msg.media_url,
-              mentions: msg.mentions,
-              reply_to: msg.reply_to,
+            const formattedMessages = await Promise.all(messageHistory.map(async (msg: any) => {
+              const senderProfile = await fetchProfile(msg.sender_id);
+              return {
+                id: msg.id,
+                content: msg.content,
+                created_at: msg.created_at,
+                sender_id: msg.sender_id,
+                sender: senderProfile,
+                media_type: msg.media_type,
+                media_url: msg.media_url,
+                mentions: msg.mentions,
+                reply_to: msg.reply_to,
+              };
             }));
             setMessages(formattedMessages);
           }
