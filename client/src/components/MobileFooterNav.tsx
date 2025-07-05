@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { useMessageNotifications } from '../hooks/useMessageNotifications';
+import { useEventNotifications } from '../hooks/useEventNotifications';
 
 const MobileFooterNav: React.FC = () => {
   const navigate = useNavigate();
@@ -13,46 +14,27 @@ const MobileFooterNav: React.FC = () => {
   if (isAdminPage) return null;
   const currentPath = location.pathname;
   const { currentUser } = useAuth();
-  const [eventCount, setEventCount] = useState(0);
   const [challengeCount, setChallengeCount] = useState(0);
   const { unreadMessages, pendingFriendRequests } = useMessageNotifications();
+  const { totalEventNotifications } = useEventNotifications();
 
   // Calculate total message notifications
   const totalMessageNotifications = unreadMessages + pendingFriendRequests;
 
   useEffect(() => {
-    const fetchCounts = async () => {
-      // Get active events count (excluding challenges)
-      const { count: eventsCount } = await supabase
-        .from('events')
-        .select('*', { count: 'exact', head: true })
-        .eq('status', 'active')
-        .neq('type', 'challenge');
-
+    const fetchChallengeCount = async () => {
       // Get active challenges count
       const { count: challengesCount } = await supabase
         .from('challenges')
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
 
-      setEventCount(eventsCount || 0);
       setChallengeCount(challengesCount || 0);
     };
 
-    fetchCounts();
+    fetchChallengeCount();
 
-    // Set up real-time subscription for updates
-    const eventsSubscription = supabase
-      .channel('events-changes')
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'events'
-      }, () => {
-        fetchCounts();
-      })
-      .subscribe();
-
+    // Set up real-time subscription for challenge updates
     const challengesSubscription = supabase
       .channel('challenges-changes')
       .on('postgres_changes', {
@@ -60,12 +42,11 @@ const MobileFooterNav: React.FC = () => {
         schema: 'public',
         table: 'challenges'
       }, () => {
-        fetchCounts();
+        fetchChallengeCount();
       })
       .subscribe();
 
     return () => {
-      eventsSubscription.unsubscribe();
       challengesSubscription.unsubscribe();
     };
   }, []);
@@ -82,7 +63,7 @@ const MobileFooterNav: React.FC = () => {
       path: '/events',
       icon: <img src="/eventssvg.svg" alt="Events Icon" className="w-6 h-6" />,
       label: 'Events',
-      badge: eventCount > 0 ? formatNotificationCount(eventCount) : undefined,
+      badge: totalEventNotifications > 0 ? formatNotificationCount(totalEventNotifications) : undefined,
     },
     {
       id: 'games',
