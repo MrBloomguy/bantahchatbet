@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, X } from 'lucide-react';
 import Header from './Header';
@@ -7,9 +8,7 @@ import { useEventParticipation } from '../hooks/useEventParticipation';
 import { useEventPool } from '../hooks/useEventPool';
 import { supabase } from '../lib/supabase';
 import ChatBubble from './ChatBubble';
-import * as Ably from 'ably';
-import { ChatClient, ChatMessageEvent } from '@ably/chat';
-
+import Pusher from 'pusher-js';
 
 // Update the Gif interface to match Tenor's API response
 interface Gif {
@@ -39,7 +38,7 @@ interface EventPool {
 interface Event {
   id: string;
   title: string;
-  description?: string; // Added description property
+  description?: string;
   creator: EventCreator;
   pool: EventPool[];
   participants: { user_id: string }[];
@@ -80,79 +79,91 @@ interface ChatMessage {
 }
 
 const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
-  // --- Ably connection state indicator ---
-  const [ablyConnectionState, setAblyConnectionState] = useState<string>('connecting');
+  // --- Pusher connection state indicator ---
+  const [pusherConnectionState, setPusherConnectionState] = useState<string>('connecting');
 
   const { currentUser } = useAuth();
 
-  // --- Ably config ---
-  const roomName = `event-chat-${eventId}`;
-  const ablyApiKey = import.meta.env.VITE_ABLY_API_KEY;
-  const ablyClientId = currentUser?.user_metadata?.username || 'guest';
+  // --- Pusher config ---
+  const channelName = `event-chat-${eventId}`;
+  const pusherKey = "decd2cca5e39cf0cbcd4";
+  const pusherCluster = "mt1";
 
-  // Memoize Ably Realtime and ChatClient (declare only once!)
-  const ablyRealtime = React.useMemo(() => {
-    if (!ablyApiKey) return null;
-    return new Ably.Realtime({ key: ablyApiKey, clientId: ablyClientId });
-  }, [ablyApiKey, ablyClientId]);
+  // Memoize Pusher client
+  const pusherClient = React.useMemo(() => {
+    if (!pusherKey) return null;
+    
+    const pusher = new Pusher(pusherKey, {
+      cluster: pusherCluster,
+      encrypted: true,
+      authEndpoint: '/api/pusher/auth',
+      auth: {
+        headers: {
+          'Authorization': `Bearer ${currentUser?.access_token || ''}`
+        }
+      }
+    });
 
-  // Listen for Ably connection state changes (must be after ablyRealtime is defined)
+    return pusher;
+  }, [pusherKey, pusherCluster, currentUser?.access_token]);
+
+  // Listen for Pusher connection state changes
   useEffect(() => {
-    if (!ablyRealtime) return;
-    const handler = (stateChange: any) => {
-      setAblyConnectionState(stateChange.current || ablyRealtime.connection.state);
+    if (!pusherClient) return;
+    
+    const handleStateChange = (state: string) => {
+      setPusherConnectionState(state);
     };
-    ablyRealtime.connection.on('connected', handler);
-    ablyRealtime.connection.on('connecting', handler);
-    ablyRealtime.connection.on('disconnected', handler);
-    ablyRealtime.connection.on('suspended', handler);
-    ablyRealtime.connection.on('closed', handler);
-    ablyRealtime.connection.on('failed', handler);
+
+    pusherClient.connection.bind('state_change', (states: any) => {
+      handleStateChange(states.current);
+    });
+
     // Set initial state
-    setAblyConnectionState(ablyRealtime.connection.state);
+    setPusherConnectionState(pusherClient.connection.state);
+
     return () => {
-      ablyRealtime.connection.off('connected', handler);
-      ablyRealtime.connection.off('connecting', handler);
-      ablyRealtime.connection.off('disconnected', handler);
-      ablyRealtime.connection.off('suspended', handler);
-      ablyRealtime.connection.off('closed', handler);
-      ablyRealtime.connection.off('failed', handler);
+      pusherClient.connection.unbind('state_change');
     };
-  }, [ablyRealtime]);
+  }, [pusherClient]);
+
   const toast = useToast();
   const { joinEvent, getUserPrediction, getPredictionCounts } = useEventParticipation();
   const { updatePoolAmount } = useEventPool();
-  // Removed unused followUser, unfollowUser
 
   const [event, setEvent] = useState<Event | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [ablyError, setAblyError] = useState<string | null>(null);
+  const [pusherError, setPusherError] = useState<string | null>(null);
   const [message, setMessage] = useState('');
-  // Only keep used state
   const [userPoints, setUserPoints] = useState<{ [key: string]: number }>({});
   const [bannerOpen, setBannerOpen] = useState(true);
   const [showMenuDropdown, setShowMenuDropdown] = useState(false);
   const [loadingEvent, setLoadingEvent] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
-  // --- Ably Chat SDK direct integration ---
-  const chatClient = React.useMemo(() => {
-    if (!ablyRealtime) return null;
-    return new ChatClient(ablyRealtime);
-  }, [ablyRealtime]);
-
   // State for messages
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [prediction, setPrediction] = useState<boolean | null>(null);
+  const [predictionCounts, setPredictionCounts] = useState<{yes: number, no: number} | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const [gifs, setGifs] = useState<Gif[]>([]);
+  const [mentionResults, setMentionResults] = useState<Array<{id: string, username: string}>>([]);
+  const [showMentionDropdown, setShowMentionDropdown] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [searchResults, setSearchResults] = useState<{messages: any[], users: any[]}>({messages: [], users: []});
 
-  // Subscribe to room events
+  // Subscribe to Pusher channel events
   useEffect(() => {
-    if (!chatClient) return;
-    let room: any;
-    let unsubMsg: any;
-    let unsubTyping: any;
+    if (!pusherClient) return;
+    
+    let channel: any;
     let mounted = true;
+    
     setIsLoading(true);
-    setAblyError(null);
+    setPusherError(null);
+
     // Helper to fetch user profile for a given senderId
     const fetchProfile = async (senderId: string) => {
       if (!senderId || senderId === 'guest') {
@@ -192,122 +203,154 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
         };
       }
     };
-    (async () => {
+
+    const setupChannel = async () => {
       try {
-        room = await chatClient.rooms.get(roomName);
-        // Attach to room first
-        await room.attach();
-        // Fetch message history if available
-        if (room.messages && room.messages.getHistory) {
-          try {
-            const history = await room.messages.getHistory({ limit: 50 });
-            if (mounted && Array.isArray(history)) {
-              // Fetch all unique senderIds
-              const senderIds = Array.from(new Set(history.map((m: any) => m.senderId).filter(Boolean)));
-              const senderProfiles: { [id: string]: any } = {};
-              await Promise.all(senderIds.map(async (id) => {
-                senderProfiles[id] = await fetchProfile(id);
-              }));
-              setMessages(history.map((message: any) => ({
-                id: message.id || message.timestamp || Math.random().toString(),
-                content: message.text || '',
-                created_at: message.timestamp ? new Date(message.timestamp).toISOString() : new Date().toISOString(),
-                sender_id: message.senderId || 'guest',
-                sender: senderProfiles[message.senderId] || senderProfiles['guest'],
-              })));
-            }
-          } catch (err) {
-            // Ignore if not supported
-          }
-        }
-        // Subscribe to messages
-        unsubMsg = room.messages.subscribe(async (event: ChatMessageEvent) => {
+        channel = pusherClient.subscribe(channelName);
+        
+        // Bind to message events
+        channel.bind('new-message', async (data: any) => {
           if (!mounted) return;
-          const msg: any = event.message;
-          // Use Ably Chat SDK fields (fallback to any for compatibility)
-          let senderProfile = msg.data && msg.data.sender ? msg.data.sender : null;
-          const senderId = msg.clientId || 'guest';
-          if (!senderProfile) {
-            senderProfile = await fetchProfile(senderId);
-          }
+          
+          const senderProfile = data.sender || await fetchProfile(data.sender_id);
+          
           setMessages((prev) => [
             ...prev,
             {
-              id: msg.id || msg.timestamp?.toString() || Math.random().toString(),
-              content: msg.text || '',
-              created_at: msg.timestamp ? new Date(msg.timestamp).toISOString() : new Date().toISOString(),
-              sender_id: senderId,
+              id: data.id || Math.random().toString(),
+              content: data.content || '',
+              created_at: data.created_at || new Date().toISOString(),
+              sender_id: data.sender_id || 'guest',
               sender: senderProfile,
             }
           ]);
         });
-        // Subscribe to typing (if supported)
-        // Typing events are not used in UI, so skip subscribing
+
+        // Load initial message history from Supabase
+        try {
+          const { data: messageHistory, error } = await supabase
+            .from('event_chat_messages')
+            .select(`
+              id,
+              content,
+              sender_id,
+              created_at,
+              media_url,
+              media_type,
+              mentions,
+              reply_to,
+              users!inner (
+                id,
+                name,
+                username,
+                avatar_url,
+                is_verified
+              )
+            `)
+            .eq('event_id', eventId)
+            .order('created_at', { ascending: true })
+            .limit(50);
+
+          if (!error && messageHistory && mounted) {
+            const formattedMessages = messageHistory.map((msg: any) => ({
+              id: msg.id,
+              content: msg.content,
+              created_at: msg.created_at,
+              sender_id: msg.sender_id,
+              sender: {
+                name: msg.users[0]?.name || 'Unknown',
+                username: msg.users[0]?.username || 'unknown',
+                avatar_url: msg.users[0]?.avatar_url || '',
+                isVerified: !!msg.users[0]?.is_verified,
+              },
+              media_type: msg.media_type,
+              media_url: msg.media_url,
+              mentions: msg.mentions,
+              reply_to: msg.reply_to,
+            }));
+            setMessages(formattedMessages);
+          }
+        } catch (err) {
+          console.error('Error loading message history:', err);
+        }
+
       } catch (err) {
-        // Room attach or history failed
-        console.error('Ably room setup error:', err);
-        setAblyError('Unable to connect to chat server. Your network or environment may be blocking access to Ably.');
+        console.error('Pusher channel setup error:', err);
+        setPusherError('Unable to connect to chat server. Please check your connection.');
       } finally {
         setIsLoading(false);
       }
-    })();
+    };
+
+    setupChannel();
+
     return () => {
       mounted = false;
-      if (unsubMsg && typeof unsubMsg.unsubscribe === 'function') unsubMsg.unsubscribe();
-      if (unsubTyping && typeof unsubTyping.unsubscribe === 'function') unsubTyping.unsubscribe();
-      if (room) {
-        try {
-          chatClient.rooms.release(roomName);
-        } catch (err) {
-          // Silently ignore Ably detach errors
-        }
+      if (channel) {
+        pusherClient.unsubscribe(channelName);
       }
     };
-  }, [chatClient, roomName, ablyClientId]);
+  }, [pusherClient, channelName, eventId]);
 
   // Send message function
-  const sendAblyMessage = async (content: string) => {
-    if (!chatClient) {
-      console.error('Ably ChatClient not initialized');
-      setAblyError('Chat is not connected. Please refresh.');
-      toast.showError('Chat is not connected. Please refresh.');
-      return;
-    }
+  const sendPusherMessage = async (content: string) => {
     if (!currentUser) {
       toast.showError('You must be signed in to send messages.');
       return;
     }
+
     try {
-      const room = await chatClient.rooms.get(roomName);
-      if (!room) {
-        console.error('Ably room not found:', roomName);
-        setAblyError('Chat room not found.');
-        toast.showError('Chat room not found.');
-        return;
+      // Save message to Supabase first
+      const { data: newMessage, error } = await supabase
+        .from('event_chat_messages')
+        .insert([{
+          event_id: eventId,
+          sender_id: currentUser.id,
+          content: content,
+          created_at: new Date().toISOString()
+        }])
+        .select(`
+          id,
+          content,
+          sender_id,
+          created_at,
+          media_url,
+          media_type
+        `)
+        .single();
+
+      if (error) throw error;
+
+      // Send to Pusher channel via API endpoint
+      const response = await fetch('/api/pusher/message', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${currentUser.access_token || ''}`
+        },
+        body: JSON.stringify({
+          channel: channelName,
+          event: 'new-message',
+          data: {
+            ...newMessage,
+            sender: {
+              name: currentUser.user_metadata?.name || currentUser.user_metadata?.username || 'Guest',
+              username: currentUser.user_metadata?.username || 'guest',
+              avatar_url: currentUser.user_metadata?.avatar_url || '',
+              isVerified: !!currentUser.user_metadata?.is_verified,
+            }
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send message via Pusher');
       }
-      await room.attach();
-      // Compose user info for payload
-      const userInfo = {
-        name: currentUser.user_metadata?.name || currentUser.user_metadata?.username || 'Guest',
-        username: currentUser.user_metadata?.username || 'guest',
-        avatar_url: currentUser.user_metadata?.avatar_url || '',
-        isVerified: !!currentUser.user_metadata?.is_verified,
-      };
-      // Send message with user info in data (cast as any to satisfy TS)
-      await room.messages.send({
-        text: content,
-        data: {
-          sender: userInfo
-        }
-      } as any);
+
     } catch (err: any) {
-      console.error('Failed to send Ably message:', err);
-      setAblyError('Unable to connect to chat server. Your network or environment may be blocking access to Ably.');
-      if (err && err.message && err.message.includes('network unreachable')) {
-        toast.showError('Unable to connect to chat server. Your network or environment is blocking access to Ably. Please try from a different network or run locally.');
-      } else {
-        toast.showError('Failed to send message.');
-      }
+      console.error('Failed to send Pusher message:', err);
+      setPusherError('Unable to send message. Please try again.');
+      toast.showError('Failed to send message.');
     }
   };
 
@@ -315,10 +358,6 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
-
-
-  // Move fetchUserPoints above useEffect to avoid ReferenceError
-  // (fetchUserPoints moved above)
 
   // Fetch user points for all message senders
   useEffect(() => {
@@ -334,17 +373,12 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
     const newValue = e.target.value;
     setMessage(newValue);
     handleMention(newValue);
-    // No need to manually broadcast typing
   };
 
-  // (Old sendAblyMessage removed, now using direct SDK sendAblyMessage only)
-
-  // Removed unused handleSubmit
-
-  // Correct the sendMessage function calls to use valid properties
+  // Handle GIF selection
   const handleGifSelection = async (gifUrl: string) => {
     try {
-      await sendAblyMessage('');
+      await sendPusherMessage('');
       setShowGifPicker(false);
     } catch (error) {
       toast.showError('Failed to send GIF');
@@ -387,7 +421,6 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
   // Handle reply
   const handleReply = (msg: ChatMessage) => {
     setReplyingTo(msg);
-    // Focus the input field
     const inputField = document.querySelector('input[type="text"]') as HTMLInputElement;
     if (inputField) {
       inputField.focus();
@@ -395,7 +428,6 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
   };
 
   const fetchUserPoints = async (userId: string) => {
-    // Prevent invalid uuid queries (e.g., 'guest')
     if (userPoints[userId] || userId === 'guest') return;
 
     try {
@@ -498,7 +530,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
     }
   };
 
-  // Share event: just share the event chatroom link, no OG image, no description
+  // Share event
   const handleShareEvent = () => {
     const eventChatUrl = `${window.location.origin}/event/${eventId}`;
     const shareContent = {
@@ -511,7 +543,6 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
       navigator.share(shareContent)
         .catch((error) => {
           console.error('Error sharing:', error);
-          // Fallback to clipboard if Web Share API fails
           copyToClipboard(eventChatUrl);
         });
     } else {
@@ -530,19 +561,19 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
   const handleSearch = async () => {
     if (!searchInput.trim()) return;
     try {
-      // Search messages
       const { data: messages, error: messageError } = await supabase
         .from('event_chat_messages')
         .select('*')
         .ilike('content', `%${searchInput}%`)
         .eq('event_id', eventId);
       if (messageError) throw messageError;
-      // Search users
+      
       const { data: users, error: userError } = await supabase
         .from('users')
         .select('id, username, name')
         .ilike('username', `%${searchInput}%`);
       if (userError) throw userError;
+      
       setSearchResults({ messages: messages || [], users: users || [] });
     } catch (error) {
       toast.showError('Search failed');
@@ -611,8 +642,6 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Removed countdown effect (setCountdown not defined)
-
   useEffect(() => {
     messages.forEach((msg) => {
       if (msg.sender_id) {
@@ -654,17 +683,9 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showMenuDropdown]);
 
-  // Removed reactions effect (setMessageReactions not defined)
-
-  // Fetch initial follow state for event creator
-  // Removed follow state effect (setIsFollowing not defined)
-
-  // Removed handleFollowBadgeClick (follow state not implemented)
-
   if (loadingEvent || !event) {
     return (
       <div className="flex flex-col h-screen bg-white items-center justify-center p-6">
-        {/* Skeleton loader for chat room */}
         <div className="w-full max-w-md mx-auto">
           <div className="flex items-center gap-3 mb-6">
             <div className="w-10 h-10 rounded-full bg-gray-200 animate-pulse" />
@@ -685,11 +706,8 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
     );
   }
 
-  // ...existing code before render...
-
   return (
     <div className="flex flex-col h-screen bg-white">
-
       {/* Site Header */}
       <Header
         title="Event Chat"
@@ -702,18 +720,18 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
         onBack={onBack}
       />
 
-      {/* Ably connection state indicator */}
+      {/* Pusher connection state indicator */}
       <div className="w-full flex items-center justify-center bg-gray-50 border-b border-gray-200 text-xs text-gray-600 py-1">
         <span className={
-          ablyConnectionState === 'connected' ? 'text-green-600' :
-          ablyConnectionState === 'connecting' ? 'text-yellow-600' :
-          ablyConnectionState === 'disconnected' || ablyConnectionState === 'suspended' || ablyConnectionState === 'closed' || ablyConnectionState === 'failed' ? 'text-red-600' : 'text-gray-600'
+          pusherConnectionState === 'connected' ? 'text-green-600' :
+          pusherConnectionState === 'connecting' ? 'text-yellow-600' :
+          pusherConnectionState === 'disconnected' || pusherConnectionState === 'unavailable' || pusherConnectionState === 'failed' ? 'text-red-600' : 'text-gray-600'
         }>
-          Ably connection: {ablyConnectionState}
+          Pusher connection: {pusherConnectionState}
         </span>
       </div>
 
-      {/* Compact event banner below header (restored original minimal design) */}
+      {/* Compact event banner below header */}
       {event && bannerOpen && (
         <div className="flex items-center bg-purple-50 border-b border-purple-200 px-3 py-1.5 text-xs min-h-[38px]">
           {event.banner_url && (
@@ -731,13 +749,14 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
           </button>
         </div>
       )}
-      {/* Ably connection error banner */}
-      {ablyError && (
+
+      {/* Pusher connection error banner */}
+      {pusherError && (
         <div className="bg-red-100 border border-red-300 text-red-700 px-4 py-2 text-center text-sm">
-          {ablyError} <br />
-          <span className="text-xs">If you are on a restricted network, try a different network or check your Ably API key.</span>
+          {pusherError}
         </div>
       )}
+
       {/* Scrollable Messages Area */}
       <div className="flex-1 overflow-y-auto">
         <div className="p-4 space-y-3">
@@ -760,7 +779,6 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
                     hasAvatar={!!msg.sender?.avatar_url}
                     avatarUrl={msg.sender?.avatar_url}
                     points={userPoints[msg.sender_id]}
-                    // ...other props as needed...
                   />
                 </div>
               );
@@ -783,7 +801,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
             if (!currentUser) return;
             if (message.trim()) {
               try {
-                await sendAblyMessage(message.trim());
+                await sendPusherMessage(message.trim());
                 setMessage('');
               } catch (err) {
                 toast.showError('Failed to send message.');
@@ -814,8 +832,5 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
     </div>
   );
 };
-
-// Utility to format numbers as 50k/1.2M
-// Removed unused formatShortNumber
 
 export default NewEventChat;
