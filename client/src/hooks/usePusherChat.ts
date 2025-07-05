@@ -174,9 +174,9 @@ export function usePusherChat(eventId: string) {
       sender_id: currentUser.id,
       created_at: new Date().toISOString(),
       sender: {
-        name: currentUser.user_metadata?.name || currentUser.email || 'Unknown',
-        username: currentUser.user_metadata?.username,
-        avatar_url: currentUser.user_metadata?.avatar_url || '/default-avatar.png'
+        name: currentUser.name || currentUser.user_metadata?.name || currentUser.email || 'User',
+        username: currentUser.username || currentUser.user_metadata?.username || 'user',
+        avatar_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || '/default-avatar.png'
       },
       media_type: mediaType,
       media_url: mediaUrl,
@@ -259,9 +259,9 @@ export function usePusherChat(eventId: string) {
             data: {
               ...newMessage,
               sender: {
-                name: currentUser.user_metadata?.name || currentUser.email || 'Unknown',
-                username: currentUser.user_metadata?.username,
-                avatar_url: currentUser.user_metadata?.avatar_url || '/default-avatar.png'
+                name: currentUser.name || currentUser.user_metadata?.name || currentUser.email || 'User',
+                username: currentUser.username || currentUser.user_metadata?.username || 'user',
+                avatar_url: currentUser.avatar_url || currentUser.user_metadata?.avatar_url || '/default-avatar.png'
               }
             }
           })

@@ -166,11 +166,11 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
 
     // Helper to fetch user profile for a given senderId
     const fetchProfile = async (senderId: string) => {
-      if (!senderId || senderId === 'guest') {
+      if (!senderId) {
         return {
-          name: 'Guest',
-          username: 'guest',
-          avatar_url: '',
+          name: 'Unknown User',
+          username: 'unknown',
+          avatar_url: '/default-avatar.png',
           isVerified: false,
         };
       }
@@ -182,23 +182,23 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
           .single();
         if (error || !data) {
           return {
-            name: senderId,
-            username: senderId,
-            avatar_url: '',
+            name: data?.name || 'Unknown User',
+            username: data?.username || 'unknown',
+            avatar_url: '/default-avatar.png',
             isVerified: false,
           };
         }
         return {
-          name: data.name || data.username || senderId,
-          username: data.username || senderId,
-          avatar_url: data.avatar_url || '',
+          name: data.name || data.username || 'Unknown User',
+          username: data.username || 'unknown',
+          avatar_url: data.avatar_url || '/default-avatar.png',
           isVerified: !!data.is_verified,
         };
       } catch {
         return {
-          name: senderId,
-          username: senderId,
-          avatar_url: '',
+          name: 'Unknown User',
+          username: 'unknown',
+          avatar_url: '/default-avatar.png',
           isVerified: false,
         };
       }
@@ -220,7 +220,7 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
               id: data.id || Math.random().toString(),
               content: data.content || '',
               created_at: data.created_at || new Date().toISOString(),
-              sender_id: data.sender_id || 'guest',
+              sender_id: data.sender_id,
               sender: senderProfile,
             }
           ]);
@@ -337,9 +337,9 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
           data: {
             ...newMessage,
             sender: {
-              name: currentUser.user_metadata?.name || currentUser.user_metadata?.username || 'Guest',
-              username: currentUser.user_metadata?.username || 'guest',
-              avatar_url: currentUser.user_metadata?.avatar_url || '',
+              name: currentUser.user_metadata?.name || currentUser.user_metadata?.username || currentUser.name || 'User',
+              username: currentUser.user_metadata?.username || currentUser.username || 'user',
+              avatar_url: currentUser.user_metadata?.avatar_url || currentUser.avatar_url || '/default-avatar.png',
               isVerified: !!currentUser.user_metadata?.is_verified,
             }
           }
