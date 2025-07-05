@@ -4,7 +4,11 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 
-const NotificationTester: React.FC = () => {
+interface NotificationTesterProps {
+  eventId?: string;
+}
+
+const NotificationTester: React.FC<NotificationTesterProps> = ({ eventId }) => {
   const { currentUser } = useAuth();
   const toast = useToast();
   const [loading, setLoading] = useState(false);
@@ -24,9 +28,10 @@ const NotificationTester: React.FC = () => {
           content: 'John: What do you think about the match tomorrow?',
           notification_type: 'group_message',
           metadata: {
-            group_name: 'Premier League Bets',
+            group_name: eventId ? `Event ${eventId.slice(0, 8)}...` : 'Premier League Bets',
             sender: 'John',
-            chat_id: 'test-group-1'
+            chat_id: eventId || 'test-group-1',
+            event_id: eventId
           }
         });
 
@@ -90,7 +95,8 @@ const NotificationTester: React.FC = () => {
           metadata: {
             challenger: 'Mike',
             challenge_id: 'test-challenge-1',
-            amount: 500
+            amount: 500,
+            event_id: eventId
           }
         });
 
@@ -122,6 +128,7 @@ const NotificationTester: React.FC = () => {
       <p className="text-sm text-gray-600 mb-4">
         Test different types of notifications while you're in any chatroom. 
         These will appear as toast notifications.
+        {eventId && <span className="block mt-1 text-blue-600">Testing within event context: {eventId.slice(0, 8)}...</span>}
       </p>
 
       <div className="space-y-3">

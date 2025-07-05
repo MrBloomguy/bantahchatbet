@@ -1,10 +1,13 @@
 
 import React from 'react';
+import { useParams } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import MobileFooterNav from '../components/MobileFooterNav';
 import NotificationTester from '../components/NotificationTester';
 
 const NotificationTest: React.FC = () => {
+  const { eventId } = useParams();
+  
   return (
     <div className="min-h-screen bg-gray-50">
       <PageHeader title="Notification Testing" showBack />
@@ -14,6 +17,7 @@ const NotificationTest: React.FC = () => {
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900 mb-2">
               Test Notifications
+              {eventId && <span className="text-sm text-blue-600 block">Event ID: {eventId}</span>}
             </h1>
             <p className="text-gray-600">
               Use this page to test how notifications work when you receive messages 
@@ -21,7 +25,7 @@ const NotificationTest: React.FC = () => {
             </p>
           </div>
 
-          <NotificationTester />
+          <NotificationTester eventId={eventId} />
 
           <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <h3 className="font-semibold text-yellow-800 mb-2">

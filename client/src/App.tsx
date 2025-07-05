@@ -163,7 +163,8 @@ const App: React.FC = () => {
                             </ProtectedRoute>
                           } />
                           <Route path="/demochatroom" element={<DemoChatRoom />} />
-                          <Route path="/test-notifications" element={<NotificationTest />} />
+                          <Route path="/notification-test" element={<NotificationTest />} />
+                          <Route path="/event/:eventId/test-notifications" element={<NotificationTest />} />
 
                           {/* Admin routes */}
                           <Route path="/admin/login" element={<AdminLogin />} />
