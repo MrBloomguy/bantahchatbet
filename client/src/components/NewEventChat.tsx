@@ -5,9 +5,9 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { useEventParticipation } from "../hooks/useEventParticipation";
 import { useEventPool } from "../hooks/useEventPool";
+import { usePusherChat } from "../hooks/usePusherChat";
 import UserAvatar from "./UserAvatar";
 import UserLevelBadge from "./UserLevelBadge";
-import { useEventChat } from "../hooks/useEventChat";
 import ProfileCard from "./ProfileCard";
 import { supabase } from "../lib/supabase";
 import ChatBubble from "./ChatBubble";
@@ -83,7 +83,7 @@ interface ChatMessage {
 const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
   const { currentUser } = useAuth();
   const toast = useToast();
-  const { messages, sendMessage, isLoading } = useEventChat(eventId);
+  const { messages, sendMessage, isLoading } = usePusherChat(eventId);
   const { joinEvent, getUserPrediction, getPredictionCounts } =
     useEventParticipation();
   const { updatePoolAmount } = useEventPool();
@@ -316,10 +316,9 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
   // Correct the sendMessage function calls to use valid properties
   const handleGifSelection = async (gifUrl: string) => {
     try {
-      await sendMessage("", undefined, {
+      await sendMessage(gifUrl, undefined, {
         mentions: [],
         reply_to: undefined,
-        media: { url: gifUrl, type: "gif" }, // Corrected property
       });
       setShowGifPicker(false);
     } catch (error) {
@@ -483,9 +482,9 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
             id: data.id,
             title: data.title,
             creator: {
-              id: data.creator?.id || "",
-              username: data.creator?.username || "",
-              avatar_url: data.creator?.avatar_url || null,
+              id: data.creator?.[0]?.id || "",
+              username: data.creator?.[0]?.username || "",
+              avatar_url: data.creator?.[0]?.avatar_url || null,
             },
             pool: data.pool || [],
             participants: data.participants || [],
@@ -875,8 +874,8 @@ const NewEventChat: React.FC<NewEventChatProps> = ({ eventId, onBack }) => {
                   try {
                     const imageUrl = await uploadImage(file);
                     await sendMessage("", file, {
-                      media_url: imageUrl,
-                      media_type: "image",
+                      mentions: [],
+                      reply_to: undefined,
                     });
                   } catch (error) {
                     toast.showError("Failed to upload image");

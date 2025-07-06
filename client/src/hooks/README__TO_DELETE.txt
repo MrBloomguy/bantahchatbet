@@ -1,0 +1,1 @@
+Files useEventChat.ts and useHybridEventChat.ts were removed as part of the migration to Pusher. All chat logic now uses usePusherChat. If you need to restore these files, check your version control history.
